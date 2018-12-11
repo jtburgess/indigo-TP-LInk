@@ -6,8 +6,8 @@
 	 back to the user you can post information into the Event Log.
 -->
 <MenuItems>
-	<MenuItem id="menu1">
-		<Name>Time Warp!</Name>
-		<CallbackMethod>timeWarp</CallbackMethod>
+	<MenuItem id="toggleDebug">
+		<Name>Toggle Debugging</Name>
+        <CallbackMethod>toggleDebugging</CallbackMethod>
 	</MenuItem>
 </MenuItems>
