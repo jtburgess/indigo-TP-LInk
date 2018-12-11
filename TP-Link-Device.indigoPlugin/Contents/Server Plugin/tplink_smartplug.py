@@ -93,7 +93,7 @@ class tplink_smartplug():
 			result = decrypt(data)
 			return '{' + result[5:]
 		except socket.error:
-			quit("Cound not connect to host " + ip + ":" + str(port))
+			quit("Cound not connect to host " + self.ip + ":" + str(self.port))
 
 # Check if hostname is valid
 def validHostname(hostname):

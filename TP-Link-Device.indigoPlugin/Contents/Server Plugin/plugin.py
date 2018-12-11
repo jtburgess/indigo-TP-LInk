@@ -8,6 +8,7 @@ import indigo
 
 import os
 import sys
+import json
 
 from tplink_smartplug import tplink_smartplug
 
@@ -19,68 +20,14 @@ class Plugin(indigo.PluginBase):
 	########################################
 	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
 		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
-		self.debug = False
+		self.debug = pluginPrefs.get("showDebugInfo", False)
 
 	########################################
 	def startup(self):
-		self.debugLog(u"startup called")
+		self.logger.debug(u"startup called")
 
 	def shutdown(self):
-		self.debugLog(u"shutdown called")
-
-	####################
-	def _getDeviceGroupList(self, filter, valuesDict, devIdList):
-		menuItems = []
-		for devId in devIdList:
-			if devId in indigo.devices:
-				dev = indigo.devices[devId]
-				devName = dev.name
-			else:
-				devName = u"- device not found -"
-			menuItems.append((devId, devName))
-		return menuItems
-
-	def _addRelay(self, valuesDict, devIdList):
-		newdev = indigo.device.create(indigo.kProtocol.Plugin, deviceTypeId="myRelayType")
-		newdev.model = "Example Multi-Device"
-		newdev.subModel = "Relay"		# Manually need to set the model and subModel names (for UI only)
-		newdev.replaceOnServer()
-		return valuesDict
-
-	def _addDimmer(self, valuesDict, devIdList):
-		newdev = indigo.device.create(indigo.kProtocol.Plugin, deviceTypeId="myDimmerType")
-		newdev.model = "Example Multi-Device"
-		newdev.subModel = "Dimmer"		# Manually need to set the model and subModel names (for UI only)
-		newdev.replaceOnServer()
-		return valuesDict
-
-	def _removeDimmerDevices(self, valuesDict, devIdList):
-		for devId in devIdList:
-			try:
-				dev = indigo.devices[devId]
-				if dev.deviceTypeId == "myDimmerType":
-					indigo.device.delete(dev)
-			except:
-				pass	# delete doesn't allow (throws) on root elem
-		return valuesDict
-
-	def _removeRelayDevices(self, valuesDict, devIdList):
-		for devId in devIdList:
-			try:
-				dev = indigo.devices[devId]
-				if dev.deviceTypeId == "myRelayType":
-					indigo.device.delete(dev)
-			except:
-				pass	# delete doesn't allow (throws) on root elem
-		return valuesDict
-
-	def _removeAllDevices(self, valuesDict, devIdList):
-		for devId in devIdList:
-			try:
-				indigo.device.delete(devId)
-			except:
-				pass	# delete doesn't allow (throws) on root elem
-		return valuesDict
+		self.logger.debug(u"shutdown called")
 
 	########################################
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
@@ -92,7 +39,7 @@ class Plugin(indigo.PluginBase):
 	def actionControlDimmerRelay(self, action, dev):
 		addr = dev.address
 		port = 9999
-		self.debugLog("TPlink name=%s, addr=%s, action=%s" % (dev.name, addr, action) )
+		self.logger.debug("TPlink name={}, addr={}, action={}".format(dev.name, addr, action))
 		tplink_dev = tplink_smartplug (addr, port)
 
 		###### TURN ON ######
@@ -112,24 +59,30 @@ class Plugin(indigo.PluginBase):
 				cmd = "on"
 			newOnState = not dev.onState
 		else:
-			indigo.server.log("Unknown command: %s" % (indigo.kDimmerRelayAction, ), isError=True )
+			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
 			return
 
 		result = tplink_dev.send(cmd)
-		if "\"err_code\":0" in result:
-			sendSuccess = True
-		else:
-			sendSuccess = False
+		sendSuccess = False
+		try:
+			result_dict = json.loads(result)
+			error_code = result_dict["system"]["set_relay_state"]["err_code"]
+			if error_code == 0:
+				sendSuccess = True
+			else:
+				self.logger.error("turn {} command failed (error code: {})".format(cmd, error_code))
+		except:
+			pass
 
 		if sendSuccess:
 			# If success then log that the command was successfully sent.
-			indigo.server.log(u"sent \"%s\" %s" % (dev.name, cmd))
+			self.logger.info(u'sent "{}" {}'.format(dev.name, cmd))
 
 			# And then tell the Indigo Server to update the state.
-			dev.updateStateOnServer("onOffState", True)
+			dev.updateStateOnServer("onOffState", cmd)
 		else:
 			# Else log failure but do NOT update state on Indigo Server.
-			indigo.server.log(u"send \"%s\" %s failed with result \"%s\"" % (dev.name, cmd, result), isError=True)
+			self.logger.error(u'send "{}" {} failed with result "{}"'.format(dev.name, cmd, result))
 
 	########################################
 	# General Action callback
@@ -138,26 +91,43 @@ class Plugin(indigo.PluginBase):
 		if action.deviceAction == indigo.kDeviceGeneralAction.RequestStatus:
 			self.getInfo(action, dev)
 		else:
-			indigo.server.log(u"unsupported Action callback \"%s\" %s" % (dev.name, action), isError=True)
+			self.logger.error(u'unsupported Action callback "{}" {}'.format(dev.name, action))
 
 	########################################
 	# Custom Plugin Action callbacks (defined in Actions.xml)
 	######################
 	def getInfo(self, pluginAction, dev):
-		try:
-			import json
-		except ImportError:
-			import simplejson as json
-
+		self.logger.info("sent '{}' status request".format(dev.name))
 		addr = dev.address
 		port = 9999
-		self.debugLog("TPlink get Info name=%s, addr=%s" % (dev.name, addr, ) )
+		self.logger.debug("getInfo name={}, addr={}".format(dev.name, addr, ) )
 		tplink_dev = tplink_smartplug (addr, port)
 		result = tplink_dev.send("info")
 
 		try:
 			# pretty print the json result
 			json_result = json.loads(result)
-			indigo.server.log ( json.dumps(json_result, sort_keys=True, indent=2, separators=(',', ': ')), type="TPLink Device Info" )
-		except ValueError, e:
-			indigo.server.log ("Json value error: %s on %s" % (e, result), isError=True )
+			# Get the device state from the JSON
+			if json_result["system"]["get_sysinfo"]["relay_state"] == 1:
+				state = "on"
+			else:
+				state = "off"
+			# Update Indigo's device state
+			dev.updateStateOnServer("onOffState", state)
+			self.logger.info("getInfo result JSON:\n{}".format(json.dumps(json_result, sort_keys=True, indent=2, separators=(',', ': '))))
+		except ValueError as e:
+			self.logger.error("JSON value error: {} on {}".format(e, result))
+
+
+	########################################
+	# Menu callbacks defined in MenuItems.xml
+	########################################
+	def toggleDebugging(self):
+		if self.debug:
+			self.logger.info("Turning off debug logging")
+			self.pluginPrefs["showDebugInfo"] = False
+		else:
+			self.logger.info("Turning on debug logging")
+			self.pluginPrefs["showDebugInfo"] = True
+		self.debug = not self.debug
+
