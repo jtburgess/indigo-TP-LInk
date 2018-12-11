@@ -114,7 +114,11 @@ class Plugin(indigo.PluginBase):
 				state = "off"
 			# Update Indigo's device state
 			dev.updateStateOnServer("onOffState", state)
+<<<<<<< HEAD
 			self.logger.info("getInfo result JSON:\n{}".format(json.dumps(json_result, sort_keys=True, indent=2, separators=(',', ': '))))
+=======
+			self.logger.debug("getInfo result JSON:\n{}".format(json.dumps(json_result, sort_keys=True, indent=2, separators=(',', ': '))))
+>>>>>>> 0ab8ee4bb10cdab1bb988bcff1c42be6497ba183
 		except ValueError as e:
 			self.logger.error("JSON value error: {} on {}".format(e, result))
 
