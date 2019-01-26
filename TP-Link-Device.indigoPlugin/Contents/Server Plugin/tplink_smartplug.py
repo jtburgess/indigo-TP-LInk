@@ -64,20 +64,30 @@ def decrypt(string):
 		result += chr(a)
 	return result
 
+########################
+# the class has an optional deviceID string, used by power Strip devices (and others???)
+# and the send command has an optional childID representing the socket on the power Strip
 class tplink_smartplug():
-	def __init__(self, ip, port):
+	def __init__(self, ip, port, deviceID = None):
 		self.ip = ip
 		self.port = port
+		self.deviceID = deviceID
 		if debug:
 			print("init with host=%s, port=%s" % ( ip, port) )
 		return
 
 	# Send command and receive reply
-	def send(self, cmd):
+	def send(self, cmd, childID = None):
 		if cmd in commands:
 			cmd = commands[cmd]
 		else:
 			quit("unknown command: %s" % (cmd, ))
+
+		# if both deviceID and childID are set, { context} is prepended to the command
+		if self.deviceID and childID:
+			context = '{"context":{"child_ids":["'+self.deviceID+childID+'"]},'
+			# now replace the initial '{' of the command with that string
+			cmd = context + cmd[1:]
 
 		if debug:
 			print ("send cmd=%s" % (cmd, ))
@@ -103,6 +113,8 @@ def validHostname(hostname):
 		parser.error("Invalid hostname.")
 	return hostname
 
+########################
+# for debugging
 def main():
 	try:
 		import json
@@ -118,10 +130,22 @@ def main():
 	group.add_argument("-c", "--command", metavar="<command>", help="Preset command to send. Choices are: "+", ".join(commands), choices=commands)
 	group.add_argument("-C", "--CMD", metavar="<command>", help="unvalidated Command")
 	# group.add_argument("-j", "--json", metavar="<JSON string>", help="Full JSON string of command to send")
+	parser.add_argument("-d", "--deviceID", metavar="<deviceID>", required=False, help="device ID for testing powerstrip")
+	parser.add_argument("-p", "--childID", metavar="<childID>", required=False, help="port on device")
+
 	args = parser.parse_args()
 
+	if (args.deviceID is None) ^ (args.childID is None):
+		# this is true if one is set and the other isn't
+		# we need BOTH to be set or both NOT set
+		print "both device and port must be set or not set"
+		exit(1)
+
 	debug = True
-	my_target = tplink_smartplug(args.target, 9999)
+	if args.deviceID:
+		my_target = tplink_smartplug(args.target, 9999, deviceID=args.deviceID)
+	else:
+		my_target = tplink_smartplug(args.target, 9999)
 
 #	if args.command is None:
 #		cmd = args.json
@@ -129,7 +153,10 @@ def main():
 #		cmd = commands[args.command]
 
 	print "Sent:     ", args.command
-	data = my_target.send(args.command)
+	if args.childID:
+		data = my_target.send(args.command, childID=args.childID)
+	else:
+		data = my_target.send(args.command)
 
 	# data[0] = "{"
 	try:
