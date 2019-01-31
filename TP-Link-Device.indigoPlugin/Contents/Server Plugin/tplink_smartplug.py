@@ -73,7 +73,7 @@ class tplink_smartplug():
 		self.port = port
 
 		# both or neither deviceID and childID should be set
-		if (deviceID and childID) or (deviceID == None) and (childID == None):
+		if (deviceID is not None and childID is not None) or (deviceID is None and childID is None):
 			pass # both combinations are ok
 		else:
 			quit("ERROR: both deviceID and childID must be set together")
@@ -92,7 +92,7 @@ class tplink_smartplug():
 			quit("ERROR: unknown command: %s" % (cmd, ))
 
 		# if both deviceID and childID are set, { context... } is prepended to the command
-		if self.deviceID and self.childID:
+		if self.deviceID is not None and self.childID is not None:
 			context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
 			# now replace the initial '{' of the command with that string
 			cmd = context + cmd[1:]
