@@ -40,4 +40,53 @@
 		</States>
 	</Device>
 
+	<Device type="relay" id="hs110">
+			<Name>HS110 SmartPlug w/Energy Monitoring</Name>
+			<ConfigUI>
+				<Field id="address" type="textfield" defaultValue="192.168.0.0">
+					<Label>Module IP Address:</Label>
+				</Field>
+				<Field id="configured" type="checkbox" hidden="true" defaultValue="false">
+				</Field>
+				<Field id="Name" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
+					<Label>Name</Label>
+				</Field>
+				<Field id="Model" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
+					<Label>Model</Label>
+				</Field>
+				<Field id="Alias" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
+					<Label>Alias</Label>
+				</Field>
+				<Field id="MAC" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
+					<Label>MAC Address</Label>
+				</Field>
+			</ConfigUI>
+			<States>
+				<State id="User">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Username</TriggerLabel>
+					<ControlPageLabel>User Name</ControlPageLabel>
+				</State>
+				<State id="Bind">
+					<ValueType boolType="YesNo">Boolean</ValueType>
+					<TriggerLabel>Bind State</TriggerLabel>
+					<ControlPageLabel>Bind State</ControlPageLabel>
+				</State>
+				<State id="CurWatts">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Watts</TriggerLabel>
+					<ControlPageLabel>Current Watts</ControlPageLabel>
+				</State>
+				<State id="CurVolts">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Volts</TriggerLabel>
+					<ControlPageLabel>Current Volts</ControlPageLabel>
+				</State>
+				<State id="CurAmps">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Amps</TriggerLabel>
+					<ControlPageLabel>Current Amps</ControlPageLabel>
+				</State>
+			</States>
+		</Device>
 </Devices>
