@@ -8,7 +8,6 @@ import indigo
 import os
 import sys
 import json
-from threading import Event
 from tplink_smartplug import tplink_smartplug
 
 # Note the "indigo" module is automatically imported and made available inside
@@ -20,10 +19,6 @@ class Plugin(indigo.PluginBase):
 	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
 		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
 		self.debug = pluginPrefs.get("showDebugInfo", False)
-
-		self.offUpFreq = 30   # interval in secs between updates when the plug is off should be <= 30
-		self.onUpFreq  =  2   # interval in secs between updates when the plug is on
-		self.updateFreq = self.offUpFreq
 
 	########################################
 	def startup(self):
@@ -40,12 +35,12 @@ class Plugin(indigo.PluginBase):
 		devAddr = dev.address
 		devPort = 9999
 
-		self.logger.info(u"Starting data refresh for %s :%s:%s:" % (dev.name, devType, devAddr))
+		self.logger.info(u"Got Here 1 with :%s:%s:" % (devType, devAddr))
 	
 		tplink_dev = tplink_smartplug (devAddr, devPort)
 
-		# self.logger.info(u"Dev props \"%s\"" % (dev.pluginProps))
-		# self.logger.info("TPlink name={}, addr={}".format(dev.name, devAddr))
+		self.logger.info(u"Dev props \"%s\"" % (dev.pluginProps))
+		self.logger.info("TPlink name={}, addr={}".format(dev.name, devAddr))
 		
 		result = tplink_dev.send('info')
 		# indigo.server.log("Received sRcvd: |%s|" % (binascii.hexlify(bytearray(sRcvd))), type="TP-Link", isError=True)
@@ -53,7 +48,6 @@ class Plugin(indigo.PluginBase):
 		state = data['system']['get_sysinfo']['relay_state']
 		dev.updateStateOnServer("onOffState", state)
 		
-		# Check to see if we should grab device paramaters from the plug
 		if not dev.pluginProps['configured']:
 			dev_name = data['system']['get_sysinfo']['dev_name']
 			alias = data['system']['get_sysinfo']['alias']
@@ -80,10 +74,13 @@ class Plugin(indigo.PluginBase):
 			localPropsCopy['configured'] = True
 			dev.replacePluginPropsOnServer(localPropsCopy)
 
+		else:
+			self.logger.info(u"conf")
+
 		if devType == "hs110":
 			result = tplink_dev.send('energy')
 			data = json.loads(result)
-			# indigo.server.log("Received result: |%s|" % (result), type="TP-Link", isError=True)
+			indigo.server.log("Received result: |%s|" % (result), type="TP-Link", isError=True)
 			curWatts = data['emeter']['get_realtime']['power_mw']/1000
 			curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 			curAmps  = data['emeter']['get_realtime']['current_ma']/1000
@@ -95,7 +92,7 @@ class Plugin(indigo.PluginBase):
 				]
 			dev.updateStatesOnServer(state_update_list)
 
-			# indigo.server.log("Received results: %s, %s, %s" % (curWatts, curVolts, curAmps), type="TP-Link", isError=True)
+			indigo.server.log("Received results: %s, %s, %s" % (curWatts, curVolts, curAmps), type="TP-Link", isError=True)
 
 		#indigo.server.log(u"Update received for %s: state %s, watts %s" % (dev.name, state, curWatts), type="TP-Link", isError=False)
 
@@ -112,10 +109,7 @@ class Plugin(indigo.PluginBase):
 					# Indigo Server.
 					self._refreshStatesFromHardware(dev, False)
 
-				# self.sleep(10)
-				self.exit = Event()
-				self.exit.wait(self.updateFreq)
-				self.exit.clear()
+				self.sleep(10)
 		except self.StopThread:
 			pass	# Optionally catch the StopThread exception and do any needed cleanup.
 			
@@ -144,7 +138,7 @@ class Plugin(indigo.PluginBase):
 		# meter. If periodic polling of the meter is needed (that is, it
 		# doesn't broadcast changes back to the plugin somehow), then consider
 		# adding that to runConcurrentThread() above.
-		# self._refreshStatesFromHardware(dev, True)
+		self._refreshStatesFromHardware(dev, True)
 		pass
 
 	def deviceStopComm(self, dev):
@@ -164,23 +158,17 @@ class Plugin(indigo.PluginBase):
 		if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
 			# Command hardware module (dev) to turn ON here:
 			cmd = "on"
-			self.updateFreq = self.onUpFreq
-			self.exit.set()
 		###### TURN OFF ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
 			# Command hardware module (dev) to turn OFF here:
 			cmd = "off"
-			self.updateFreq = self.offUpFreq
 		###### TOGGLE ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
 			# Command hardware module (dev) to toggle here:
 			if dev.onState:
 				cmd = "off"
-				self.updateFreq = self.offUpFreq
 			else:
 				cmd = "on"
-				self.updateFreq = self.onUpFreq
-				self.exit.set()
 			# newOnState = not dev.onState
 		else:
 			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
