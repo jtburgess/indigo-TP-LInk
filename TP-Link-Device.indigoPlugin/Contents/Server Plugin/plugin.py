@@ -31,29 +31,66 @@ class Plugin(indigo.PluginBase):
 	# Poll all of the states from the smart plug and pass values to
 	# Indigo Server.
 	def _refreshStatesFromHardware(self, dev, logRefresh):
-		# self.logger.info(u"Got Here 1 with %s" % (dev))
-		addr = dev.address
-		port = 9999
-		self.logger.info("TPlink name={}, addr={}".format(dev.name, addr))
-		tplink_dev = tplink_smartplug (addr, port)
+		devType = dev.deviceTypeId
+		devAddr = dev.address
+		devPort = 9999
+
+		self.logger.info(u"Got Here 1 with :%s:%s:" % (devType, devAddr))
+	
+		tplink_dev = tplink_smartplug (devAddr, devPort)
+
+		self.logger.info(u"Dev props \"%s\"" % (dev.pluginProps))
+		self.logger.info("TPlink name={}, addr={}".format(dev.name, devAddr))
 		
 		result = tplink_dev.send('info')
 		# indigo.server.log("Received sRcvd: |%s|" % (binascii.hexlify(bytearray(sRcvd))), type="TP-Link", isError=True)
 		data = json.loads(result)
 		state = data['system']['get_sysinfo']['relay_state']
 		dev.updateStateOnServer("onOffState", state)
+		
+		if not dev.pluginProps['configured']:
+			dev_name = data['system']['get_sysinfo']['dev_name']
+			alias = data['system']['get_sysinfo']['alias']
+			mac = data['system']['get_sysinfo']['mac']
+			model = data['system']['get_sysinfo']['model']
 
-		if "CurWatts" in dev.states:
+			result = tplink_dev.send('cloudinfo')
+			data = json.loads(result)
+			user = data['cnCloud']['get_info']['username']
+			bind = data['cnCloud']['get_info']['binded']
+
+			state_update_list = [
+				{'key':'dev_name', 'value':dev_name},
+				{'key':'alias', 'value':alias},
+				{'key':'mac', 'value':mac},
+				{'key':'model', 'value':model},
+				{'key':'user', 'value':user},
+				{'key':'bind', 'value':bind}
+				]
+			dev.updateStatesOnServer(state_update_list)
+			
+			self.logger.info(u"not conf")
+			localPropsCopy = dev.pluginProps
+			localPropsCopy['configured'] = True
+			dev.replacePluginPropsOnServer(localPropsCopy)
+
+		else:
+			self.logger.info(u"conf")
+
+		if devType == "hs110":
 			result = tplink_dev.send('energy')
 			data = json.loads(result)
 			indigo.server.log("Received result: |%s|" % (result), type="TP-Link", isError=True)
-			curWatts = data['emeter']['get_realtime']['power_mw']
-			curVolts = data['emeter']['get_realtime']['voltage_mv']
-			curAmps  = data['emeter']['get_realtime']['current_ma']
+			curWatts = data['emeter']['get_realtime']['power_mw']/1000
+			curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
+			curAmps  = data['emeter']['get_realtime']['current_ma']/1000
 
-			dev.updateStateOnServer("CurWatts", curWatts)
-			dev.updateStateOnServer("CurVolts", curVolts)
-			dev.updateStateOnServer("CurAmps", curAmps)
+			state_update_list = [
+				{'key':'curWatts', 'value':curWatts},
+				{'key':'curVolts', 'value':curVolts},
+				{'key':'curAmps', 'value':curAmps}
+				]
+			dev.updateStatesOnServer(state_update_list)
 
 			indigo.server.log("Received results: %s, %s, %s" % (curWatts, curVolts, curAmps), type="TP-Link", isError=True)
 
@@ -90,22 +127,8 @@ class Plugin(indigo.PluginBase):
 			self.logger.info(u"%s is not reachable" % valuesDict['address'], isError=True)
 			errorsDict["address"] = "Host unreachable"
 			return (False, valuesDict, errorsDict)
-		
-		addr = valuesDict['address']
-		port = 9999
-		
-		tplink_dev = tplink_smartplug (addr, port)
-		result = tplink_dev.send('info')
-		#if logRefresh:
-		# self.logger.info(u"received \"%s\" %s to %s" % (dev.name, "power load", result))
-
-		data = json.loads(result)
-		valuesDict["Name"] = data['system']['get_sysinfo']['dev_name']
-		valuesDict["Alias"] = data['system']['get_sysinfo']['alias']
-		valuesDict["Model"]  = data['system']['get_sysinfo']['model']
-		valuesDict["MAC"]  = data['system']['get_sysinfo']['mac']
-		valuesDict["configured"]  = "true"
-
+			
+		valuesDict['newDev'] = False
 		return (True, valuesDict, errorsDict)
 
 	########################################
@@ -146,7 +169,7 @@ class Plugin(indigo.PluginBase):
 				cmd = "off"
 			else:
 				cmd = "on"
-			newOnState = not dev.onState
+			# newOnState = not dev.onState
 		else:
 			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
 			return

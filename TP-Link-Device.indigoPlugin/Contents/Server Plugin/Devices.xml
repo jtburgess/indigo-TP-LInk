@@ -46,43 +46,54 @@
 				<Field id="address" type="textfield" defaultValue="192.168.0.0">
 					<Label>Module IP Address:</Label>
 				</Field>
-				<Field id="configured" type="checkbox" hidden="true" defaultValue="false">
+				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
 				</Field>
-				<Field id="Name" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
-					<Label>Name</Label>
-				</Field>
-				<Field id="Model" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
-					<Label>Model</Label>
-				</Field>
-				<Field id="Alias" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
-					<Label>Alias</Label>
-				</Field>
-				<Field id="MAC" type="textfield" visibleBindingId='configured' visibleBindingValue="true">
-					<Label>MAC Address</Label>
+				<Field id="configured" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
+					<Label>Check to re-read device parameters:</Label>
 				</Field>
 			</ConfigUI>
 			<States>
-				<State id="User">
+				<State id="dev_name">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device Name</TriggerLabel>
+					<ControlPageLabel>Device Name</ControlPageLabel>
+				</State>
+				<State id="model">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device Model</TriggerLabel>
+					<ControlPageLabel>Device Model</ControlPageLabel>
+				</State>
+				<State id="alias">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device Alias</TriggerLabel>
+					<ControlPageLabel>Device Alias</ControlPageLabel>
+				</State>
+				<State id="mac">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device MAC</TriggerLabel>
+					<ControlPageLabel>Device MAC</ControlPageLabel>
+				</State>
+				<State id="user">
 					<ValueType>String</ValueType>
 					<TriggerLabel>Username</TriggerLabel>
 					<ControlPageLabel>User Name</ControlPageLabel>
 				</State>
-				<State id="Bind">
+				<State id="bind">
 					<ValueType boolType="YesNo">Boolean</ValueType>
 					<TriggerLabel>Bind State</TriggerLabel>
 					<ControlPageLabel>Bind State</ControlPageLabel>
 				</State>
-				<State id="CurWatts">
+				<State id="curWatts">
 					<ValueType>Float</ValueType>
 					<TriggerLabel>Current Watts</TriggerLabel>
 					<ControlPageLabel>Current Watts</ControlPageLabel>
 				</State>
-				<State id="CurVolts">
+				<State id="curVolts">
 					<ValueType>Float</ValueType>
 					<TriggerLabel>Current Volts</TriggerLabel>
 					<ControlPageLabel>Current Volts</ControlPageLabel>
 				</State>
-				<State id="CurAmps">
+				<State id="curAmps">
 					<ValueType>Float</ValueType>
 					<TriggerLabel>Current Amps</TriggerLabel>
 					<ControlPageLabel>Current Amps</ControlPageLabel>
