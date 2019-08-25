@@ -23,47 +23,30 @@ class myThread(Thread):
 		Thread.__init__(self)
 		self.dev = dev
 		self.name = dev.name
-		# self.offPoll = int(offPoll)
-		self.offPoll = int(dev.pluginProps['offPoll'])
-		self.onPoll = int(dev.pluginProps['onPoll'])
+		# self.frequency = int(frequency)
+		self.pollFreq = int(dev.pluginProps['frequency'])
 		self.configured = self.dev.pluginProps['configured']
-		self.multiPlug = self.dev.pluginProps['multiPlug']
-		if self.multiPlug:
-			self.childId = dev.states['outletNum']
 		self.onOffState = dev.states['onOffState']
-		if self.onOffState:
-			self.pollFreq = self.onPoll
-		else:
-			self.pollFreq = self.offPoll
-		self.deviceId = dev.states['deviceId']
+		self.lastPollFreq = self.pollFreq
+		self.lastOnOffState = self.onOffState
 		self.changed = False
-		# indigo.server.log(u"Initializing: %s:%s" % (dev.name, self.offPoll))
+		# indigo.server.log(u"Initializing: %s:%s" % (dev.name, self.pollFreq))
 		self._is_running = True
 		self.start()
 
-	def interupt(self, state):
-		#####  All of this code is unecessary since any device changes stop and restart the queue anyeway
-		# self.dev = indigo.devices[self.dev.id]
-		# indigo.server.log(u"from: %s You interupted with %s" % (self.name, state))
-		# self.configured = self.dev.pluginProps['configured']
-		# indigo.server.log(u"from: %s configured = %s" % (self.name, self.configured))
-		# self.offPoll = int(self.dev.pluginProps['offPoll'])
-		# self.onPoll = int(self.dev.pluginProps['onPoll'])
-		# self.onOffState = self.dev.states['onOffState']
-		# indigo.server.log(u"Current state %s %s" % (self.onOffState, bool(self.onOffState)))
-		# indigo.server.log(u"Was: onPoll=%s & offPOll=%s" % (self.onPoll, self.offPoll))
-		# if self.offPoll != self.lastOffPoll or self.onPoll != self.lastOnPoll or self.onOffState != self.lastOnOffState or self.configured:
+	def interupt(self):
+		self.dev = indigo.devices[self.dev.id]
+		indigo.server.log(u"from: %s You interupted" % (self.name))
+		self.configured = self.dev.pluginProps['configured']
+		indigo.server.log(u"from: %s configured = %s" % (self.name, self.configured))
+		self.pollFreq = int(self.dev.pluginProps['frequency'])
+		self.onOffState = self.dev.states['onOffState']
+		if self.pollFreq != self.lastPollFreq or self.onOffState != self.lastOnOffState or self.configured:
+			self.changed = True
+			self.lastPollFreq = self.pollFreq
+			self.lastOnOffState = self.onOffState
+			indigo.server.log(u"Property or state change for %s" % (self.name))
 
-		# indigo.server.log(u"Just before the test state %s %s" % (self.onOffState, bool(self.onOffState)))
-		if state:
-			self.pollFreq = self.onPoll
-		else:
-			self.pollFreq = self.offPoll
-		self.changed = True
-			# indigo.server.log(u"Now: is %s, onPoll=%s & offPOll=%s" % (self.pollFreq, self.onPoll, self.offPoll))
-
-		# indigo.server.log(u"Property or state change for %s" % (self.name))
-			
 	def stop(self):
 		indigo.server.log(u"from: %s  time to quit" % (self.name))
 		self._is_running = False
@@ -74,40 +57,20 @@ class myThread(Thread):
 		# indigo.server.log(u"Running: %s" % (devType))
 		devAddr = dev.address
 		devPort = 9999
-		lastState = 0
-		if self.multiPlug:
-			deviceId = self.deviceId
-			childId = self.childId
-		else:
-			deviceId = None
-			childId = None
 		
-		# indigo.server.log(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
+		# indigo.server.log(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.pollFreq))
 
-		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
+		tplink_dev = tplink_smartplug (devAddr, devPort)
 		while True:
-			# indigo.server.log(u"%s: Starting polling loop with interval %s" % (self.name, self.offPoll))
+			indigo.server.log(u"%s: Starting polling loop with interval %s" % (self.name, self.pollFreq))
 			result = tplink_dev.send('info')
 			data = json.loads(result)
 			state = data['system']['get_sysinfo']['relay_state']
-			# indigo.server.log(u"%s: state= %s" % (self.name, state))
-			if state == 1:
-				state = "on"
-				if state != lastState:
-					self.interupt(True)
-			else:
-				state = "off"
-				if state != lastState:
-					self.interupt(False)
-			lastState = state
-
 			dev.updateStateOnServer("onOffState", state)
-
 			# Check % (self.name) to see if we should grab device parameters from the plug
 			if dev.pluginProps['newDev'] or self.configured:
 				# indigo.server.log(u"%s: In the loop - re-reading device info" % (self.name))
 				dev_name = data['system']['get_sysinfo']['dev_name']
-				deviceId = data['system']['get_sysinfo']['deviceId']
 				alias = data['system']['get_sysinfo']['alias']
 				mac = data['system']['get_sysinfo']['mac']
 				model = data['system']['get_sysinfo']['model']
@@ -119,7 +82,6 @@ class myThread(Thread):
 
 				state_update_list = [
 					{'key':'dev_name', 'value':dev_name},
-					{'key':'deviceId', 'value':deviceId},
 					{'key':'alias', 'value':alias},
 					{'key':'mac', 'value':mac},
 					{'key':'model', 'value':model},
@@ -150,14 +112,16 @@ class myThread(Thread):
 					]
 				dev.updateStatesOnServer(state_update_list)
 
-				indigo.server.log("Received results for %s @ %s secs: %s, %s, %s: chenge = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed), type="TP-Link", isError=False)
+				indigo.server.log("Received results for %s @ %s secs: %s, %s, %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps), type="TP-Link", isError=True)
 			# indigo.server.log(u"%s: In the loop - finished data gathering" % (self.name))
+			lPollFreq = float(self.pollFreq)
 			pTime = 0.5
-			cTime = self.pollFreq
+			cTime = lPollFreq
+
 			while cTime > 0:
 				# indigo.server.log(u"Timer = %6.4f" % (cTime))
 				if self.changed or not self._is_running:
-					# indigo.server.log(u"Device change for %s" % (self.name))
+					indigo.server.log(u"Device change for %s" % (self.name))
 					self.changed = False
 					break
 				else:
@@ -212,23 +176,25 @@ class Plugin(indigo.PluginBase):
 
 	########################################
 	def deviceStartComm(self, dev):
-		# indigo.server.log("deviceStartComn starting %s" % (dev.name), type="TP-Link", isError=False)
+		indigo.server.log("deviceStartComn starting %s" % (dev.name), type="TP-Link", isError=False)
+
 		# myThread(dev)
 		if dev.name in self.tpThreads:
-			indigo.server.log("deviceStartComm error: Thread exists for %s - %s" % (dev.name, self.tpThreads[dev.name]))
-			# self.tpThreads[dev.name].interupt(None)
-		elif dev.pluginProps['devPoll']:
+			# indigo.server.log("Thread exists for %s: %s" % (dev.name, self.tpThreads[dev.name]))
+			self.tpThreads[dev.name].interupt()
+			indigo.server.log("interupt fired")
+		else:
 			# We start one thread per device.
 			self.process = myThread(dev)
 			self.tpThreads[dev.name] = self.process
-			indigo.server.log("Started thread for device  %s" % (self.tpThreads), type="TP-Link", isError=False)
+			# indigo.server.log("Started thread for device  %s" % (self.tpThreads), type="TP-Link", isError=True)
+		return
 
 	def deviceStopComm(self, dev):
 		# Called when communication with the hardware should be shutdown.
-		if dev.name in self.tpThreads:  # We don't want to waste time if a polling thread was never started
-			indigo.server.log("deviceStopComn ending %s" % (dev.name), type="TP-Link", isError=False)
-			self.tpThreads[dev.name].stop()
-			del self.tpThreads[dev.name]
+		indigo.server.log("deviceStopComn ending %s" % (dev.name), type="TP-Link", isError=False)
+		self.tpThreads[dev.name].stop()
+		del self.tpThreads[dev.name]
 
 	########################################
 	# Relay / Dimmer Action callback
@@ -243,21 +209,24 @@ class Plugin(indigo.PluginBase):
 		if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
 			# Command hardware module (dev) to turn ON here:
 			cmd = "on"
-			self.tpThreads[dev.name].interupt(True)
+			self.updateFreq = self.onUpFreq
+			self.tpThreads[dev.name].interupt()
 		###### TURN OFF ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
 			# Command hardware module (dev) to turn OFF here:
 			cmd = "off"
-			self.tpThreads[dev.name].interupt(False)
+			self.tpThreads[dev.name].interupt()
 		###### TOGGLE ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
 			# Command hardware module (dev) to toggle here:
 			if dev.onState:
 				cmd = "off"
-				self.tpThreads[dev.name].interupt(False)
+				self.updateFreq = self.offUpFreq
+				self.tpThreads[dev.name].interupt()
 			else:
 				cmd = "on"
-				self.tpThreads[dev.name].interupt(True)
+				self.updateFreq = self.onUpFreq
+				self.tpThreads[dev.name].interupt()
 			# newOnState = not dev.onState
 		else:
 			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))

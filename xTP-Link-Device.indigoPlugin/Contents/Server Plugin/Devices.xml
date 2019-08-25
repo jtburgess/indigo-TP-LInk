@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<!-- If your plugin defines device types, you can define them here.
+
+	 Devices must specify their type (via the type attribute):
+
+		relay (ON/OFF/STATUS)
+		dimmer (ON/OFF/DIM/BRIGHTEN/SET BRIGHTNESS/STATUS)
+		speedcontrol (ON/OFF/SET SPEED LEVEL/SET SPEED INDEX/INCREASE/DECREASE/STATUS)
+		sensor (ON/OFF/STATUS)
+		thermostat
+		sprinkler
+		custom
+
+	 The first six inherit states, actions and events from Indigo. You can
+	 also specify your own custom actions and additional states, if needed.
+
+	 The two Device examples below specify the relay and dimmer types.
+	 
+	 Devices must also specify a unique typeID - so, for instance, if you define
+	 2 relay type devices then your plugin can distinguish between the two by
+	 the typeID.
+-->
+
+<Devices>
+	<!-- I'm going to start with one relay device type for a Kasa SmartPlug.
+	   Others can be added as I learn what they need to be.
+	-->
+	<Device type="relay" id="SmartPlug">
+		<Name>SmartPlug</Name>
+		<ConfigUI>
+			<!-- There is one required parameter - the IP address of the device
+			-->
+			<Field id="address" type="textfield" defaultValue="192.168.0.0">
+				<Label>Module IP Address:</Label>
+			</Field>
+		</ConfigUI>
+		<States>
+			<!-- there are no custom states
+			-->
+		</States>
+	</Device>
+
+	<Device type="relay" id="hs110">
+			<Name>HS110 SmartPlug w/Energy Monitoring</Name>
+			<ConfigUI>
+				<Field id="address" type="textfield" defaultValue="192.168.0.0">
+					<Label>Module IP Address:</Label>
+				</Field>
+				<Field id="devPoll" type="checkbox" defaultValue="true">
+					<Label>Enable device polling:</Label>
+				</Field>
+				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
+					<Label>Polling interval when device is Off</Label>
+				</Field>
+				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
+					<Label>Polling interval when device is On</Label>
+				</Field>
+				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
+				</Field>
+				￼<Field id="simpleSeparator1" type="separator" />
+				<Field id="configured" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
+					<Label>Check to re-read device parameters:</Label>
+				</Field>
+			</ConfigUI>
+			<States>
+				<State id="dev_name">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device Name</TriggerLabel>
+					<ControlPageLabel>Device Name</ControlPageLabel>
+				</State>
+				<State id="model">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device Model</TriggerLabel>
+					<ControlPageLabel>Device Model</ControlPageLabel>
+				</State>
+				<State id="alias">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device Alias</TriggerLabel>
+					<ControlPageLabel>Device Alias</ControlPageLabel>
+				</State>
+				<State id="mac">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Device MAC</TriggerLabel>
+					<ControlPageLabel>Device MAC</ControlPageLabel>
+				</State>
+				<State id="user">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Username</TriggerLabel>
+					<ControlPageLabel>User Name</ControlPageLabel>
+				</State>
+				<State id="bind">
+					<ValueType boolType="YesNo">Boolean</ValueType>
+					<TriggerLabel>Bind State</TriggerLabel>
+					<ControlPageLabel>Bind State</ControlPageLabel>
+				</State>
+				<State id="curWatts">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Watts</TriggerLabel>
+					<ControlPageLabel>Current Watts</ControlPageLabel>
+				</State>
+				<State id="curVolts">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Volts</TriggerLabel>
+					<ControlPageLabel>Current Volts</ControlPageLabel>
+				</State>
+				<State id="curAmps">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Amps</TriggerLabel>
+					<ControlPageLabel>Current Amps</ControlPageLabel>
+				</State>
+			</States>
+		</Device>
+</Devices>
