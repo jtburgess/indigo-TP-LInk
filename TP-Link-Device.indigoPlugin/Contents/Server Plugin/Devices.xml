@@ -46,8 +46,18 @@
 				<Field id="address" type="textfield" defaultValue="192.168.0.0">
 					<Label>Module IP Address:</Label>
 				</Field>
+				<Field id="devPoll" type="checkbox" defaultValue="true">
+					<Label>Enable device polling:</Label>
+				</Field>
+				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
+					<Label>Polling interval when device is Off</Label>
+				</Field>
+				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
+					<Label>Polling interval when device is On</Label>
+				</Field>
 				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
 				</Field>
+				￼<Field id="simpleSeparator1" type="separator" />
 				<Field id="configured" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
 					<Label>Check to re-read device parameters:</Label>
 				</Field>
