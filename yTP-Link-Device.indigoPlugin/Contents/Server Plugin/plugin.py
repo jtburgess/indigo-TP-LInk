@@ -68,90 +68,6 @@ class myThread(Thread):
 		indigo.server.log(u"from: %s  time to quit" % (self.name))
 		self._is_running = False
 
-	def pollSinglePlug(self):
-		dev = self.dev
-		devType = dev.deviceTypeId
-		# indigo.server.log(u"Running: %s" % (devType))
-		devAddr = dev.address
-		devPort = 9999
-		lastState = 0
-		if self.multiPlug:
-			deviceId = self.deviceId
-			childId = self.childId
-		else:
-			deviceId = None
-			childId = None
-		
-		# indigo.server.log(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
-
-		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
-		while True:
-			# indigo.server.log(u"%s: Starting polling loop with interval %s" % (self.name, self.offPoll))
-			result = tplink_dev.send('info')
-			data = json.loads(result)
-			state = data['system']['get_sysinfo']['relay_state']
-			# indigo.server.log(u"%s: state= %s" % (self.name, state))
-			if state == 1:
-				state = "on"
-				if state != lastState:
-					self.interupt(True)
-			else:
-				state = "off"
-				if state != lastState:
-					self.interupt(False)
-			lastState = state
-
-			dev.updateStateOnServer("onOffState", state)
-
-			# Check % (self.name) to see if we should grab device parameters from the plug
-			if dev.pluginProps['newDev'] or self.configured:
-				# indigo.server.log(u"%s: In the loop - re-reading device info" % (self.name))
-				dev_name = data['system']['get_sysinfo']['dev_name']
-				deviceId = data['system']['get_sysinfo']['deviceId']
-				alias = data['system']['get_sysinfo']['alias']
-				mac = data['system']['get_sysinfo']['mac']
-				model = data['system']['get_sysinfo']['model']
-
-				result = tplink_dev.send('cloudinfo')
-				data = json.loads(result)
-				user = data['cnCloud']['get_info']['username']
-				bind = data['cnCloud']['get_info']['binded']
-
-				state_update_list = [
-					{'key':'dev_name', 'value':dev_name},
-					{'key':'deviceId', 'value':deviceId},
-					{'key':'alias', 'value':alias},
-					{'key':'mac', 'value':mac},
-					{'key':'model', 'value':model},
-					{'key':'user', 'value':user},
-					{'key':'bind', 'value':bind}
-					]
-				dev.updateStatesOnServer(state_update_list)
-				
-				# Reset the properties that control gathering informational states
-				indigo.server.log(u"Ressetting config properties")
-				localPropsCopy = self.dev.pluginProps
-				localPropsCopy['newDev'] = False
-				localPropsCopy['configured'] = False
-				self.dev.replacePluginPropsOnServer(localPropsCopy)
-
-			if devType == "hs110":
-				result = tplink_dev.send('energy')
-				data = json.loads(result)
-				# indigo.server.log("Received result: |%s|" % (result), type="TP-Link", isError=True)
-				curWatts = data['emeter']['get_realtime']['power_mw']/1000
-				curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
-				curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-
-				state_update_list = [
-					{'key':'curWatts', 'value':curWatts},
-					{'key':'curVolts', 'value':curVolts},
-					{'key':'curAmps', 'value':curAmps}
-					]
-				dev.updateStatesOnServer(state_update_list)
-			indigo.server.log("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed), type="TP-Link", isError=False)
-
-
 	def run(self):
 		dev = self.dev
 		devType = dev.deviceTypeId
@@ -234,7 +150,7 @@ class myThread(Thread):
 					]
 				dev.updateStatesOnServer(state_update_list)
 
-				indigo.server.log("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed), type="TP-Link", isError=False)
+				indigo.server.log("Received results for %s @ %s secs: %s, %s, %s: chenge = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed), type="TP-Link", isError=False)
 			# indigo.server.log(u"%s: In the loop - finished data gathering" % (self.name))
 			pTime = 0.5
 			cTime = self.pollFreq
@@ -296,7 +212,6 @@ class Plugin(indigo.PluginBase):
 
 	########################################
 	def deviceStartComm(self, dev):
-		self.logger.info(u"deviceStartComn starting %s" % (dev.name)) #, type="TP-Link", isError=False)
 		# indigo.server.log("deviceStartComn starting %s" % (dev.name), type="TP-Link", isError=False)
 		# myThread(dev)
 		if dev.name in self.tpThreads:

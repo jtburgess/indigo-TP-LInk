@@ -22,9 +22,7 @@
 
 import socket
 import argparse
-import struct
 from struct import pack
-import json
 
 version = 0.2
 
@@ -43,7 +41,6 @@ commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
 			'antitheft': '{"anti_theft":{"get_rules":{}}}',
 			'reboot'   : '{"system":{"reboot":{"delay":1}}}',
 			'reset'    : '{"system":{"reset":{"delay":1}}}',
-			'e+i'      : '{ "emeter": { "get_realtime": {} }, "system": { "get_sysinfo": {} } }',
 			'energy'   : '{"emeter":{"get_realtime":{}}}'
 }
 
@@ -103,44 +100,19 @@ class tplink_smartplug():
 
 		if debug:
 			print ("send cmd=%s" % (cmd, ))
-		
-		### Insert pyHS100 code here
-		timeout = 10
 		try:
-			sock = socket.create_connection((self.ip, self.port), timeout)
+			sock_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			sock_tcp.connect((self.ip, self.port))
+			sock_tcp.send(encrypt(cmd))
+			data = sock_tcp.recv(2048)
+			sock_tcp.close()
 
-			# _LOGGER.debug("> (%i) %s", len(cmd), cmd)
-			sock.send(encrypt(cmd))
-
-			buffer = bytes()
-            # Some devices send responses with a length header of 0 and
-            # terminate with a zero size chunk. Others send the length and
-            # will hang if we attempt to read more data.
-			length = -1
-			while True:
-				chunk = sock.recv(4096)
-				if length == -1:
-					length = struct.unpack(">I", chunk[0:4])[0]
-				buffer += chunk
-				if (length > 0 and len(buffer) >= length + 4) or not chunk:
-					break
-
-		finally:
-			try:
-				if sock:
-					sock.shutdown(socket.SHUT_RDWR)
-			except OSError:
-				# OSX raises OSError when shutdown() gets called on a closed
-				# socket. We ignore it here as the data has already been read
-				# into the buffer at this point.
-				pass
-
-			finally:
-				if sock:
-					sock.close()
-		response = decrypt(buffer[4:])
-
-		return response
+			# don't know what the first 3 decrypted bytes are. skip them
+			# Byte 4 is a '?' but for valid json replace it with '{'
+			result = decrypt(data)
+			return '{' + result[5:]
+		except socket.error:
+			quit("ERROR: Cound not connect to host " + self.ip + ":" + str(self.port))
 
 # Check if hostname is valid
 def validHostname(hostname):
@@ -196,11 +168,10 @@ def main():
 		data = my_target.send(args.command)
 
 	# data[0] = "{"
-	response = json.loads(data)
 	try:
 		# pretty print the json result
-		# json_result = json.loads(data)
-		print "Received: ", json.dumps(response, sort_keys=True, indent=2, separators=(',', ': '))
+		json_result = json.loads(data)
+		print "Received: ", json.dumps(json_result, sort_keys=True, indent=2, separators=(',', ': '))
 	except ValueError, e:
 		print ("Json value error: %s on %s" % (e, data) )
 
