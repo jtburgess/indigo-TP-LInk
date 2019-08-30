@@ -26,6 +26,7 @@
 				<Field id="address" type="textfield" defaultValue="192.168.0.0">
 					<Label>Module IP Address:</Label>
 				</Field>
+				￼<Field id="outletNum" type="textfield" hidden="true" defaultValue="00" />
 				<Field id="devPoll" type="checkbox" defaultValue="true">
 					<Label>Enable device polling:</Label>
 				</Field>
@@ -52,6 +53,11 @@
 					<ValueType>String</ValueType>
 					<TriggerLabel>Device ID</TriggerLabel>
 					<ControlPageLabel>Device ID</ControlPageLabel>
+				</State>
+				<State id="outletId">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Outlet ID</TriggerLabel>
+					<ControlPageLabel>Outlet ID</ControlPageLabel>
 				</State>
 				<State id="model">
 					<ValueType>String</ValueType>
@@ -96,25 +102,25 @@
 			</States>
 		</Device>
 
-		<Device type="relay" id="SmartStrip">
-			<Name>HS110 SmartPlug w/Energy Monitoring</Name>
+		<Device type="relay" id="hs300">
+			<Name>HS300 Smartstrip w/Energy Monitoring</Name>
 			<ConfigUI>
 				<Field id="multiPlug" type="checkbox" hidden="true" defaultValue="true" />
 				<Field id="address" type="textfield" defaultValue="192.168.0.0">
 					<Label>Module IP Address:</Label>
 				</Field>
-				￼<Field type="menu" id="outletNum" defaultValue="item1">
+				￼<Field type="menu" id="outletNum" defaultValue="00">
 					<Label>Outlet Number:</Label>
 					<List>
-						<Option value="1">1</Option>
-						<Option value="2">2</Option>
-						<Option value="3">3</Option>
-						<Option value="3">4</Option>
-						<Option value="3">5</Option>
-						<Option value="3">6</Option>
+						<Option value="00">0</Option>
+						<Option value="01">1</Option>
+						<Option value="02">2</Option>
+						<Option value="03">3</Option>
+						<Option value="04">4</Option>
+						<Option value="05">5</Option>
 					</List>
 				</Field>
-				<Field id="devPoll" type="checkbox" defaultValue="true">
+<!-- 				<Field id="devPoll" type="checkbox" defaultValue="true">
 					<Label>Enable device polling:</Label>
 				</Field>
 				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
@@ -122,7 +128,7 @@
 				</Field>
 				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
 					<Label>Polling interval when device is On</Label>
-				</Field>
+				</Field> -->
 				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
 				</Field>
 				￼<Field id="simpleSeparator1" type="separator" />
@@ -131,15 +137,20 @@
 				</Field>
 			</ConfigUI>
 			<States>
-				<State id="dev_name">
+			<!-- 	<State id="childId">
 					<ValueType>String</ValueType>
 					<TriggerLabel>Device Name</TriggerLabel>
 					<ControlPageLabel>Device Name</ControlPageLabel>
-				</State>
+				</State> -->
 				<State id="deviceId">
 					<ValueType>String</ValueType>
 					<TriggerLabel>Device ID</TriggerLabel>
 					<ControlPageLabel>Device ID</ControlPageLabel>
+				</State>
+				<State id="outletId">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Outlet ID</TriggerLabel>
+					<ControlPageLabel>Outlet ID</ControlPageLabel>
 				</State>
 				<State id="model">
 					<ValueType>String</ValueType>

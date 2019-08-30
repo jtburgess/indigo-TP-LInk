@@ -91,8 +91,10 @@ class tplink_smartplug():
 	def send(self, cmd):
 		if cmd in commands:
 			cmd = commands[cmd]
-		else:
-			quit("ERROR: unknown command: %s" % (cmd, ))
+		# else:
+		# 	quit("ERROR: unknown command: %s" % (cmd, ))
+
+		print ("Got %s" % cmd)
 
 		# if both deviceID and childID are set, { context... } is prepended to the command
 		if self.deviceID is not None and self.childID is not None:
@@ -166,7 +168,7 @@ def main():
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("-c", "--command", metavar="<command>", help="Preset command to send. Choices are: "+", ".join(commands), choices=commands)
 	group.add_argument("-C", "--CMD", metavar="<command>", help="unvalidated Command")
-	# group.add_argument("-j", "--json", metavar="<JSON string>", help="Full JSON string of command to send")
+	group.add_argument("-j", "--json", metavar="<JSON string>", help="Full JSON string of command to send")
 	parser.add_argument("-d", "--deviceID", metavar="<deviceID>", required=False, help="device ID for testing powerstrip")
 	parser.add_argument("-p", "--childID", metavar="<childID>", required=False, help="port on device", type=int)
 
@@ -177,23 +179,26 @@ def main():
 #		# we need BOTH to be set or both NOT set
 #		print "both device and port must be set or not set"
 #		exit(1)
-
+	print ("args2 = %s" % args)
 	debug = True
 	if args.deviceID:
 		my_target = tplink_smartplug(args.target, 9999, deviceID=args.deviceID, childID=args.childID)
 	else:
 		my_target = tplink_smartplug(args.target, 9999)
 
-#	if args.command is None:
-#		cmd = args.json
-#	else:
-#		cmd = commands[args.command]
+	if args.command is None:
+		cmd = args.json
+	else:
+		cmd = commands[args.command]
+	print ("args2 = %s" % args)
+	print ("args.command = %s" % args.command)
 
-	print "Sent:     ", args.command
 	if args.childID:
 		data = my_target.send(args.command)
 	else:
-		data = my_target.send(args.command)
+		data = my_target.send(cmd)
+
+	print "Sent:     ", args.command
 
 	# data[0] = "{"
 	response = json.loads(data)
