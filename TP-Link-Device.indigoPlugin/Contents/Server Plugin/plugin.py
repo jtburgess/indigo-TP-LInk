@@ -25,6 +25,7 @@ class myThread(Thread):
 		self.logger.debug(u"%s: called for: %s." % (func, dev.name))
 		self.dev = dev
 		self.name = dev.name
+		self.lastState = 1
 		self.pluginPrefs = pluginPrefs
 
 		self.outlets = {}
@@ -34,110 +35,52 @@ class myThread(Thread):
 		# Here we deal with multi plug devices. We will just store the entire device in a dictionary indexed by the outlet number
 		self.multiPlug = dev.pluginProps['multiPlug']
 		if self.multiPlug:
-			self.onPoll = self.pluginPrefs['onPoll']
-			self.offPoll = self.pluginPrefs['offPoll']	
+			self.onPoll = int(self.pluginPrefs['onPoll'])
+			self.offPoll = int(self.pluginPrefs['offPoll'])
 			self.outlets[outletNum] = self.dev
 			self.logger.debug(u"outlet dict =%s" % (self.outlets))					
 		else:
 			self.onPoll = int(dev.pluginProps['onPoll'])
 			self.offPoll = int(dev.pluginProps['offPoll'])
 			
-		self.configured = self.dev.pluginProps['configured']
+		# self.configured = self.dev.configured
 
 		self.onOffState = dev.states['onOffState']
 		if self.onOffState:
 			self.pollFreq = self.onPoll
 		else:
 			self.pollFreq = self.offPoll
-		self.deviceId = dev.states['deviceId']
+		self.deviceId = dev.pluginProps['deviceId']
 		self.changed = False
 		# self.logger.debug(u"Initializing: %s:%s" % (dev.name, self.offPoll))
 		self._is_running = True
 		self.start()
 
-	def interupt(self, state=None, dev=None):
-		self.logger.debug(u"interupt called with %s %s" % (state, dev.id))
+	def interupt(self, state=None, dev=None, action=None):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
 
 		# self.logger.debug(u"%s: Before, poll freq is %s" % (dev.name, self.pollFreq))
-		if state and dev:
+		if action == 'state' and state:
 			if self.multiPlug:
 				self.pollFreq = self.pluginPrefs['onPoll']
 			else:
-				self.pollFreq = dev.pluginProps['onPoll']
-			self.changed = True
-		else:
+				self.pollFreq = self.dev.pluginProps['onPoll']
+		elif action == 'state' and not state:
 			if self.multiPlug:
 				self.pollFreq = self.pluginPrefs['offPoll']
 			else:
-				self.pollFreq = dev.pluginProps['offPoll']
-			self.changed = True
-		
-		# self.logger.debug(u"%s: After, poll freq is %s" % (dev.name, self.pollFreq))
-
-		if dev and not state:
+				self.pollFreq = self.dev.pluginProps['offPoll']
+		elif action == 'dev':
 			outletNum = dev.pluginProps['outletNum']
 			self.outlets[outletNum] = dev
-			self.changed = True
-			# for key in self.outlets:
-			# 	self.logger.debug(u"key=%s, dev=%s" % (key, self.outlets[key].id))
-		# self.logger.debug(u"Property or state change for %s" % (self.name))
+			self.dev = dev
+		else:
+			self.logger.error(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
+			return
 
-	def initializeDev(self, dev):
-		# Check % (self.name) to see if we should grab device parameters from the plug
-		# if dev.pluginProps['newDev'] or self.configured:
-		# self.logger.debug(u"%s: In initializeDev" % (dev.name))
-		# 
-		devAddr = dev.address
-		# self.logger.debug(u"%s: In initializeDev 0" % (dev.address))
-		devPort = 9999
-		# self.logger.debug(u"%s: In initializeDev 1" % (dev.address))
-		deviceId = None
-		childId = None
-		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
-		# self.logger.debug(u"%s: In initializeDev 1.1" % (dev.address))
-	
-		# self.logger.debug(u"%s: In initializeDev 2" % (dev.address))
-		result = tplink_dev.send('info')
-
-		self.logger.debug(u"%s: InitializeDev 3 got %s" % (dev.name, result))
-		data = json.loads(result)
-		self.logger.debug(u"%s: InitializeDev 4 got %s" % (dev.name, data))
-		# dev_name = data['system']['get_sysinfo']['alias']
-		deviceId = data['system']['get_sysinfo']['deviceId']
-		# self.logger.debug(u"%s: In initializeDev 4.1" % (dev.address))
-		childId = deviceId + dev.pluginProps['outletNum']
-		alias = data['system']['get_sysinfo']['alias']
-		mac = data['system']['get_sysinfo']['mac']
-		model = data['system']['get_sysinfo']['model']
-		
-		# self.logger.debug(u"%s: In initializeDev 7 " % (dev.address))
-		result = tplink_dev.send('cloudinfo')
-		# self.logger.debug(u"%s: In initializeDev 8 " % (dev.address))
-		data = json.loads(result)
-		user = data['cnCloud']['get_info']['username']
-		bind = data['cnCloud']['get_info']['binded']
-
-		# self.logger.debug(u"%s: In initializeDev 6" % (dev.address))
-
-		state_update_list = [
-			# {'key':'dev_name', 'value':dev_name},
-			{'key':'deviceId', 'value':deviceId},
-			{'key':'alias', 'value':alias},
-			{'key':'mac', 'value':mac},
-			{'key':'model', 'value':model},
-			{'key':'user', 'value':user},
-			{'key':'bind', 'value':bind}
-			]
-		dev.updateStatesOnServer(state_update_list)
-		# self.logger.debug(u"%s: Got Here 1" % (self.name))
-		# Reset the properties that control gathering informational states
-		self.logger.debug(u"Ressetting config properties")
-		localPropsCopy = self.dev.pluginProps
-		localPropsCopy['newDev'] = False
-		localPropsCopy['configured'] = False
-		dev.replacePluginPropsOnServer(localPropsCopy)
-
-		return (deviceId, childId)
+		self.changed = True
+		return
 			
 	def stop(self):
 		self.logger.debug(u"from: %s  time to quit" % (self.name))
@@ -151,25 +94,17 @@ class myThread(Thread):
 		devAddr = dev.address
 		devPort = 9999
 		self.logger.debug(u"%s multiPlug is %s" % (dev.name, self.multiPlug))
-
-		if dev.pluginProps['newDev'] or self.configured:
-			# self.logger.debug(u"%s: Got Here -4" % (self.name))
-			(deviceId, childId) = self.initializeDev(dev)
-			self.logger.debug(u"%s: newdev call returned %s %s" % (self.name, deviceId, childId))
-
 		
-		# self.logger.debug(u"%s: Got Here -3" % (self.name))
 		self.logger.debug(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
-		# tplink_dev_states = tplink_smartplug(devAddr, devPort, self.deviceId, self.childId)
-		# self.logger.debug(u"%s: Got Here -2" % (dev.name))
+
 		while True:
 			self.logger.debug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
 			try:
 				result = tplink_dev_states.send('info')
 			except Exception as e:
-				self.logger.error("Fatal error attempting to update %s: %s" % (dev.name, str(e)))
+				self.logger.error("Fatal error attempting to update %s: %s" % (self.name, str(e)))
 				return
 			data = json.loads(result)
 			self.logger.debug(u"%s: finished state data collection with %s" % (self.name, data))
@@ -181,41 +116,58 @@ class myThread(Thread):
 				
 				for element in elements:
 					devState = bool(element['state'])
-					# self.logger.debug(u"%s: id=%s, element:%s" % (self.name, element['id'], element))
+					self.logger.debug(u"%s: id=%s, alias=%s, element:%s" % (self.name, element['id'], element['alias'], element))
 					for outlet in self.outlets:
-						# self.logger.debug(u"%s: Got Here -1x with %s and %s" % (self.name, outlet, element['id'][-2:]))
+						self.logger.debug(u"%s: Got Here -1x with %s and %s" % (self.name, outlet, element['id'][-2:]))
 						if element['id'][-2:] == outlet:
 							# self.logger.debug(u"%s: YES %s" % (self.name, self.outlets[outlet].id))
-							indigoDevState = indigo.devices[self.outlets[outlet].id].states['onOffState']
-							# self.logger.debug(u"%s: indigo device onOffState is %s" % (self.name, indigoDevState))
-							if devState != indigoDevState:
+							self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", self.name, self.lastState, devState)
+							if devState != self.lastState:
 								if devState:
 									state = "on"
-									self.interupt(True)
+									self.interupt(state=True, action='state')
 								else:
 									state = "off"
-									self.interupt(False)
-								self.outlets[outlet].updateStateOnServer("onOffState", state)
+									self.interupt(state=False, action='state')	
+								self.lastState = devState								
 
+								alias = element['alias']
+								alias = element['alias']
+								state_update_list = [
+									{'key':'onOffState', 'value':devState},
+									{'key':'alias', 'value':alias}
+									]
+								alias = element['alias']
+								self.outlets[outlet].updateStatesOnServer(state_update_list)
+								
 			else:
+				# self.logger.debug(u"%s: Got Here 0 with %s" % (self.name, data))
 				devState = data['system']['get_sysinfo']['relay_state']
-				indigoDevState = indigo.devices[dev.id].states['onOffState']
-				# self.logger.debug(u"%s: state= %s" % (self.name, state))
-				# self.logger.debug(u"%s: Got Here 0" % (self.name))
-				if devState != indigoDevState:
+				self.logger.debug(u"%s: state= %s" % (self.name, devState))
+				
+				if devState != self.lastState:
 					if devState:
 						state = "on"
-						self.interupt(True)
+						self.interupt(state=True, action='state')
 					else:
 						state = "off"
-						self.interupt(False)
-					dev.updateStateOnServer("onOffState", state)
+						self.interupt(state=False, action='state')
+					self.lastState = devState	
+
+					alias = data['system']['get_sysinfo']['alias']
+					state_update_list = [
+						{'key':'onOffState', 'value':state},
+						{'key':'alias', 'value':alias}
+						]
+					dev.updateStatesOnServer(state_update_list)
+					# dev.updateStateOnServer("onOffState", state)
 			
 			self.logger.debug(u"%s: finished state update %s" % (self.name, data))
 
 			if self.multiPlug:
 				self.logger.debug(u"Starting energy query for devices at %s", devAddr)
 				deviceId = self.deviceId
+
 				for element in elements:
 					# self.logger.debug(u"Starting energy update for %s: id=%s, element:%s" % (self.name, element['id'], element))
 					childId = element['id'][-2:]
@@ -224,9 +176,9 @@ class myThread(Thread):
 						self.logger.debug(u"Found entry for outlet %s devId is %s", childId, indigoDevice.id)
 
 						state = element['state']
-						self.logger.debug(u"Getting energy for outlet %s, state %s" % (childId, state))
+						self.logger.debug(u"Ready to check energy for outlet %s, state %s" % (childId, state))
 						if bool(state):
-							#childId = outlet[-2:]
+							self.logger.debug(u"Getting energy for %s %s %s %s state %s" % (devAddr, devPort, deviceId, childId, state))
 							tplink_dev_energy = tplink_smartplug (devAddr, devPort, deviceId, childId)
 							result = tplink_dev_energy.send('energy')
 							data = json.loads(result)
@@ -257,30 +209,35 @@ class myThread(Thread):
 
 				
 			else:    # devType == "hs110":
+				tplink_dev_energy = tplink_smartplug (devAddr, devPort, None, None)
 				result = tplink_dev_energy.send('energy')
 				data = json.loads(result)
-				# self.logger.debug("Received result: |%s|" % (result))
+				self.logger.debug("Received result: |%s|" % (result))
 				curWatts = data['emeter']['get_realtime']['power_mw']/1000
 				curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 				curAmps  = data['emeter']['get_realtime']['current_ma']/1000
 
 				state_update_list = [
 					{'key':'curWatts', 'value':curWatts},
+					{'key':'curEnergyLevel', 'value':curWatts},
+					# {'key':'energyAccumTotal', 'value':1000},
+					# {'key':'energyAccumBaseTime', 'value':curWatts},
+					# {'key':'energyAccumTimeDelta', 'value':99},
 					{'key':'curVolts', 'value':curVolts},
 					{'key':'curAmps', 'value':curAmps}
 					]
 				dev.updateStatesOnServer(state_update_list)
 
-				#self.logger.debug("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
+				self.logger.info("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
 			
 			self.logger.debug(u"%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
 			pTime = 0.5
 			cTime = float(self.pollFreq)
 			
 			while cTime > 0:
-				self.logger.debug(u"%s: Timer = %s", self.name, cTime)
+				# self.logger.debug(u"%s: Looping Timer = %s", self.name, cTime)
 				if self.changed or not self._is_running:
-					self.logger.debug(u"Device change for %s" % (self.name))
+					# self.logger.debug(u"Device change for %s" % (self.name))
 					self.changed = False
 					cTime = 0
 				else:
@@ -289,11 +246,11 @@ class myThread(Thread):
 					cTime = cTime - pTime
 					# self.logger.debug(u"Timer = %6.4f" % (cTime))
 
-				self.logger.debug(u"Timer loop finished for %s", self.name)
+				# self.logger.debug(u"Timer loop finished for %s", self.name)
 			if not self._is_running:
 				break
 			
-			# self.logger.debug(u"%s: In the loop - timer ended" % (self.name))
+			self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name))
 
 
 ################################################################################
@@ -323,7 +280,7 @@ class Plugin(indigo.PluginBase):
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
 		errorsDict = indigo.Dict()
 
-		# self.logger.info(u"received \"%s\"" % (valuesDict))
+		self.logger.info(u"received \"%s\"" % (valuesDict))
 		cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
 		response = os.system(cmd)
 		# self.logger.debug("Response: %s " % (response))
@@ -334,7 +291,12 @@ class Plugin(indigo.PluginBase):
 			errorsDict["address"] = "Host unreachable"
 			return (False, valuesDict, errorsDict)
 			
-		# valuesDict['newDev'] = False
+		# If this is a new device, or we have been asked to re-initialize it...
+		if ('initialize' in valuesDict and valuesDict['initialize']) or valuesDict['newDev']:
+			self.initializeDev(valuesDict)
+
+		valuesDict['newDev'] = False
+		valuesDict['initialize'] = False
 		return (True, valuesDict, errorsDict)
 
 
@@ -389,7 +351,7 @@ class Plugin(indigo.PluginBase):
 
 				# self.logger.info(u"deviceStartComm related to device %s, %s", deviceId, "foio")
 				# Since a thread already exists, this is probably a multiPlug
-				self.tpThreads[address].interupt(dev=dev)
+				self.tpThreads[address].interupt(dev=dev, action='dev')
 			else:
 				# something is horribly wrong
 				self.logger.error(u"deviceStartComm error in thread creation %s, %s", name, address)
@@ -412,10 +374,10 @@ class Plugin(indigo.PluginBase):
 	def actionControlDimmerRelay(self, action, dev):
 		addr = dev.address
 		port = 9999
-		deviceId = dev.states['deviceId']
+		deviceId = dev.pluginProps['deviceId']
 		childId = dev.pluginProps['outletNum']
 		# childId = deviceId + outletNum
-		self.logger.debug("TPlink name={}, addr={}, action={}".format(dev.name, addr, action))
+		# self.logger.debug("TPlink name={}, addr={}, action={}".format(dev.name, addr, action))
 
 		tplink_dev = tplink_smartplug (addr, port, deviceId, childId)
 
@@ -424,21 +386,21 @@ class Plugin(indigo.PluginBase):
 			# Command hardware module (dev) to turn ON here:
 			cmd = "on"
 			# TODO: make conditional if polling is enabled
-			self.tpThreads[dev.address].interupt(state=True, dev=dev)
+			self.tpThreads[dev.address].interupt(state=True, action='state')
 		###### TURN OFF ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
 			# Command hardware module (dev) to turn OFF here:
 			cmd = "off"
-			self.tpThreads[dev.address].interupt(state=False, dev=dev)
+			self.tpThreads[dev.address].interupt(state=False, action='state')
 		###### TOGGLE ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
 			# Command hardware module (dev) to toggle here:
 			if dev.onState:
 				cmd = "off"
-				self.tpThreads[dev.address].interupt(False)
+				self.tpThreads[dev.address].interupt(state=False, action='state')
 			else:
 				cmd = "on"
-				self.tpThreads[dev.address].interupt(True)
+				self.tpThreads[dev.address].interupt(state=True, action='state')
 			# newOnState = not dev.onState
 		else:
 			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
@@ -513,3 +475,74 @@ class Plugin(indigo.PluginBase):
 			self.pluginPrefs["showDebugInfo"] = True
 		self.debug = not self.debug
 
+	def dumpDeviceInfo(self, valuesDict, b):
+		func = inspect.stack()[0][3]
+		self.logger.debug("%s: called with a=%s and b=%s", func, str(valuesDict), b)
+
+		return(True)	
+	
+	def displayButtonPressed(self, valuesDict, bar):
+		func = inspect.stack()[0][3]
+		self.logger.debug("%s: called with foo=%s bar=%s", func, valuesDict, bar)
+
+		devNumber = int(valuesDict['targetDevice'])
+		dev = indigo.devices[devNumber]
+		props = dev.pluginProps
+	
+		valuesDict['address']       = props['address']
+		valuesDict['devPoll']       = props['devPoll']
+		valuesDict['deviceId']      = props['deviceId']
+		valuesDict['energyCapable'] = props['energyCapable']
+		valuesDict['mac']           = props['mac']
+		valuesDict['model']         = props['model']
+		valuesDict['multiPlug']     = props['multiPlug']
+		valuesDict['offPoll']       = props['offPoll']
+		valuesDict['onPoll']        = props['onPoll']
+		valuesDict['outletNum']     = props['outletNum']
+		valuesDict['alias']         = dev.states['alias']
+		valuesDict['displayOk']     = True
+
+		self.logger.debug("Device info = %s", valuesDict)
+
+		return(valuesDict)
+
+	def printToLogPressed(self, valuesDict, bar):
+		func = inspect.stack()[0][3]
+		self.logger.debug("%s: called with foo=%s bar=%s", func, valuesDict, bar)
+
+		self.logger.info("Device data for %s:\n%s", "device", valuesDict)
+
+		return
+
+	########################################
+	########################################
+	def initializeDev(self, valuesDict):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
+		devAddr = valuesDict['address']
+		devName = "new device at " + devAddr
+		devPort = 9999
+		deviceId = None
+		childId = None
+		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
+		result = tplink_dev.send('info')
+
+		self.logger.debug(u"%s: InitializeDev 3 got %s" % (devName, result))
+		data = json.loads(result)
+		self.logger.debug(u"%s: InitializeDev 4 got %s" % (devName, data))
+		# dev_name = data['system']['get_sysinfo']['alias']
+		valuesDict['deviceId'] = data['system']['get_sysinfo']['deviceId']
+		# self.logger.debug(u"%s: In initializeDev 4.1" % (dev.address))
+		valuesDict['childId'] = str(deviceId) + valuesDict['outletNum']
+		# alias = data['system']['get_sysinfo']['alias']
+		valuesDict['mac'] = data['system']['get_sysinfo']['mac']
+		valuesDict['model'] = data['system']['get_sysinfo']['model']
+
+		if 'ENE' in data['system']['get_sysinfo']['feature']:
+			valuesDict['energyCapable'] = True
+		else:
+			valuesDict['energyCapable'] = True
+
+		valuesDict['initialize'] = False
+
+		return valuesDict

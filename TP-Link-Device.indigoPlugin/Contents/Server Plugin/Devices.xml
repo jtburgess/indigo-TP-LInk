@@ -39,9 +39,11 @@
 				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
 				</Field>
 				￼<Field id="simpleSeparator1" type="separator" />
-				<Field id="configured" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
+				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
 					<Label>Check to re-read device parameters:</Label>
 				</Field>
+				<Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
+            	<Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
 			</ConfigUI>
 			<States>
 				<State id="dev_name">
@@ -84,6 +86,11 @@
 					<TriggerLabel>Bind State</TriggerLabel>
 					<ControlPageLabel>Bind State</ControlPageLabel>
 				</State>
+<!-- 			<State id="curEnergyLevel">
+					<ValueType>Float</ValueType>
+					<TriggerLabel>Current Watts</TriggerLabel>
+					<ControlPageLabel>Current Watts</ControlPageLabel>
+				</State> -->
 				<State id="curWatts">
 					<ValueType>Float</ValueType>
 					<TriggerLabel>Current Watts</TriggerLabel>
@@ -132,9 +139,11 @@
 				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
 				</Field>
 				￼<Field id="simpleSeparator1" type="separator" />
-				<Field id="configured" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
+				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
 					<Label>Check to re-read device parameters:</Label>
 				</Field>
+				<Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
+            	<Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
 			</ConfigUI>
 			<States>
 			<!-- 	<State id="childId">
