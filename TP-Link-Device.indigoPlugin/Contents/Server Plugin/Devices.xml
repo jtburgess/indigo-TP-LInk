@@ -1,17 +1,16 @@
 <?xml version="1.0"?>
 
 <Devices>
-	<!-- I'm going to start with one relay device type for a Kasa SmartPlug.
-	   Others can be added as I learn what they need to be.
-	-->
 		<Device type="relay" id="tplinkSmartPlug">
 			<Name>TP-Link Smart plug (all versions)</Name>
 			<ConfigUI>
 				<Field id="multiPlug" type="checkbox" hidden="true" defaultValue="false" />
 				<Field id="address" type="textfield" defaultValue="192.168.0.0">
-					<Label>Module IP Address:</Label>
+					<Label>Device IP Address:</Label>
 				</Field>
-				￼<Field id="outletNum" type="textfield" hidden="true" defaultValue="00" />
+				￼<Field id="outletNum" type="textfield" hidden="false" defaultValue="00" >
+					<Label>Outlet number (Eg. 01, 02, etc.)</Label>
+				</Field>
 				<Field id="devPoll" type="checkbox" defaultValue="true">
 					<Label>Enable device polling:</Label>
 				</Field>

@@ -312,7 +312,7 @@ class Plugin(indigo.PluginBase):
 		# If this is a new device, or we have been asked to re-initialize it...
 		if ('initialize' in valuesDict and valuesDict['initialize']) or valuesDict['newDev']:
 			self.initializeDev(valuesDict)
-
+		valuesDict['outletNum'] = int(valuesDict['outletNum']) -1
 		valuesDict['newDev'] = False
 		valuesDict['initialize'] = False
 		return (True, valuesDict, errorsDict)
