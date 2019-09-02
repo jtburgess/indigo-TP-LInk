@@ -76,6 +76,8 @@ class myThread(Thread):
 			outletNum = dev.pluginProps['outletNum']
 			self.outlets[outletNum] = dev
 			self.dev = dev
+		elif action == 'status':
+			self.dev = dev
 		else:
 			self.logger.error(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
 			return
@@ -240,7 +242,7 @@ class myThread(Thread):
 						]
 					dev.updateStatesOnServer(state_update_list)
 
-					self.logger.info("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
+					self.logger.debug("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
 				
 				self.logger.debug(u"%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
 				pTime = 0.5
@@ -295,7 +297,7 @@ class Plugin(indigo.PluginBase):
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
 		errorsDict = indigo.Dict()
 
-		self.logger.info(u"received \"%s\"" % (valuesDict))
+		self.logger.debug(u"received \"%s\"" % (valuesDict))
 		cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
 		response = os.system(cmd)
 		# self.logger.debug("Response: %s " % (response))
@@ -384,6 +386,39 @@ class Plugin(indigo.PluginBase):
 			del self.tpThreads[address]
 
 	########################################
+	########################################
+	def initializeDev(self, valuesDict):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
+		devAddr = valuesDict['address']
+		devName = "new device at " + devAddr
+		devPort = 9999
+		deviceId = None
+		childId = None
+		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
+		result = tplink_dev.send('info')
+
+		self.logger.debug(u"%s: InitializeDev 3 got %s" % (devName, result))
+		data = json.loads(result)
+		self.logger.debug(u"%s: InitializeDev 4 got %s" % (devName, data))
+		# dev_name = data['system']['get_sysinfo']['alias']
+		valuesDict['deviceId'] = data['system']['get_sysinfo']['deviceId']
+		# self.logger.debug(u"%s: In initializeDev 4.1" % (dev.address))
+		valuesDict['childId'] = str(deviceId) + valuesDict['outletNum']
+		# alias = data['system']['get_sysinfo']['alias']
+		valuesDict['mac'] = data['system']['get_sysinfo']['mac']
+		valuesDict['model'] = data['system']['get_sysinfo']['model']
+
+		if 'ENE' in data['system']['get_sysinfo']['feature']:
+			valuesDict['energyCapable'] = True
+		else:
+			valuesDict['energyCapable'] = True
+
+		valuesDict['initialize'] = False
+
+		return valuesDict
+
+	########################################
 	# Relay / Dimmer Action callback
 	######################
 	def actionControlDimmerRelay(self, action, dev):
@@ -456,26 +491,17 @@ class Plugin(indigo.PluginBase):
 	# Custom Plugin Action callbacks (defined in Actions.xml)
 	######################
 	def getInfo(self, pluginAction, dev):
-		self.logger.info("sent '{}' status request".format(dev.name))
-		addr = dev.address
-		port = 9999
-		self.logger.debug("getInfo name={}, addr={}".format(dev.name, addr, ) )
-		tplink_dev = tplink_smartplug (addr, port)
-		result = tplink_dev.send("info")
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called for: %s." % (func, dev.name))
+		address = dev.address
 
 		try:
-			# pretty print the json result
-			json_result = json.loads(result)
-			# Get the device state from the JSON
-			if json_result["system"]["get_sysinfo"]["relay_state"] == 1:
-				state = "on"
-			else:
-				state = "off"
-			# Update Indigo's device state
-			dev.updateStateOnServer("onOffState", state)
-			self.logger.info("getInfo result JSON:\n{}".format(json.dumps(json_result, sort_keys=True, indent=2, separators=(',', ': '))))
-		except ValueError as e:
-			self.logger.error("JSON value error: {} on {}".format(e, result))
+			self.tpThreads[address].interupt(dev=dev, action='status')
+			self.logger.info("%s: Device reachable and states updated.", dev.name)
+		except Exception as e:
+			self.logger.error("%s: Device not reachable and states could not be updated.", dev.name)
+
+		return
 
 
 	########################################
@@ -490,6 +516,9 @@ class Plugin(indigo.PluginBase):
 			self.pluginPrefs["showDebugInfo"] = True
 		self.debug = not self.debug
 
+
+	########################################
+	# Device reporting
 	def dumpDeviceInfo(self, valuesDict, b):
 		func = inspect.stack()[0][3]
 		self.logger.debug("%s: called with a=%s and b=%s", func, str(valuesDict), b)
@@ -548,35 +577,4 @@ class Plugin(indigo.PluginBase):
 
 		return
 
-	########################################
-	########################################
-	def initializeDev(self, valuesDict):
-		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
-		devAddr = valuesDict['address']
-		devName = "new device at " + devAddr
-		devPort = 9999
-		deviceId = None
-		childId = None
-		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
-		result = tplink_dev.send('info')
-
-		self.logger.debug(u"%s: InitializeDev 3 got %s" % (devName, result))
-		data = json.loads(result)
-		self.logger.debug(u"%s: InitializeDev 4 got %s" % (devName, data))
-		# dev_name = data['system']['get_sysinfo']['alias']
-		valuesDict['deviceId'] = data['system']['get_sysinfo']['deviceId']
-		# self.logger.debug(u"%s: In initializeDev 4.1" % (dev.address))
-		valuesDict['childId'] = str(deviceId) + valuesDict['outletNum']
-		# alias = data['system']['get_sysinfo']['alias']
-		valuesDict['mac'] = data['system']['get_sysinfo']['mac']
-		valuesDict['model'] = data['system']['get_sysinfo']['model']
-
-		if 'ENE' in data['system']['get_sysinfo']['feature']:
-			valuesDict['energyCapable'] = True
-		else:
-			valuesDict['energyCapable'] = True
-
-		valuesDict['initialize'] = False
-
-		return valuesDict
+	
