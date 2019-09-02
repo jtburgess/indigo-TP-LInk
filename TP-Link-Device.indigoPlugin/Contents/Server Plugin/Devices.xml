@@ -58,6 +58,7 @@
 					<ControlPageLabel>Current Amps</ControlPageLabel>
 				</State>
 			</States>
+			<UiDisplayStateId>onOffState</UiDisplayStateId>
 		</Device>
 
 	<Device type="relay" id="hs110">

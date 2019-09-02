@@ -82,6 +82,7 @@ class myThread(Thread):
 			self.logger.error(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
 			return
 
+		time.sleep(0.5)
 		self.changed = True
 		return
 			
@@ -129,15 +130,15 @@ class myThread(Thread):
 								self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", self.name, self.lastState, devState)
 								if devState != self.lastState:
 									if devState:
-										state = "on"
+										state = "On"
 									else:
-										state = "off"
+										state = "Off"
 									self.lastState = devState								
 
 									alias = element['alias']
 									rssi = data['system']['get_sysinfo']['rssi']
 									state_update_list = [
-										{'key':'onOffState', 'value':state, 'uiValue':state},
+										{'key':'onOffState', 'value':state},
 										{'key':'rssi', 'value':rssi},
 										{'key':'alias', 'value':alias}
 										]
@@ -160,17 +161,17 @@ class myThread(Thread):
 					
 					if devState != self.lastState:
 						if devState:
-							state = "on"
+							state = "On"
 							self.interupt(state=True, action='state')
 						else:
-							state = "off"
+							state = "Off"
 							self.interupt(state=False, action='state')
 						self.lastState = devState	
 
 						alias = data['system']['get_sysinfo']['alias']
 						rssi = data['system']['get_sysinfo']['rssi']
 						state_update_list = [
-							{'key':'onOffState', 'value':state, 'uiValue':state},
+							{'key':'onOffState', 'value':state, 'uivalue':state},
 							{'key':'rssi', 'value':rssi},
 							{'key':'alias', 'value':alias}
 							]
@@ -178,6 +179,8 @@ class myThread(Thread):
 						self.logger.debug(u"%s: %s, updated state on server to %s (%s, %s)", func, self.name, state, rssi, alias)
 				
 				self.logger.debug(u"%s: finished state update %s" % (self.name, data))
+
+				# Now we start looking for energy data... if the plug is capable
 				if energyCapable:
 					if self.multiPlug:
 						self.logger.debug(u"Starting energy query for devices at %s", devAddr)
@@ -210,7 +213,6 @@ class myThread(Thread):
 									indigoDevice.updateStatesOnServer(state_update_list)
 
 								else:
-									# self.logger.error(u"GOT HERE")
 									self.logger.debug("Outlet %s:%s was off. No data collected", self.name, childId)
 									state_update_list = [
 										{'key':'curWatts', 'value':0},
@@ -221,9 +223,8 @@ class myThread(Thread):
 								
 						else:
 							self.logger.debug(u"Outlet %s: outlet=%s not configured. No energy usage collected" % (self.name, childId))
-
 						
-					else:    # devType == "hs110":
+					else:    # we have a single outlet device
 						tplink_dev_energy = tplink_smartplug (devAddr, devPort, None, None)
 						result = tplink_dev_energy.send('energy')
 						data = json.loads(result)
@@ -360,10 +361,6 @@ class Plugin(indigo.PluginBase):
 				if not myDeviceId:
 					self.logger.error("%s: Oops.No deviceId for %s", name, address)
 					id = self.tpDevices[address].id
-					self.logger.info("%s: found Id for %s", name, str(id))
-					myDeviceId = indigo.devices[id].states['deviceId']
-					# dev.updateStateOnServer("deviceId", myDeviceId)
-					self.logger.info("%s: Got deviceId  %s", name, myDeviceId)
 				else:
 					self.logger.debug("%s: Already had deviceId  %s", name, myDeviceId)
 
@@ -475,6 +472,7 @@ class Plugin(indigo.PluginBase):
 			self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
 
 			# And then tell the Indigo Server to update the state.
+			cmd = cmd.capitalize()
 			dev.updateStateOnServer("onOffState", cmd)
 		else:
 			# Else log failure but do NOT update state on Indigo Server.
