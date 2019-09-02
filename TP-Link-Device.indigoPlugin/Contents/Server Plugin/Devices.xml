@@ -8,8 +8,10 @@
 				<Field id="address" type="textfield" defaultValue="192.168.0.0">
 					<Label>Device IP Address:</Label>
 				</Field>
-				￼<Field id="outletNum" type="textfield" hidden="false" defaultValue="00" >
-					<Label>Outlet number (Eg. 01, 02, etc.)</Label>
+				￼<Field id="displayOutletNum" type="textfield" hidden="false" defaultValue="1" >
+					<Label>Outlet number (Eg. 1, 2, etc.)</Label>
+				</Field>
+				<Field id="outletNum" type="textfield" hidden="true" defaultValue="00" >
 				</Field>
 				<Field id="devPoll" type="checkbox" defaultValue="true">
 					<Label>Enable device polling:</Label>

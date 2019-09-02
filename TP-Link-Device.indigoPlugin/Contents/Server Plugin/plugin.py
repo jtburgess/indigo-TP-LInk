@@ -312,7 +312,7 @@ class Plugin(indigo.PluginBase):
 		# If this is a new device, or we have been asked to re-initialize it...
 		if ('initialize' in valuesDict and valuesDict['initialize']) or valuesDict['newDev']:
 			self.initializeDev(valuesDict)
-		valuesDict['outletNum'] = int(valuesDict['outletNum']) -1
+		valuesDict['outletNum'] = str(int(valuesDict['displayOutletNum']) -1).zfill(2)
 		valuesDict['newDev'] = False
 		valuesDict['initialize'] = False
 		return (True, valuesDict, errorsDict)
@@ -408,10 +408,10 @@ class Plugin(indigo.PluginBase):
 		valuesDict['model'] = data['system']['get_sysinfo']['model']
 
 		if 'child_num' in data['system']['get_sysinfo']:
-			self.logger.error(u"%s: %s has child_id", func, devName)
+			self.logger.debug(u"%s: %s has child_id", func, devName)
 			valuesDict['multiPlug'] = True
 		else:
-			self.logger.error(u"%s: %s does not have child_id", func, devName)
+			self.logger.debug(u"%s: %s does not have child_id", func, devName)
 			valuesDict['multiPlug'] = False
 
 		if 'ENE' in data['system']['get_sysinfo']['feature']:
@@ -547,7 +547,7 @@ class Plugin(indigo.PluginBase):
 		valuesDict['multiPlug']     = props['multiPlug']
 		valuesDict['offPoll']       = props['offPoll']
 		valuesDict['onPoll']        = props['onPoll']
-		valuesDict['outletNum']     = props['outletNum']
+		valuesDict['outletNum']     = props['displayOutletNum']
 		valuesDict['alias']         = dev.states['alias']
 		valuesDict['displayOk']     = True
 
