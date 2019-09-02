@@ -6,65 +6,74 @@
 	 back to the user you can post information into the Event Log.
 -->
 <MenuItems>
-	<MenuItem id="toggleDebug">
-		<Name>Toggle Debugging</Name>
-        <CallbackMethod>toggleDebugging</CallbackMethod>
-	</MenuItem>
 	<MenuItem id="dumpDeviceInfo">
 		<Name>Display device information</Name>
         <CallbackMethod>dumpDeviceInfo</CallbackMethod>
 		 <ButtonTitle>Done</ButtonTitle>
 		<ConfigUI>
-			<Field id="targetDevice" type="menu" defaultValue="">
+			<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
+			<Field id='hideCheckBox' type='checkbox' hidden="true" defaultValue="true" />
+
+			<Field id="targetDevice" type="menu" defaultValue="" enabledBindingId="displayOk" enabledBindingNegate="true">
 				<Label>Select the plug device:</Label>
 				<List class="indigo.devices" filter="self"/>
 			</Field>
-			<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
-			<Field id="multiPlug" type="checkbox" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>2 or more outlets:</Label>
-			</Field>
-			<Field id="address" type="textfield" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
+			<Field id="address" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
 				<Label>IP Address:</Label>
 			</Field>
-			<Field id="outletNum" type="textfield" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Outlet number:</Label>
-			</Field>
-			<Field id="energyCapable" type="checkbox" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Energy <datagrid></datagrid>:</Label>
-			</Field>
-			<Field id="deviceId" type="textfield" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
+			<Field id="deviceId" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
 				<Label>Device ID:</Label>
 			</Field>
-			<Field id="alias" type="textfield" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>alias:</Label>
+			<Field id="alias" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Alias:</Label>
 			</Field>
-			<Field id="devPoll" type="checkbox" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
+			<Field id="outletNum" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Outlet number:</Label>
+			</Field>
+			<Field id="model" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Model:</Label>
+			</Field>
+			<Field id="onPoll" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>On state polling freq</Label>
+			</Field>
+			<Field id="offPoll" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Off state polling freq</Label>
+			</Field>
+			<Field id="mac" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>MAC Address</Label>
+			</Field>
+			<Field id="devPoll" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
 				<Label>Polling enabled:</Label>
 			</Field>
-			<Field id="onPoll" type="textfield" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Polling interval when device is On</Label>
+			<Field id="multiPlug" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+				<Label>Multiple outlets:</Label>
 			</Field>
-			<Field id="offPoll" type="textfield" readonly='YES' visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Polling interval when device is Off</Label>
+			<Field id="energyCapable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+				<Label>Energy reporting<datagrid></datagrid>:</Label>
 			</Field>
 			<Field id="actionButton" 
 					type="button" 
-					tooltip="Click this button to display device information" 
+					tooltip="Click to display device information" 
 					visibleBindingId="displayOk" 
 					visibleBindingValue="false">
 				<!-- <Label>Visible button's label:</Label> -->
-				<Title>Display Device Date</Title>
+				<Title>Display Device Data</Title>
 				<CallbackMethod>displayButtonPressed</CallbackMethod>
 			</Field>
 			<Field id="printButton" 
 					type="button" 
-					tooltip="Click this button to print device information to the log" 
+					tooltip="Click to print device information to the log" 
 					visibleBindingId="displayOk" 
 					visibleBindingValue="true">
 				<!-- <Label>Visible button's label:</Label> -->
 				<Title>Print to log</Title>
 				<CallbackMethod>printToLogPressed</CallbackMethod>
 			</Field>
+			<Field id="separator1" type="separator" />
         </ConfigUI>
+	</MenuItem>
+	<MenuItem id="toggleDebug">
+		<Name>Toggle Debugging</Name>
+        <CallbackMethod>toggleDebugging</CallbackMethod>
 	</MenuItem>
 </MenuItems>

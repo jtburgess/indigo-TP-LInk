@@ -46,6 +46,11 @@
             	<Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
 			</ConfigUI>
 			<States>
+				<State id="rssi">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Signal Strength</TriggerLabel>
+					<ControlPageLabel>Signal Strength</ControlPageLabel>
+				</State>
 				<State id="dev_name">
 					<ValueType>String</ValueType>
 					<TriggerLabel>Device Name</TriggerLabel>
@@ -151,6 +156,11 @@
 					<TriggerLabel>Device Name</TriggerLabel>
 					<ControlPageLabel>Device Name</ControlPageLabel>
 				</State> -->
+				<State id="rssi">
+					<ValueType>String</ValueType>
+					<TriggerLabel>Signal Strength</TriggerLabel>
+					<ControlPageLabel>Signal Strength</ControlPageLabel>
+				</State>
 				<State id="deviceId">
 					<ValueType>String</ValueType>
 					<TriggerLabel>Device ID</TriggerLabel>
