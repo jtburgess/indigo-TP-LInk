@@ -109,7 +109,11 @@ class tplink_smartplug():
 		### Insert pyHS100 code here
 		timeout = 10
 		try:
-			sock = socket.create_connection((self.ip, self.port), timeout)
+			# sock = socket.create_connection((self.ip, self.port), timeout)
+
+			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			sock.settimeout(5)
+			sock.connect((self.ip, 9999))
 
 			# _LOGGER.debug("> (%i) %s", len(cmd), cmd)
 			sock.send(encrypt(cmd))
@@ -126,7 +130,9 @@ class tplink_smartplug():
 				buffer += chunk
 				if (length > 0 and len(buffer) >= length + 4) or not chunk:
 					break
-
+		except Exception as e:
+			return ("Fatal error in tplink_smartplug: %s" % (str(e)))
+	
 		finally:
 			try:
 				if sock:

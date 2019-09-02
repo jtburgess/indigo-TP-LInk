@@ -84,7 +84,7 @@ class myThread(Thread):
 
 		time.sleep(0.5)
 		self.changed = True
-		return
+		return(True)
 			
 	def stop(self):
 		self.logger.debug(u"from: %s  time to quit" % (self.name))
@@ -103,6 +103,7 @@ class myThread(Thread):
 		self.logger.debug(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
+		lastState = 0
 
 		while True:
 			try:
@@ -130,9 +131,9 @@ class myThread(Thread):
 								self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", self.name, self.lastState, devState)
 								if devState != self.lastState:
 									if devState:
-										state = "On"
+										state = True
 									else:
-										state = "Off"
+										state = False
 									self.lastState = devState								
 
 									alias = element['alias']
@@ -157,21 +158,23 @@ class myThread(Thread):
 				else:  # we have a single outlet device
 					# self.logger.debug(u"%s: Got Here 0 with %s" % (self.name, data))
 					devState = data['system']['get_sysinfo']['relay_state']
-					self.logger.debug(u"%s: state= %s" % (self.name, devState))
+					self.logger.debug(u"%s: 1 state= %s, lastState=%s" % (self.name, devState, lastState))
 					
-					if devState != self.lastState:
+					if devState != lastState:
 						if devState:
-							state = "On"
+							state = True
 							self.interupt(state=True, action='state')
 						else:
-							state = "Off"
+							state = False
 							self.interupt(state=False, action='state')
-						self.lastState = devState	
+						lastState = devState	
+
+						self.logger.debug(u"%s: 2 state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
 
 						alias = data['system']['get_sysinfo']['alias']
 						rssi = data['system']['get_sysinfo']['rssi']
 						state_update_list = [
-							{'key':'onOffState', 'value':state, 'uivalue':state},
+							{'key':'onOffState', 'value':state},
 							{'key':'rssi', 'value':rssi},
 							{'key':'alias', 'value':alias}
 							]
@@ -269,8 +272,7 @@ class myThread(Thread):
 				self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name))
 			except Exception as e:
 				self.logger.error("Fatal error attempting to update %s: %s" % (self.name, str(e)))
-				# return
-
+				return
 
 ################################################################################
 class Plugin(indigo.PluginBase):
@@ -360,7 +362,6 @@ class Plugin(indigo.PluginBase):
 				myDeviceId  = dev.pluginProps['deviceId']
 				if not myDeviceId:
 					self.logger.error("%s: Oops.No deviceId for %s", name, address)
-					id = self.tpDevices[address].id
 				else:
 					self.logger.debug("%s: Already had deviceId  %s", name, myDeviceId)
 
@@ -434,13 +435,13 @@ class Plugin(indigo.PluginBase):
 		###### TURN ON ######
 		if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
 			cmd = "on"
-			if dev.pluginProps['devPoll']:
-				self.tpThreads[dev.address].interupt(state=True, action='state')
+			#if dev.pluginProps['devPoll']:
+				#self.tpThreads[dev.address].interupt(state=True, action='state')
 		###### TURN OFF ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
 			cmd = "off"
-			if dev.pluginProps['devPoll']:
-				self.tpThreads[dev.address].interupt(state=False, action='state')
+			#if dev.pluginProps['devPoll']:
+				#self.tpThreads[dev.address].interupt(state=False, action='state')
 		###### TOGGLE ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
 			if dev.onState:
@@ -472,8 +473,13 @@ class Plugin(indigo.PluginBase):
 			self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
 
 			# And then tell the Indigo Server to update the state.
-			cmd = cmd.capitalize()
-			dev.updateStateOnServer("onOffState", cmd)
+			if cmd == "on":
+				state = True
+			else:
+				state = False
+			dev.updateStateOnServer(key="onOffState", value=state)
+			#self.tpThreads[dev.address].interupt(dev=dev, action='status')
+			
 		else:
 			# Else log failure but do NOT update state on Indigo Server.
 			self.logger.error(u'send "{}" {} failed with result "{}"'.format(dev.name, cmd, result))
@@ -499,7 +505,7 @@ class Plugin(indigo.PluginBase):
 			self.tpThreads[address].interupt(dev=dev, action='status')
 			self.logger.info("%s: Device reachable and states updated.", dev.name)
 		except Exception as e:
-			self.logger.error("%s: Device not reachable and states could not be updated.", dev.name)
+			self.logger.error("%s: Device not reachable and states could not be updated. %s", dev.name, str(e))
 
 		return
 
