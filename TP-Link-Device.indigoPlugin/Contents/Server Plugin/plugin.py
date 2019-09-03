@@ -399,9 +399,11 @@ class Plugin(indigo.PluginBase):
 		childId = None
 		tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
 		result = tplink_dev.send('info')
+		self.deviceSearchResults[devAddr] = result
 
 		self.logger.debug(u"%s: InitializeDev 3 got %s" % (devName, result))
 		data = json.loads(result)
+		self.deviceSearchResults[devAddr] = data
 		self.logger.debug(u"%s: InitializeDev 4 got %s" % (devName, data))
 		valuesDict['deviceId'] = data['system']['get_sysinfo']['deviceId']
 		valuesDict['childId'] = str(deviceId) + valuesDict['outletNum']
@@ -586,8 +588,12 @@ class Plugin(indigo.PluginBase):
 		try:
 			self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 			outletArray = []
-			for outlet in range(1, 7): #int(self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['child_num']) +1):
-				menuEntry = (str(int(outlet) -1).zfill(2), outlet)
+			address = valuesDict['address']
+			maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
+		
+			for outlet in range(1, maxOutlet):
+				internalOutlet = int(outlet)-1
+				menuEntry = (str(internalOutlet).zfill(2), outlet)
 				outletArray.append(menuEntry)
 		except:
 			pass
