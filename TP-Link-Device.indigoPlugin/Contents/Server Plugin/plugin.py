@@ -300,21 +300,22 @@ class Plugin(indigo.PluginBase):
 	# Validation handlers
 	######################
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 		errorsDict = indigo.Dict()
 
-		self.logger.debug(u"received \"%s\"" % (valuesDict))
-		cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
-		response = os.system(cmd)
-		# self.logger.debug("Response: %s " % (response))
+		# cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
+		# response = os.system(cmd)
+		# self.logger.info("Response: %s " % (response))
 		
-		#and then check the response...
-		if int(response) != 0:
-			self.logger.info(u"%s is not reachable" % valuesDict['address'])
-			errorsDict["address"] = "Host unreachable"
-			return (False, valuesDict, errorsDict)
+		# #and then check the response...
+		# if int(response) != 0:
+		# 	self.logger.info(u"%s is not reachable" % valuesDict['address'])
+		# 	errorsDict["address"] = "Host unreachable"
+		# 	return (False, valuesDict, errorsDict)
 			
-		# If this is a new device, or we have been asked to re-initialize it...
-		if ('initialize' in valuesDict and valuesDict['initialize']) or valuesDict['newDev']:
+		# If we have been asked to re-initialize this device...
+		if ('initialize' in valuesDict and valuesDict['initialize']):
 			self.initializeDev(valuesDict)
 		valuesDict['newDev'] = False
 		valuesDict['initialize'] = False
@@ -387,7 +388,10 @@ class Plugin(indigo.PluginBase):
 	########################################
 	def initializeDev(self, valuesDict):
 		func = inspect.stack()[0][3]
-		self.logger.info(u"%s: called for: %s." % (func, valuesDict))
+		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
+		if valuesDict['address'] == "":
+			valuesDict['address'] = valuesDict['addressManual']
+		self.logger.debug(u"%s: 2 called for: %s." % (func, valuesDict))
 		devAddr = valuesDict['address']
 		devName = "new device at " + devAddr
 		devPort = 9999
@@ -513,7 +517,7 @@ class Plugin(indigo.PluginBase):
 	# Device ConfigUI Callbacks
 	def getTpDevice(self, filter="", valuesDict=None, typeId="", targetId=0):
 		func = inspect.stack()[0][3]
-		self.logger.info(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
+		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 
 		deviceArray = []
 		tplink_discover = tplink_smartplug(None, None)
@@ -531,19 +535,19 @@ class Plugin(indigo.PluginBase):
 
 	def selectTpDevice(self, valuesDict, typeId, devId):
 		func = inspect.stack()[0][3]
-		self.logger.info(u"%s: called for: %s, %s, %s." % (func, typeId, devId, valuesDict))
+		self.logger.debug(u"%s: called for: %s, %s, %s." % (func, typeId, devId, valuesDict))
 
 		if valuesDict['address'] != 'manual' or valuesDict['manualAddressResponse']:
-			self.logger.info("%s: %s -- %s\n" % (func, valuesDict['address'], valuesDict['manualAddressResponse']))
+			self.logger.debug("%s: %s -- %s\n" % (func, valuesDict['address'], valuesDict['manualAddressResponse']))
 			if valuesDict['manualAddressResponse']:
-				# # TODO we need to query the device since it was not automatically found
 				valuesDict['address'] = valuesDict['addressManual']
 				valuesDict = self.initializeDev(valuesDict)
 				# address = valuesDict['addressManual']
 				# valuesDict['address'] = address
 				valuesDict['displayOk'] = True
 				valuesDict['displayManAddressButton'] = False
-
+				valuesDict['address'] = valuesDict['addressManual']
+				
 				return valuesDict
 			else:
 				address = valuesDict['address']
@@ -565,7 +569,7 @@ class Plugin(indigo.PluginBase):
 				else:
 					valuesDict['energyCapable'] = True
 
-				self.logger.info("returning valuesDict: %s" % valuesDict)
+				self.logger.debug("returning valuesDict: %s" % valuesDict)
 
 				return valuesDict
 		elif valuesDict['address'] == 'manual':
@@ -580,7 +584,7 @@ class Plugin(indigo.PluginBase):
 	def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
 		func = inspect.stack()[0][3]
 		try:
-			self.logger.info(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
+			self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 			outletArray = []
 			for outlet in range(1, 7): #int(self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['child_num']) +1):
 				menuEntry = (str(int(outlet) -1).zfill(2), outlet)
@@ -611,10 +615,8 @@ class Plugin(indigo.PluginBase):
 		return(True)	
 	
 	def displayButtonPressed(self, valuesDict, bar):
-		self.logger.debug("GOT HERE")
 		func = inspect.stack()[0][3]
-		self.logger.debug("%s: called", func)
-		self.logger.debug("%s: called with valuesDict=%s", func, valuesDict)
+		self.logger.info("%s: called with valuesDict=%s", func, valuesDict)
 
 		devNumber = int(valuesDict['targetDevice'])
 		dev = indigo.devices[devNumber]
@@ -630,7 +632,7 @@ class Plugin(indigo.PluginBase):
 		valuesDict['multiPlug']     = props['multiPlug']
 		valuesDict['offPoll']       = props['offPoll']
 		valuesDict['onPoll']        = props['onPoll']
-		valuesDict['outletNum']     = props['displayOutletNum']
+		valuesDict['outletNum']     = int(props['outletNum'])+1
 		valuesDict['alias']         = dev.states['alias']
 		valuesDict['displayOk']     = True
 

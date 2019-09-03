@@ -25,7 +25,7 @@
 					<Title>Continue</Title>
 					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
-				￼<Field id="outletNum" type="menu" hidden="false" defaultValue="0" visibleBindingId="multiPlug"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+				￼<Field id="outletNum" type="menu" hidden="false" defaultValue="" visibleBindingId="multiPlug"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
 					<List class='self' method='selectTpOutlet' dynamicReload="true" />
 					<Label>Outlet number</Label>
 				</Field>
@@ -45,65 +45,6 @@
 				</Field>
 				<Field id="energyCapable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
 					<Label>Energy reporting<datagrid></datagrid>:</Label>
-				</Field>
-				￼<Field id="simpleSeparator1" type="separator" />
-				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
-					<Label>Check to re-read device parameters:</Label>
-				</Field>
-				<Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
-            	<Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
-			</ConfigUI>
-			<States>
-				<State id="rssi">
-					<ValueType>String</ValueType>
-					<TriggerLabel>Signal Strength</TriggerLabel>
-					<ControlPageLabel>Signal Strength</ControlPageLabel>
-				</State>
-				<State id="alias">
-					<ValueType>String</ValueType>
-					<TriggerLabel>Device Alias</TriggerLabel>
-					<ControlPageLabel>Device Alias</ControlPageLabel>
-				</State>
-				<State id="curWatts">
-					<ValueType>Float</ValueType>
-					<TriggerLabel>Current Watts</TriggerLabel>
-					<ControlPageLabel>Current Watts</ControlPageLabel>
-				</State>
-				<State id="curVolts">
-					<ValueType>Float</ValueType>
-					<TriggerLabel>Current Volts</TriggerLabel>
-					<ControlPageLabel>Current Volts</ControlPageLabel>
-				</State>
-				<State id="curAmps">
-					<ValueType>Float</ValueType>
-					<TriggerLabel>Current Amps</TriggerLabel>
-					<ControlPageLabel>Current Amps</ControlPageLabel>
-				</State>
-			</States>
-		</Device>
-
-		<Device type="relay" id="OLDtplinkSmartPlug">
-			<Name>Old TP-Link Smart plug (all versions)</Name>
-			<ConfigUI>
-				<Field id="multiPlug" type="checkbox" hidden="true" defaultValue="false" />
-				<Field id="address" type="textfield" defaultValue="192.168.0.0">
-					<Label>Device IP Address:</Label>
-				</Field>
-				￼<Field id="displayOutletNum" type="textfield" hidden="false" defaultValue="1" >
-					<Label>Outlet number (Eg. 1, 2, etc.)</Label>
-				</Field>
-				<Field id="outletNum" type="textfield" hidden="true" defaultValue="00" >
-				</Field>
-				<Field id="devPoll" type="checkbox" defaultValue="true">
-					<Label>Enable device polling:</Label>
-				</Field>
-				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
-					<Label>Polling interval when device is Off</Label>
-				</Field>
-				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
-					<Label>Polling interval when device is On</Label>
-				</Field>
-				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
 				</Field>
 				￼<Field id="simpleSeparator1" type="separator" />
 				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
