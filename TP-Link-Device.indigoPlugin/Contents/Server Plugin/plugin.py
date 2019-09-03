@@ -92,11 +92,15 @@ class myThread(Thread):
 
 	def run(self):
 		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called for: %s." % (func, self.dev.name))
+		self.logger.debug(u"%s: called for: %s." % (func, self.dev))
 		dev = self.dev
 		devType = dev.deviceTypeId
 		energyCapable = dev.pluginProps['energyCapable']
-		devAddr = dev.address
+
+		if dev.address == "":
+			devAddr = dev.pluginProps['addressManual']
+		else:
+			devAddr = dev.address
 		devPort = 9999
 		self.logger.debug(u"%s multiPlug is %s" % (dev.name, self.multiPlug))
 		
@@ -158,7 +162,7 @@ class myThread(Thread):
 				else:  # we have a single outlet device
 					# self.logger.debug(u"%s: Got Here 0 with %s" % (self.name, data))
 					devState = data['system']['get_sysinfo']['relay_state']
-					self.logger.debug(u"%s: 1 state= %s, lastState=%s" % (self.name, devState, lastState))
+					self.logger.debug(u"%s: single outlet device 1 state= %s, lastState=%s" % (self.name, devState, lastState))
 					
 					if devState != lastState:
 						if devState:
@@ -521,19 +525,26 @@ class Plugin(indigo.PluginBase):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 
+		# if targetId in indigo.devices:
+		# 	self.logger.error(u"%s: found %s %s" % (func, targetId, indigo.devices[targetId].configured))
+		# else:
+		# 	self.logger.error(u"%s: not found %s" % (func, targetId))
 		deviceArray = []
-		tplink_discover = tplink_smartplug(None, None)
-		self.deviceSearchResults = tplink_discover.send('discover')
+		if indigo.devices[targetId].configured:
+			return deviceArray
+		else:
+			tplink_discover = tplink_smartplug(None, None)
+			self.deviceSearchResults = tplink_discover.send('discover')
 
-		for address in self.deviceSearchResults:
-			model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
-			menuText = model + " @ " + address
-			menuEntry = (address, menuText)
+			for address in self.deviceSearchResults:
+				model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
+				menuText = model + " @ " + address
+				menuEntry = (address, menuText)
+				deviceArray.append(menuEntry)
+			menuEntry = ('manual', 'manual entry')
 			deviceArray.append(menuEntry)
-		menuEntry = ('manual', 'manual entry')
-		deviceArray.append(menuEntry)
 
-		return deviceArray
+			return deviceArray
 
 	def selectTpDevice(self, valuesDict, typeId, devId):
 		func = inspect.stack()[0][3]
