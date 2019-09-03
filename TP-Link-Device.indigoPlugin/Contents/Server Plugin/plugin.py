@@ -287,6 +287,7 @@ class Plugin(indigo.PluginBase):
 		self.tpThreads = {}
 		self.tpDevices = {}
 		self.tpQueue = Queue()
+		self.deviceSearchResults = {}
 
 	########################################
 	def startup(self):
@@ -315,11 +316,9 @@ class Plugin(indigo.PluginBase):
 		# If this is a new device, or we have been asked to re-initialize it...
 		if ('initialize' in valuesDict and valuesDict['initialize']) or valuesDict['newDev']:
 			self.initializeDev(valuesDict)
-		valuesDict['outletNum'] = str(int(valuesDict['displayOutletNum']) -1).zfill(2)
 		valuesDict['newDev'] = False
 		valuesDict['initialize'] = False
 		return (True, valuesDict, errorsDict)
-
 
 	def validatePrefsConfigUi(self, valuesDict):
 		# this is where we will detect a change in polling settings so we can update the polling threads
@@ -388,7 +387,7 @@ class Plugin(indigo.PluginBase):
 	########################################
 	def initializeDev(self, valuesDict):
 		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
+		self.logger.info(u"%s: called for: %s." % (func, valuesDict))
 		devAddr = valuesDict['address']
 		devName = "new device at " + devAddr
 		devPort = 9999
@@ -496,6 +495,8 @@ class Plugin(indigo.PluginBase):
 	########################################
 	# Custom Plugin Action callbacks (defined in Actions.xml)
 	######################
+
+	# The 'status' callback
 	def getInfo(self, pluginAction, dev):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s." % (func, dev.name))
@@ -509,6 +510,84 @@ class Plugin(indigo.PluginBase):
 
 		return
 
+	# Device ConfigUI Callbacks
+	def getTpDevice(self, filter="", valuesDict=None, typeId="", targetId=0):
+		func = inspect.stack()[0][3]
+		self.logger.info(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
+
+		deviceArray = []
+		tplink_discover = tplink_smartplug(None, None)
+		self.deviceSearchResults = tplink_discover.send('discover')
+
+		for address in self.deviceSearchResults:
+			model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
+			menuText = model + " @ " + address
+			menuEntry = (address, menuText)
+			deviceArray.append(menuEntry)
+		menuEntry = ('manual', 'manual entry')
+		deviceArray.append(menuEntry)
+
+		return deviceArray
+
+	def selectTpDevice(self, valuesDict, typeId, devId):
+		func = inspect.stack()[0][3]
+		self.logger.info(u"%s: called for: %s, %s, %s." % (func, typeId, devId, valuesDict))
+
+		if valuesDict['address'] != 'manual' or valuesDict['manualAddressResponse']:
+			self.logger.info("%s: %s -- %s\n" % (func, valuesDict['address'], valuesDict['manualAddressResponse']))
+			if valuesDict['manualAddressResponse']:
+				# # TODO we need to query the device since it was not automatically found
+				valuesDict['address'] = valuesDict['addressManual']
+				valuesDict = self.initializeDev(valuesDict)
+				# address = valuesDict['addressManual']
+				# valuesDict['address'] = address
+				valuesDict['displayOk'] = True
+				valuesDict['displayManAddressButton'] = False
+
+				return valuesDict
+			else:
+				address = valuesDict['address']
+				valuesDict['displayOk'] = True
+				valuesDict['model'] = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
+				valuesDict['deviceId'] = self.deviceSearchResults[address]['system']['get_sysinfo']['deviceId']
+				valuesDict['mac'] = self.deviceSearchResults[address]['system']['get_sysinfo']['mac']
+				valuesDict['displayManAddressButton'] = False
+
+				if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
+					self.logger.debug(u"%s: %s has child_id", func, address)
+					valuesDict['multiPlug'] = True
+				else:
+					self.logger.debug(u"%s: %s does not have child_id", func, address)
+					valuesDict['multiPlug'] = False
+
+				if 'ENE' in self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
+					valuesDict['energyCapable'] = True
+				else:
+					valuesDict['energyCapable'] = True
+
+				self.logger.info("returning valuesDict: %s" % valuesDict)
+
+				return valuesDict
+		elif valuesDict['address'] == 'manual':
+			# # TODO we need to query the device since it was not automatically found
+			# valuesDict['address'] = valuesDict['addressManual']
+			# self.initializeDev(valuesDict)
+			valuesDict['displayManAddress'] = True
+			valuesDict['displayManAddressButton'] = True
+			valuesDict['manualAddressResponse'] = True
+			return valuesDict
+
+	def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
+		func = inspect.stack()[0][3]
+		try:
+			self.logger.info(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
+			outletArray = []
+			for outlet in range(1, 7): #int(self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['child_num']) +1):
+				menuEntry = (str(int(outlet) -1).zfill(2), outlet)
+				outletArray.append(menuEntry)
+		except:
+			pass
+		return outletArray
 
 	########################################
 	# Menu callbacks defined in MenuItems.xml

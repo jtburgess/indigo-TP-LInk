@@ -38,6 +38,7 @@ commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
 			'cloudinfo': '{"cnCloud":{"get_info":{}}}',
 			'wlanscan' : '{"netif":{"get_scaninfo":{"refresh":0}}}',
 			'time'     : '{"time":{"get_time":{}}}',
+			'discover' : '{"system":{"get_sysinfo":{}}}',
 			'schedule' : '{"schedule":{"get_rules":{}}}',
 			'countdown': '{"count_down":{"get_rules":{}}}',
 			'antitheft': '{"anti_theft":{"get_rules":{}}}',
@@ -89,66 +90,112 @@ class tplink_smartplug():
 
 	# Send command and receive reply
 	def send(self, cmd):
-		if cmd in commands:
+		print cmd
+		if cmd != 'discover':
 			cmd = commands[cmd]
-		# else:
-		# 	quit("ERROR: unknown command: %s" % (cmd, ))
+			# else:
+			# 	quit("ERROR: unknown command: %s" % (cmd, ))
 
-		print ("Got %s" % cmd)
+			print ("Got %s" % cmd)
 
-		# if both deviceID and childID are set, { context... } is prepended to the command
-		if self.deviceID is not None and self.childID is not None:
-			context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
-			# now replace the initial '{' of the command with that string
-			cmd = context + cmd[1:]
-		# note error checking on deviceID and childID is done in __init__
+			# if both deviceID and childID are set, { context... } is prepended to the command
+			if self.deviceID is not None and self.childID is not None:
+				context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
+				# now replace the initial '{' of the command with that string
+				cmd = context + cmd[1:]
+			# note error checking on deviceID and childID is done in __init__
 
-		if debug:
-			print ("send cmd=%s" % (cmd, ))
-		
-		### Insert pyHS100 code here
-		timeout = 10
-		try:
-			# sock = socket.create_connection((self.ip, self.port), timeout)
-
-			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			sock.settimeout(5)
-			sock.connect((self.ip, 9999))
-
-			# _LOGGER.debug("> (%i) %s", len(cmd), cmd)
-			sock.send(encrypt(cmd))
-
-			buffer = bytes()
-            # Some devices send responses with a length header of 0 and
-            # terminate with a zero size chunk. Others send the length and
-            # will hang if we attempt to read more data.
-			length = -1
-			while True:
-				chunk = sock.recv(4096)
-				if length == -1:
-					length = struct.unpack(">I", chunk[0:4])[0]
-				buffer += chunk
-				if (length > 0 and len(buffer) >= length + 4) or not chunk:
-					break
-		except Exception as e:
-			return ("Fatal error in tplink_smartplug: %s" % (str(e)))
-	
-		finally:
+			if debug:
+				print ("send cmd=%s" % (cmd, ))
+			
+			### Insert pyHS100 code here
+			timeout = 10
 			try:
-				if sock:
-					sock.shutdown(socket.SHUT_RDWR)
-			except OSError:
-				# OSX raises OSError when shutdown() gets called on a closed
-				# socket. We ignore it here as the data has already been read
-				# into the buffer at this point.
-				pass
+				# sock = socket.create_connection((self.ip, self.port), timeout)
 
+				sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				sock.settimeout(5)
+				sock.connect((self.ip, 9999))
+
+				# _LOGGER.debug("> (%i) %s", len(cmd), cmd)
+				sock.send(encrypt(cmd))
+
+				buffer = bytes()
+				# Some devices send responses with a length header of 0 and
+				# terminate with a zero size chunk. Others send the length and
+				# will hang if we attempt to read more data.
+				length = -1
+				while True:
+					chunk = sock.recv(4096)
+					if length == -1:
+						length = struct.unpack(">I", chunk[0:4])[0]
+					buffer += chunk
+					if (length > 0 and len(buffer) >= length + 4) or not chunk:
+						break
+			except Exception as e:
+				return ("Fatal error in tplink_smartplug: %s" % (str(e)))
+		
 			finally:
-				if sock:
-					sock.close()
-		response = decrypt(buffer[4:])
+				try:
+					if sock:
+						sock.shutdown(socket.SHUT_RDWR)
+				except OSError:
+					# OSX raises OSError when shutdown() gets called on a closed
+					# socket. We ignore it here as the data has already been read
+					# into the buffer at this point.
+					pass
 
-		return response
+				finally:
+					if sock:
+						sock.close()
+			response = decrypt(buffer[4:])
+
+			return response
+		else: # the discover command
+			cmd = commands['discover']
+			ip = '255.255.255.255'
+			port = 9999
+			timeout = 3
+			discovery_packets = 3
+			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			sock.settimeout(float(timeout))
+
+			req = cmd
+			print("Sending discovery to %s:%s" % (ip, port))
+
+			encrypted_req = encrypt(req)
+			for i in range(discovery_packets):
+				sock.sendto(encrypted_req[4:], (ip, port))
+
+			devices = {}
+			print("Waiting %s seconds for responses..." % timeout)
+
+			foundDevs = {}
+			foundCount = 0
+
+			try:
+				while True:
+					data, addr = sock.recvfrom(4096)
+					ip, port = addr
+					info = json.loads(decrypt(data))
+					# print("%s\n%s\n" % (ip, info))
+					if not ip in foundDevs:
+						foundDevs[ip] = info
+						foundCount += 1
+			except socket.timeout:
+				print("Got socket timeout, which is okay.")
+			except Exception as ex:
+				print("Got exception %s", ex)
+
+			# print("Found %s devices" % (foundCount))
+			# for device in foundDevs:
+			# 	print("%s: %s\n" % (device, foundDevs[device]))
+
+			# print("Test: %s" % foundDevs['192.168.5.113']['system']['get_sysinfo']['model'])
+
+			return foundDevs
 
 # Check if hostname is valid
 def validHostname(hostname):
@@ -170,7 +217,7 @@ def main():
 	global debug
 	# Parse commandline arguments
 	parser = argparse.ArgumentParser(description="TP-Link Wi-Fi Smart Plug Client v" + str(version))
-	parser.add_argument("-t", "--target", metavar="<hostname>", required=True, help="Target hostname or IP address", type=validHostname)
+	parser.add_argument("-t", "--target", metavar="<hostname>", required=False, help="Target hostname or IP address", type=validHostname)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("-c", "--command", metavar="<command>", help="Preset command to send. Choices are: "+", ".join(commands), choices=commands)
 	group.add_argument("-C", "--CMD", metavar="<command>", help="unvalidated Command")
@@ -179,6 +226,7 @@ def main():
 	parser.add_argument("-p", "--childID", metavar="<childID>", required=False, help="port on device", type=int)
 
 	args = parser.parse_args()
+
 
 #	if (args.deviceID is None) ^ (args.childID is None):
 #		# this is true if one is set and the other isn't
@@ -194,6 +242,8 @@ def main():
 
 	if args.command is None:
 		cmd = args.json
+	elif args.command == 'discover':
+		cmd = 'discover'
 	else:
 		cmd = commands[args.command]
 	print ("args2 = %s" % args)
