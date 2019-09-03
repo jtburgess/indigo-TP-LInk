@@ -424,7 +424,7 @@ class Plugin(indigo.PluginBase):
 		if 'ENE' in data['system']['get_sysinfo']['feature']:
 			valuesDict['energyCapable'] = True
 		else:
-			valuesDict['energyCapable'] = True
+			valuesDict['energyCapable'] = False
 
 		valuesDict['initialize'] = False
 
@@ -580,7 +580,7 @@ class Plugin(indigo.PluginBase):
 				if 'ENE' in self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
 					valuesDict['energyCapable'] = True
 				else:
-					valuesDict['energyCapable'] = True
+					valuesDict['energyCapable'] = False
 
 				self.logger.debug("returning valuesDict: %s" % valuesDict)
 
