@@ -361,6 +361,11 @@ class Plugin(indigo.PluginBase):
 		else:
 			devPoll = dev.pluginProps['devPoll']
 
+		# Update the model display column
+		dev.model = dev.pluginProps['model']
+		dev.description = "plug " + str(int(dev.pluginProps['outletNum'])+1)
+		dev.replaceOnServer()
+
 		# self.logger.debug("deviceStartComn starting %s" % (name), type="TP-Link", isError=False)
 		if name in self.tpThreads:
 			self.logger.debug("deviceStartComm error: Thread exists for %s , %s- %s" % (name, address, self.tpThreads[dev.name]))
