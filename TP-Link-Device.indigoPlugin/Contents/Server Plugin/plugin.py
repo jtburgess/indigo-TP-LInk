@@ -315,7 +315,7 @@ class Plugin(indigo.PluginBase):
 		self.logger.debug(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 		errorsDict = indigo.Dict()
 
-		if not valuesDict['outletNum']:
+		if not valuesDict['outletNum'] or valuesDict['outletNum'] == None or valuesDict['outletNum'] == "":
 			valuesDict['outletNum']   = "00"
 
 		if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
@@ -468,7 +468,7 @@ class Plugin(indigo.PluginBase):
 			childId = None
 
 		tplink_dev = tplink_smartplug (addr, port, deviceId, childId)
-		self.logger.error(u"%s: tplink_dev set with: %s, %s, %s, %s." % (func, addr, port, deviceId, childId))
+		self.logger.debug(u"%s: tplink_dev set with: %s, %s, %s, %s." % (func, addr, port, deviceId, childId))
 
 		###### TURN ON ######
 		if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
