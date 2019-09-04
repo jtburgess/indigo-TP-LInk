@@ -631,26 +631,30 @@ class Plugin(indigo.PluginBase):
 		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 
 		outletArray = []
-
+		
 		if 'newDev' in valuesDict and 'address' in valuesDict:
 			address = valuesDict['address']
 			if address in self.deviceSearchResults:
-				if valuesDict['addressSelect'] == 'manual':
-					if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
-						maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
-						address = valuesDict['address']
-					
-						for outlet in range(1, maxOutlet):
-							internalOutlet = int(outlet)-1
-							menuEntry = (str(internalOutlet).zfill(2), outlet)
-							outletArray.append(menuEntry)
-					else:	
-						self.logger.debug(u"%s: outlets avail %s" % (func, valuesDict['outletsAvailable']))
-						for outlet in range(0, int(valuesDict['outletsAvailable'])):
-							self.logger.debug(u"%s: loop %s" % (func, outlet))
-							internalOutlet = int(outlet)
-							menuEntry = (str(internalOutlet).zfill(2), outlet+1)
-							outletArray.append(menuEntry)
+				self.logger.debug(u"%s:1 in dictoutlets avail %s" % (func, valuesDict['outletsAvailable']))
+				# if valuesDict['addressSelect'] == 'manual':
+				self.logger.debug(u"%s:2 in dictoutlets avail %s" % (func, valuesDict['outletsAvailable']))
+				if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
+					self.logger.debug(u"%s:3 in dictoutlets avail %s" % (func, valuesDict['outletsAvailable']))
+					maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
+					address = valuesDict['address']
+				
+					for outlet in range(1, maxOutlet):
+						internalOutlet = int(outlet)-1
+						menuEntry = (str(internalOutlet).zfill(2), outlet)
+						outletArray.append(menuEntry)
+				else:	
+					self.logger.debug(u"%s: not in dict outlets avail %s" % (func, valuesDict['outletsAvailable']))
+					for outlet in range(0, int(valuesDict['outletsAvailable'])):
+						self.logger.debug(u"%s: loop %s" % (func, outlet))
+						internalOutlet = int(outlet)
+						menuEntry = (str(internalOutlet).zfill(2), outlet+1)
+						outletArray.append(menuEntry)
+
 			elif valuesDict['outletsAvailable'] > 0:
 				self.logger.debug(u"%s: outlets 2 avail %s" % (func, valuesDict['outletsAvailable']))
 				for outlet in range(0, int(valuesDict['outletsAvailable'])):
