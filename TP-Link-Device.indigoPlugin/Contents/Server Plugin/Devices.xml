@@ -7,12 +7,12 @@
 				<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="address" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
 					<Label>TP-Link plug device:</Label>
 					<List class='self' method='getTpDevice' />
 					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
-				<Field id="addressManual" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+				<Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
 					<Label>Enter the IP Address:</Label>
 				</Field>
 				<Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
@@ -29,13 +29,14 @@
 					<List class='self' method='selectTpOutlet' dynamicReload="true" />
 					<Label>Outlet number</Label>
 				</Field>
+				<Field id="outletsAvailable" type="textfield" defaultValue="1" hidden="true" />
 				<Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
 					<Label>Enable device polling:</Label>
 				</Field>
-				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="multiPlug"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
 					<Label>Polling interval when device is Off</Label>
 				</Field>
-				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="multiPlug"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
 					<Label>Polling interval when device is On</Label>
 				</Field>
 				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">

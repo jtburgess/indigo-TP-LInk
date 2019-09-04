@@ -97,10 +97,10 @@ class myThread(Thread):
 		devType = dev.deviceTypeId
 		energyCapable = dev.pluginProps['energyCapable']
 
-		if dev.address == "":
-			devAddr = dev.pluginProps['addressManual']
-		else:
-			devAddr = dev.address
+		# if dev.address == "":
+		# 	devAddr = dev.pluginProps['addressManual']
+		# else:
+		devAddr = dev.address
 		devPort = 9999
 		self.logger.debug(u"%s multiPlug is %s" % (dev.name, self.multiPlug))
 		
@@ -109,6 +109,7 @@ class myThread(Thread):
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
 		lastState = 0
 
+		error_counter = 0
 		while True:
 			try:
 				self.logger.debug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
@@ -215,7 +216,8 @@ class myThread(Thread):
 									state_update_list = [
 										{'key':'curWatts', 'value':curWatts},
 										{'key':'curVolts', 'value':curVolts},
-										{'key':'curAmps', 'value':curAmps}
+										{'key':'curAmps', 'value':curAmps},
+										{'key':"curEnergyLevel", 'value':curWatts, 'uiValue':str(curWatts) + " w"}
 										]
 									indigoDevice.updateStatesOnServer(state_update_list)
 
@@ -224,7 +226,8 @@ class myThread(Thread):
 									state_update_list = [
 										{'key':'curWatts', 'value':0},
 										{'key':'curVolts', 'value':0},
-										{'key':'curAmps', 'value':0}
+										{'key':'curAmps', 'value':0},
+										{'key':"curEnergyLevel", 'value':0, 'uiValue':str(0) + " w"}
 										]
 									indigoDevice.updateStatesOnServer(state_update_list)
 								
@@ -242,21 +245,19 @@ class myThread(Thread):
 
 						state_update_list = [
 							{'key':'curWatts', 'value':curWatts},
-							{'key':'curEnergyLevel', 'value':curWatts},
-							# {'key':'energyAccumTotal', 'value':1000},
-							# {'key':'energyAccumBaseTime', 'value':curWatts},
-							# {'key':'energyAccumTimeDelta', 'value':99},
+							{'key':'curEnergyLevel', 'value':curWatts, 'uiValue':str(curWatts) + " w"},
 							{'key':'curVolts', 'value':curVolts},
 							{'key':'curAmps', 'value':curAmps}
 							]
 						dev.updateStatesOnServer(state_update_list)
 
 						self.logger.debug("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
-				
+		
 				self.logger.debug(u"%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
 				pTime = 0.5
 				cTime = float(self.pollFreq)
 				
+				error_counter = 0
 				while cTime > 0:
 					# self.logger.debug(u"%s: Looping Timer = %s", self.name, cTime)
 					if self.changed or not self._is_running:
@@ -274,9 +275,15 @@ class myThread(Thread):
 					break
 				
 				self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name))
+
 			except Exception as e:
-				self.logger.error("Fatal error attempting to update %s: %s" % (self.name, str(e)))
-				return
+				if errorCounter == 10:
+					self.logger.error("Unable to update %s: %s  after 10 attempts. Polling for this device will now shut down" % (self.name, str(e)))
+					return
+				else:
+					error_counter += 1
+					self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
+				
 
 ################################################################################
 class Plugin(indigo.PluginBase):
@@ -305,8 +312,16 @@ class Plugin(indigo.PluginBase):
 	######################
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
 		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
+		self.logger.error(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 		errorsDict = indigo.Dict()
+
+		if not valuesDict['outletNum']:
+			valuesDict['outletNum']   = "00"
+
+		if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
+			valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
+		self.logger.error(u"%s: left with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
+
 
 		# cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
 		# response = os.system(cmd)
@@ -393,8 +408,8 @@ class Plugin(indigo.PluginBase):
 	def initializeDev(self, valuesDict):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
-		if valuesDict['address'] == "":
-			valuesDict['address'] = valuesDict['addressManual']
+		# if valuesDict['address'] == "":
+		# 	valuesDict['address'] = valuesDict['addressManual']
 		self.logger.debug(u"%s: 2 called for: %s." % (func, valuesDict))
 		devAddr = valuesDict['address']
 		devName = "new device at " + devAddr
@@ -417,9 +432,11 @@ class Plugin(indigo.PluginBase):
 		if 'child_num' in data['system']['get_sysinfo']:
 			self.logger.debug(u"%s: %s has child_id", func, devName)
 			valuesDict['multiPlug'] = True
+			valuesDict['outletsAvailable'] = data['system']['get_sysinfo']['child_num']
 		else:
 			self.logger.debug(u"%s: %s does not have child_id", func, devName)
 			valuesDict['multiPlug'] = False
+			valuesDict['outletsAvailable'] = 1
 
 		if 'ENE' in data['system']['get_sysinfo']['feature']:
 			valuesDict['energyCapable'] = True
@@ -434,12 +451,19 @@ class Plugin(indigo.PluginBase):
 	# Relay / Dimmer Action callback
 	######################
 	def actionControlDimmerRelay(self, action, dev):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called with: %s for %s." % (func, action, dev.name))
 		addr = dev.address
 		port = 9999
-		deviceId = dev.pluginProps['deviceId']
-		childId = dev.pluginProps['outletNum']
+		if dev.pluginProps['multiPlug']:
+			deviceId = dev.pluginProps['deviceId']
+			childId = dev.pluginProps['outletNum']
+		else:
+			deviceId = None
+			childId = None
 
 		tplink_dev = tplink_smartplug (addr, port, deviceId, childId)
+		self.logger.error(u"%s: tplink_dev set with: %s, %s, %s, %s." % (func, addr, port, deviceId, childId))
 
 		###### TURN ON ######
 		if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
@@ -455,12 +479,12 @@ class Plugin(indigo.PluginBase):
 		elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
 			if dev.onState:
 				cmd = "off"
-				if dev.pluginProps['devPoll']:
-					self.tpThreads[dev.address].interupt(state=False, action='state')
+				# if dev.pluginProps['devPoll']:
+				# 	self.tpThreads[dev.address].interupt(state=False, action='state')
 			else:
 				cmd = "on"
-				if dev.pluginProps['devPoll']:
-					self.tpThreads[dev.address].interupt(state=True, action='state')
+				# if dev.pluginProps['devPoll']:
+				# 	self.tpThreads[dev.address].interupt(state=True, action='state')
 		else:
 			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
 			return
@@ -550,62 +574,70 @@ class Plugin(indigo.PluginBase):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s, %s, %s." % (func, typeId, devId, valuesDict))
 
-		if valuesDict['address'] != 'manual' or valuesDict['manualAddressResponse']:
+		if valuesDict['addressSelect'] != 'manual': 
+			self.logger.debug("%s: %s -- %s\n" % (func, valuesDict['addressSelect'], valuesDict['manualAddressResponse']))
+			valuesDict['address'] = valuesDict['addressSelect']
+			address = valuesDict['address']
+			valuesDict['deviceId']  = self.deviceSearchResults[address]['system']['get_sysinfo']['deviceId']
+			valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
+			valuesDict['mac']       = self.deviceSearchResults[address]['system']['get_sysinfo']['mac']
+			valuesDict['model']     = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
+			valuesDict['displayOk'] = True
+			valuesDict['displayManAddress'] = True
+			
+		elif valuesDict['manualAddressResponse']:
 			self.logger.debug("%s: %s -- %s\n" % (func, valuesDict['address'], valuesDict['manualAddressResponse']))
-			if valuesDict['manualAddressResponse']:
-				valuesDict['address'] = valuesDict['addressManual']
-				valuesDict = self.initializeDev(valuesDict)
-				# address = valuesDict['addressManual']
-				# valuesDict['address'] = address
-				valuesDict['displayOk'] = True
-				valuesDict['displayManAddressButton'] = False
-				valuesDict['address'] = valuesDict['addressManual']
-				
-				return valuesDict
-			else:
-				address = valuesDict['address']
-				valuesDict['displayOk'] = True
-				valuesDict['model'] = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
-				valuesDict['deviceId'] = self.deviceSearchResults[address]['system']['get_sysinfo']['deviceId']
-				valuesDict['mac'] = self.deviceSearchResults[address]['system']['get_sysinfo']['mac']
-				valuesDict['displayManAddressButton'] = False
+			valuesDict = self.initializeDev(valuesDict)
+			valuesDict['displayOk'] = True
+			valuesDict['displayManAddressButton'] = False
 
-				if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
-					self.logger.debug(u"%s: %s has child_id", func, address)
-					valuesDict['multiPlug'] = True
-				else:
-					self.logger.debug(u"%s: %s does not have child_id", func, address)
-					valuesDict['multiPlug'] = False
-
-				if 'ENE' in self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
-					valuesDict['energyCapable'] = True
-				else:
-					valuesDict['energyCapable'] = False
-
-				self.logger.debug("returning valuesDict: %s" % valuesDict)
-
-				return valuesDict
-		elif valuesDict['address'] == 'manual':
-			# # TODO we need to query the device since it was not automatically found
-			# valuesDict['address'] = valuesDict['addressManual']
-			# self.initializeDev(valuesDict)
+		elif valuesDict['addressSelect'] == 'manual':
 			valuesDict['displayManAddress'] = True
 			valuesDict['displayManAddressButton'] = True
 			valuesDict['manualAddressResponse'] = True
 			return valuesDict
 
+		address = valuesDict['address']
+		if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
+			self.logger.debug(u"%s: %s has child_id", func, address)
+			valuesDict['multiPlug'] = True
+			valuesDict['outletsAvailable'] = self.deviceSearchResults[address]['system']['get_sysinfo']['child_num']
+		else:
+			self.logger.debug(u"%s: %s does not have child_id", func, address)
+			valuesDict['multiPlug'] = False
+			valuesDict['outletsAvailable'] = 1
+
+		if 'ENE' in self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
+			valuesDict['energyCapable'] = True
+		else:
+			valuesDict['energyCapable'] = False
+
+		self.logger.debug("returning valuesDict: %s" % valuesDict)
+
+		return valuesDict
+
 	def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
 		func = inspect.stack()[0][3]
+		self.logger.error(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
+
+		outletArray = []
 		try:
-			self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
-			outletArray = []
-			address = valuesDict['address']
-			maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
-		
-			for outlet in range(1, maxOutlet):
-				internalOutlet = int(outlet)-1
-				menuEntry = (str(internalOutlet).zfill(2), outlet)
-				outletArray.append(menuEntry)
+			if valuesDict['newDev']:
+				address = valuesDict['address']
+				maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
+			
+				for outlet in range(1, maxOutlet):
+					internalOutlet = int(outlet)-1
+					menuEntry = (str(internalOutlet).zfill(2), outlet)
+					outletArray.append(menuEntry)
+			else:	
+				self.logger.error(u"%s: outlets avail %s" % (func, valuesDict['outletsAvailable']))
+				for outlet in range(0, int(valuesDict['outletsAvailable'])):
+					self.logger.error(u"%s: loop %s" % (func, outlet))
+					internalOutlet = int(outlet)
+					menuEntry = (str(internalOutlet).zfill(2), outlet+1)
+					outletArray.append(menuEntry)
+
 		except:
 			pass
 		return outletArray
@@ -633,7 +665,7 @@ class Plugin(indigo.PluginBase):
 	
 	def displayButtonPressed(self, valuesDict, bar):
 		func = inspect.stack()[0][3]
-		self.logger.info("%s: called with valuesDict=%s", func, valuesDict)
+		self.logger.debug("%s: called with valuesDict=%s", func, valuesDict)
 
 		devNumber = int(valuesDict['targetDevice'])
 		dev = indigo.devices[devNumber]

@@ -169,7 +169,6 @@ class tplink_smartplug():
 			for i in range(discovery_packets):
 				sock.sendto(encrypted_req[4:], (ip, port))
 
-			devices = {}
 			print("Waiting %s seconds for responses..." % timeout)
 
 			foundDevs = {}
