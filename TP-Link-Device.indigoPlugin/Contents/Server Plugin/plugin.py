@@ -13,6 +13,7 @@ import threading
 from tplink_smartplug import tplink_smartplug
 import time
 import inspect
+import logging
 
 # Note the "indigo" module is automatically imported and made available inside
 # our global name space by the host process.
@@ -290,6 +291,7 @@ class Plugin(indigo.PluginBase):
 	########################################
 	def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
 		super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
+		# self.indigo_log_handler.setFormatter(logging.Formatter('%(levelname)-10s\t%(name)s.%(funcName)-28s %(msg)s'))
 		self.debug = pluginPrefs.get("showDebugInfo", False)
 
 		self.offUpFreq = 30   # interval in secs between updates when the plug is off should be <= 30
@@ -315,8 +317,9 @@ class Plugin(indigo.PluginBase):
 		self.logger.debug(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 		errorsDict = indigo.Dict()
 
-		if not valuesDict['outletNum'] or valuesDict['outletNum'] == None or valuesDict['outletNum'] == "":
-			valuesDict['outletNum']   = "00"
+		# if not valuesDict['outletNum'] or valuesDict['outletNum'] == None or valuesDict['outletNum'] == "":
+		# 	valuesDict['outletNum']   = "00"
+		# 	self.logger.debug(u"%s: GOT HERE 1", func)
 
 		if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
 			valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
@@ -338,6 +341,7 @@ class Plugin(indigo.PluginBase):
 			self.initializeDev(valuesDict)
 		valuesDict['newDev'] = False
 		valuesDict['initialize'] = False
+		self.logger.debug(u"%s: GOT HERE 2", func)
 		return (True, valuesDict, errorsDict)
 
 	def validatePrefsConfigUi(self, valuesDict):
@@ -611,6 +615,7 @@ class Plugin(indigo.PluginBase):
 			self.logger.debug(u"%s: %s does not have child_id", func, address)
 			valuesDict['multiPlug'] = False
 			valuesDict['outletsAvailable'] = 1
+			valuesDict['outletNum'] = "00"
 
 		if 'ENE' in self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
 			valuesDict['energyCapable'] = True
@@ -626,24 +631,36 @@ class Plugin(indigo.PluginBase):
 		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 
 		outletArray = []
-		try:
-			if valuesDict['newDev']:
-				address = valuesDict['address']
-				maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
-			
-				for outlet in range(1, maxOutlet):
-					internalOutlet = int(outlet)-1
-					menuEntry = (str(internalOutlet).zfill(2), outlet)
-					outletArray.append(menuEntry)
-			else:	
-				self.logger.debug(u"%s: outlets avail %s" % (func, valuesDict['outletsAvailable']))
+
+		if 'newDev' in valuesDict and 'address' in valuesDict:
+			address = valuesDict['address']
+			if address in self.deviceSearchResults:
+				if valuesDict['addressSelect'] == 'manual':
+					if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
+						maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
+						address = valuesDict['address']
+					
+						for outlet in range(1, maxOutlet):
+							internalOutlet = int(outlet)-1
+							menuEntry = (str(internalOutlet).zfill(2), outlet)
+							outletArray.append(menuEntry)
+					else:	
+						self.logger.debug(u"%s: outlets avail %s" % (func, valuesDict['outletsAvailable']))
+						for outlet in range(0, int(valuesDict['outletsAvailable'])):
+							self.logger.debug(u"%s: loop %s" % (func, outlet))
+							internalOutlet = int(outlet)
+							menuEntry = (str(internalOutlet).zfill(2), outlet+1)
+							outletArray.append(menuEntry)
+			elif valuesDict['outletsAvailable'] > 0:
+				self.logger.debug(u"%s: outlets 2 avail %s" % (func, valuesDict['outletsAvailable']))
 				for outlet in range(0, int(valuesDict['outletsAvailable'])):
+					self.logger.debug(u"%s: loop %s" % (func, outlet))
 					internalOutlet = int(outlet)
 					menuEntry = (str(internalOutlet).zfill(2), outlet+1)
 					outletArray.append(menuEntry)
 
-		except:
-			pass
+
+		self.logger.debug(u"%s: returned: OA=%s" % (func, outletArray))
 		return outletArray
 
 	########################################

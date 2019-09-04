@@ -25,7 +25,7 @@
 					<Title>Continue</Title>
 					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
-				￼<Field id="outletNum" type="menu" hidden="false" defaultValue="1" visibleBindingId="multiPlug"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+				￼<Field id="outletNum" type="menu" hidden="false" defaultValue="00" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
 					<List class='self' method='selectTpOutlet' dynamicReload="true" />
 					<Label>Outlet number</Label>
 				</Field>
