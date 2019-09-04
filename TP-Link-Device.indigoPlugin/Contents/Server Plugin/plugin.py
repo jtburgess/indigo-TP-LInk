@@ -312,7 +312,7 @@ class Plugin(indigo.PluginBase):
 	######################
 	def validateDeviceConfigUi(self, valuesDict, typeId, devId):
 		func = inspect.stack()[0][3]
-		self.logger.error(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
+		self.logger.debug(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 		errorsDict = indigo.Dict()
 
 		if not valuesDict['outletNum']:
@@ -320,7 +320,7 @@ class Plugin(indigo.PluginBase):
 
 		if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
 			valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
-		self.logger.error(u"%s: left with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
+		self.logger.debug(u"%s: left with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 
 
 		# cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
@@ -618,7 +618,7 @@ class Plugin(indigo.PluginBase):
 
 	def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
 		func = inspect.stack()[0][3]
-		self.logger.error(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
+		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
 
 		outletArray = []
 		try:
@@ -631,9 +631,8 @@ class Plugin(indigo.PluginBase):
 					menuEntry = (str(internalOutlet).zfill(2), outlet)
 					outletArray.append(menuEntry)
 			else:	
-				self.logger.error(u"%s: outlets avail %s" % (func, valuesDict['outletsAvailable']))
+				self.logger.debug(u"%s: outlets avail %s" % (func, valuesDict['outletsAvailable']))
 				for outlet in range(0, int(valuesDict['outletsAvailable'])):
-					self.logger.error(u"%s: loop %s" % (func, outlet))
 					internalOutlet = int(outlet)
 					menuEntry = (str(internalOutlet).zfill(2), outlet+1)
 					outletArray.append(menuEntry)
