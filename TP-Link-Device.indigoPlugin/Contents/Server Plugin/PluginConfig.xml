@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <PluginConfig>
 	<Field id="logOnOff" type="checkbox" defaultValue="false">
-        <Label>Log On and Off events:</Label>
+        <Label>Log On and Off events</Label>
     </Field>
 	<Field id="devPoll" type="checkbox" defaultValue="true">
-        <Label>Enable multi-plug device polling:</Label>
+        <Label>Enable multi-plug device polling</Label>
     </Field>
         <Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
         <Label>Polling interval when multi-plug device is On</Label>

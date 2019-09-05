@@ -308,7 +308,7 @@ class Plugin(indigo.PluginBase):
 
 		self.offUpFreq = 30   # interval in secs between updates when the plug is off should be <= 30
 		self.onUpFreq  =  2   # interval in secs between updates when the plug is on
-		self.logOnOff = self.pluginPrefs['logOnOff']
+		self.logOnOff = pluginPrefs.get('logOnOff', False)
 		self.updateFreq = self.offUpFreq
 		self.tpThreads = {}
 		self.tpDevices = {}
@@ -470,7 +470,7 @@ class Plugin(indigo.PluginBase):
 		return valuesDict
 
 	########################################
-	# Relay / Dimmer Action callback
+	# Relay Action callback
 	######################
 	def actionControlDimmerRelay(self, action, dev):
 		func = inspect.stack()[0][3]
