@@ -582,6 +582,7 @@ class Plugin(indigo.PluginBase):
 		else:
 			tplink_discover = tplink_smartplug(None, None)
 			self.deviceSearchResults = tplink_discover.send('discover')
+			self.logger.info(u"%s: received %s" % (func, self.deviceSearchResults))
 
 			for address in self.deviceSearchResults:
 				model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']

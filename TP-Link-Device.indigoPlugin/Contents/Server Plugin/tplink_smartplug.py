@@ -165,7 +165,7 @@ class tplink_smartplug():
 			sock.settimeout(float(timeout))
 
 			req = cmd
-			print("Sending discovery to %s:%s" % (ip, port))
+			print("Sending discovery to %s:%s   %s" % (ip, port, req))
 
 			encrypted_req = encrypt(req)
 			for i in range(discovery_packets):
@@ -181,14 +181,14 @@ class tplink_smartplug():
 					data, addr = sock.recvfrom(4096)
 					ip, port = addr
 					info = json.loads(decrypt(data))
-					# print("%s\n%s\n" % (ip, info))
+					print("%s\n%s\n" % (ip, info))
 					if not ip in foundDevs:
 						foundDevs[ip] = info
 						foundCount += 1
-			except socket.timeout:
-				return json.dumps({'error': 'TP-Link connection timeout'})
-			except Exception as e:
-				return json.dumps({'error': str(e)})
+			# except socket.timeout:
+			# 	return json.dumps({'error': 'TP-Link connection timeout'})
+			except:
+				return foundDevs
 				
 			# print("Found %s devices" % (foundCount))
 			# for device in foundDevs:
@@ -256,9 +256,10 @@ def main():
 		data = my_target.send(cmd)
 
 	print "Sent:     ", args.command
-
+	print data
 	# data[0] = "{"
-	response = json.loads(data)
+	response = data #json.loads(data)
+
 	try:
 		# pretty print the json result
 		# json_result = json.loads(data)
