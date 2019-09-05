@@ -14,6 +14,7 @@ from tplink_smartplug import tplink_smartplug
 import time
 import inspect
 import logging
+import pdb
 
 # Note the "indigo" module is automatically imported and made available inside
 # our global name space by the host process.
@@ -29,7 +30,6 @@ class myThread(Thread):
 		self.lastState = 1
 		self.lastMultiPlugOnCount = 0
 		self.pluginPrefs = pluginPrefs
-		self.logOnOff = self.pluginPrefs['logOnOff']
 
 		self.outlets = {}
 		outletNum = dev.pluginProps['outletNum']
@@ -157,8 +157,7 @@ class myThread(Thread):
 											{'key':'alias', 'value':alias}
 											]
 										self.outlets[outlet].updateStatesOnServer(state_update_list)
-										if self.logOnOff:
-											self.logger.info(u"%s set to %s", self.name, logState)
+										self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
 
 						# Before we go, check to see if we need to update the polling interval
 						if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
@@ -197,8 +196,7 @@ class myThread(Thread):
 								{'key':'alias', 'value':alias}
 								]
 							dev.updateStatesOnServer(state_update_list)
-							if self.logOnOff:
-								self.logger.info(u"%s set to %s", self.name, logState)
+							self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
 							self.logger.debug(u"%s: %s, updated state on server to %s (%s, %s)", func, self.name, state, rssi, alias)
 					
 					self.logger.debug(u"%s: finished state update %s" % (self.name, data))
@@ -267,7 +265,7 @@ class myThread(Thread):
 							dev.updateStatesOnServer(state_update_list)
 
 							self.logger.debug("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
-			
+				indigo.debugger()
 				self.logger.debug(u"%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
 				pTime = 0.5
 				cTime = float(self.pollFreq)
@@ -310,6 +308,7 @@ class Plugin(indigo.PluginBase):
 
 		self.offUpFreq = 30   # interval in secs between updates when the plug is off should be <= 30
 		self.onUpFreq  =  2   # interval in secs between updates when the plug is on
+		self.logOnOff = self.pluginPrefs['logOnOff']
 		self.updateFreq = self.offUpFreq
 		self.tpThreads = {}
 		self.tpDevices = {}
@@ -523,7 +522,7 @@ class Plugin(indigo.PluginBase):
 				self.logger.error("turn {} command failed (error code: {})".format(cmd, error_code))
 		except:
 			pass
-
+		indigo.debugger()
 		if sendSuccess:
 			# If success then log that the command was successfully sent.
 			self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
@@ -534,6 +533,8 @@ class Plugin(indigo.PluginBase):
 			else:
 				state = False
 			dev.updateStateOnServer(key="onOffState", value=state)
+			if self.logOnOff:
+				self.logger.info(u"%s set to %s", dev.name, cmd)
 			#self.tpThreads[dev.address].interupt(dev=dev, action='status')
 			
 		else:
@@ -582,7 +583,7 @@ class Plugin(indigo.PluginBase):
 		else:
 			tplink_discover = tplink_smartplug(None, None)
 			self.deviceSearchResults = tplink_discover.send('discover')
-			self.logger.info(u"%s: received %s" % (func, self.deviceSearchResults))
+			self.logger.debug(u"%s: received %s" % (func, self.deviceSearchResults))
 
 			for address in self.deviceSearchResults:
 				model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
