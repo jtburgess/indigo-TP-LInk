@@ -114,7 +114,7 @@ class tplink_smartplug():
 				# sock = socket.create_connection((self.ip, self.port), timeout)
 
 				sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				sock.settimeout(5)
+				sock.settimeout(3.0)
 				sock.connect((self.ip, 9999))
 
 				# _LOGGER.debug("> (%i) %s", len(cmd), cmd)
@@ -132,8 +132,10 @@ class tplink_smartplug():
 					buffer += chunk
 					if (length > 0 and len(buffer) >= length + 4) or not chunk:
 						break
+			except socket.timeout:
+				return json.dumps({'error': 'TP-Link connection timeout'})
 			except Exception as e:
-				return ("Fatal error in tplink_smartplug: %s" % (str(e)))
+				return json.dumps({'error': "TP-Link error: " + str(e)})
 		
 			finally:
 				try:
@@ -155,7 +157,7 @@ class tplink_smartplug():
 			cmd = commands['discover']
 			ip = '255.255.255.255'
 			port = 9999
-			timeout = 3
+			timeout = 4.0
 			discovery_packets = 3
 			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 			sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -184,10 +186,10 @@ class tplink_smartplug():
 						foundDevs[ip] = info
 						foundCount += 1
 			except socket.timeout:
-				print("Got socket timeout, which is okay.")
-			except Exception as ex:
-				print("Got exception %s", ex)
-
+				return json.dumps({'error': 'TP-Link connection timeout'})
+			except Exception as e:
+				return json.dumps({'error': str(e)})
+				
 			# print("Found %s devices" % (foundCount))
 			# for device in foundDevs:
 			# 	print("%s: %s\n" % (device, foundDevs[device]))
