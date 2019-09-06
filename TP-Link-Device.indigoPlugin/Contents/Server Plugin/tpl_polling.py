@@ -237,6 +237,7 @@ class myThread(Thread):
 
 										state_update_list = [
 											{'key':'curWatts', 'value':curWatts},
+											{'key':'totWatts', 'value':totWatts},
 											{'key':'curVolts', 'value':curVolts},
 											{'key':'curAmps', 'value':curAmps},
 											{'key':"curEnergyLevel", 'value':curWatts, 'uiValue':str(curWatts) + " w"},
@@ -269,6 +270,7 @@ class myThread(Thread):
 
 							state_update_list = [
 								{'key':'curWatts', 'value':curWatts},
+								{'key':'totWatts', 'value':totWatts},
 								{'key':'curEnergyLevel', 'value':curWatts, 'uiValue':str(curWatts) + " w"},
 								{'key':'accumEnergyTotal', 'value':totWatts, 'uiValue':str(totWatts) + " kwh"},
 								{'key':'curVolts', 'value':curVolts},
