@@ -233,12 +233,14 @@ class myThread(Thread):
 										curWatts = data['emeter']['get_realtime']['power_mw']/1000
 										curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 										curAmps  = data['emeter']['get_realtime']['current_ma']/1000
+										totWatts = data['emeter']['get_realtime']['total_wh']/1000
 
 										state_update_list = [
 											{'key':'curWatts', 'value':curWatts},
 											{'key':'curVolts', 'value':curVolts},
 											{'key':'curAmps', 'value':curAmps},
-											{'key':"curEnergyLevel", 'value':curWatts, 'uiValue':str(curWatts) + " w"}
+											{'key':"curEnergyLevel", 'value':curWatts, 'uiValue':str(curWatts) + " w"},
+											{'key':'accumEnergyTotal', 'value':totWatts, 'uiValue':str(totWatts) + " kwh"}
 											]
 										indigoDevice.updateStatesOnServer(state_update_list)
 
@@ -263,10 +265,12 @@ class myThread(Thread):
 							curWatts = data['emeter']['get_realtime']['power_mw']/1000
 							curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 							curAmps  = data['emeter']['get_realtime']['current_ma']/1000
+							totWatts = data['emeter']['get_realtime']['total_wh']/1000
 
 							state_update_list = [
 								{'key':'curWatts', 'value':curWatts},
 								{'key':'curEnergyLevel', 'value':curWatts, 'uiValue':str(curWatts) + " w"},
+								{'key':'accumEnergyTotal', 'value':totWatts, 'uiValue':str(totWatts) + " kwh"},
 								{'key':'curVolts', 'value':curVolts},
 								{'key':'curAmps', 'value':curAmps}
 								]
