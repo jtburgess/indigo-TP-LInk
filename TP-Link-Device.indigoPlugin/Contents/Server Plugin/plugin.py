@@ -9,17 +9,18 @@ import json
 from threading import Event
 from threading import Thread
 from Queue import Queue
-import threading
+# import threading
 from tplink_smartplug import tplink_smartplug
 import time
 import inspect
 import logging
 import pdb
+from tpl_polling import myThread
 
 # Note the "indigo" module is automatically imported and made available inside
 # our global name space by the host process.
 
-class myThread(Thread):
+""" class myThread(Thread):
 	def __init__(self, logger, dev, pluginPrefs):
 		Thread.__init__(self)
 		self.logger = logger
@@ -112,6 +113,7 @@ class myThread(Thread):
 		lastState = 0
 		lastStateMulti = {}
 		error_counter = 0
+		pollErrors = 0
 
 		while True:
 			try:
@@ -122,9 +124,15 @@ class myThread(Thread):
 
 				# Check if we got an error back
 				if 'error' in data:
-					self.logger.error(u"Polling error for device \"%s\": %s" % (self.name, data['error']))
+					if pollErrors < 10:
+						self.logger.error(u"Polling error for device \"%s\": %s" % (self.name, data['error']))
+						pollErrors += 1
+					else:
+						self.logger.error(u"Unable to polling device \"%s\": %s after 10 attempts. Polling for this device will now shut down." % (self.name, data['error']))
+						self.stop()
 				else:
 					# First, we check the onOff state of each plug
+					pollErrors = 0
 					if self.multiPlug:
 						self.logger.debug(u"%s: entered multiPlug state block" % (self.name))
 						multiPlugOnCount = 0
@@ -303,7 +311,7 @@ class myThread(Thread):
 					return
 				else:
 					error_counter += 1
-					self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
+					self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq)) """
 				
 
 ################################################################################
