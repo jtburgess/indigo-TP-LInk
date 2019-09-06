@@ -561,14 +561,16 @@ class Plugin(indigo.PluginBase):
 			# Else log failure but do NOT update state on Indigo Server.
 			self.logger.error(u'send "{}" {} failed with result "{}"'.format(dev.name, cmd, result))
 
-	########################################
-	# General Action callback
-	######################
-	def actionControlGeneral(self, action, dev):
-		if action.deviceAction == indigo.kDeviceGeneralAction.RequestStatus:
-			self.getInfo(action, dev)
-		else:
-			self.logger.error(u'unsupported Action callback "{}" {}'.format(dev.name, action))
+	# ########################################
+	# # General Action callback
+	# ######################
+	# def actionControlGeneral(self, action, dev):
+	# 	func = inspect.stack()[0][3]
+	# 	self.logger.info(u"%s: action: %s for device: %s." % (func, action, dev.name))
+	# 	if action.deviceAction == indigo.kDeviceGeneralAction.RequestStatus:
+	# 		self.getInfo(action, dev)
+	# 	else:
+	# 		self.logger.error(u'unsupported Action callback "{}" {}'.format(dev.name, action))
 
 	########################################
 	# Custom Plugin Action callbacks (defined in Actions.xml)
@@ -592,6 +594,8 @@ class Plugin(indigo.PluginBase):
 	# General Action callback
 	######################
 	def actionControlUniversal(self, action, dev):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: action: %s for device: %s." % (func, action, dev.name))
 		###### ENERGY UPDATE ######
 		if action.deviceAction == indigo.kUniversalAction.EnergyUpdate:
 			if dev.pluginProps['energyCapable'] == True :
@@ -602,6 +606,10 @@ class Plugin(indigo.PluginBase):
 		###### STATUS REQUEST ######
 		elif action.deviceAction == indigo.kUniversalAction.RequestStatus:
 			self.getInfo("", dev)
+
+		###### ENERGY RESET ######
+		elif action.deviceAction == indigo.kUniversalAction.EnergyReset:
+			self.logger.info("Device " + dev.name + " wants an energy reset")
 
 	########################################
 	# Device ConfigUI Callbacks

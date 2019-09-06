@@ -233,7 +233,7 @@ class myThread(Thread):
 										curWatts = data['emeter']['get_realtime']['power_mw']/1000
 										curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 										curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-										totWatts = data['emeter']['get_realtime']['total_wh']/1000
+										totWatts = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
 
 										state_update_list = [
 											{'key':'curWatts', 'value':curWatts},
@@ -266,7 +266,7 @@ class myThread(Thread):
 							curWatts = data['emeter']['get_realtime']['power_mw']/1000
 							curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 							curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-							totWatts = data['emeter']['get_realtime']['total_wh']/1000
+							totWatts = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
 
 							state_update_list = [
 								{'key':'curWatts', 'value':curWatts},
