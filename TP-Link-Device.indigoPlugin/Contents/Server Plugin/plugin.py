@@ -110,8 +110,9 @@ class myThread(Thread):
 
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
 		lastState = 0
-
+		lastStateMulti = {}
 		error_counter = 0
+
 		while True:
 			try:
 				self.logger.debug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
@@ -128,26 +129,31 @@ class myThread(Thread):
 						self.logger.debug(u"%s: entered multiPlug state block" % (self.name))
 						multiPlugOnCount = 0
 						elements = data['system']['get_sysinfo']['children']
+
 						self.logger.debug(u"%s: Elements %s" % (self.name, elements))
-						
 						for element in elements:
 							multiPlugOnCount += int(element['state'])
+							outletName = element['alias']
+							outletNum = element['id'][-2:]
 							# self.logger.error(u"%s: on count = %s last on count was %s for %s" % (func, multiPlugOnCount, self.lastMultiPlugOnCount, self.dev.address))
 							devState = bool(element['state'])
-							self.logger.debug(u"%s: id=%s, alias=%s, element:%s" % (self.name, element['id'], element['alias'], element))
+							self.logger.debug(u"%s: Starting new element... id=%s, outletNum=%s, element=%s" % (outletName, element['id'], outletNum, element))
 							for outlet in self.outlets:
-								self.logger.debug(u"%s: Got Here -1x with %s and %s" % (self.name, outlet, element['id'][-2:]))
-								if element['id'][-2:] == outlet:
-									# self.logger.debug(u"%s: YES %s" % (self.name, self.outlets[outlet].id))
-									self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", self.name, self.lastState, devState)
-									if devState != self.lastState:
+								self.logger.debug(u"%s: Outlet=%s and id=%s id=%s" % (outletName, outlet, element['id'], element['id'][-2:]))
+								if outlet == outletNum: #element['id'][-2:] == outlet:
+									self.logger.debug(u"%s: YES %s" % (outletName, outletNum))
+									# self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", outletName, lastStateMulti[outletNum], devState)
+									if not outletNum in lastStateMulti:
+										lastStateMulti[outletNum] = 0
+
+									if devState != lastStateMulti[outletNum]:
 										if devState:
 											state = True
 											logState = "On"
 										else:
 											state = False
 											logState = "Off"
-										self.lastState = devState								
+										lastStateMulti[outletNum] = devState								
 
 										alias = element['alias']
 										rssi = data['system']['get_sysinfo']['rssi']
@@ -158,6 +164,8 @@ class myThread(Thread):
 											]
 										self.outlets[outlet].updateStatesOnServer(state_update_list)
 										self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
+
+
 
 						# Before we go, check to see if we need to update the polling interval
 						if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
@@ -291,7 +299,7 @@ class myThread(Thread):
 
 			except Exception as e:
 				if error_counter == 10:
-					self.logger.error("Unable to update %s: %s after 10 attempts. Polling for this device will now shut down" % (self.name, str(e)))
+					self.logger.error("Unable to update %s: after 10 attempts. Polling for this device will now shut down. (%s)" % (self.name, str(e)))
 					return
 				else:
 					error_counter += 1
@@ -490,23 +498,23 @@ class Plugin(indigo.PluginBase):
 		###### TURN ON ######
 		if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
 			cmd = "on"
-			#if dev.pluginProps['devPoll']:
-				#self.tpThreads[dev.address].interupt(state=True, action='state')
+			if dev.pluginProps['devPoll']:
+				self.tpThreads[dev.address].interupt(state=True, action='state')
 		###### TURN OFF ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
 			cmd = "off"
-			#if dev.pluginProps['devPoll']:
-				#self.tpThreads[dev.address].interupt(state=False, action='state')
+			if dev.pluginProps['devPoll']:
+				self.tpThreads[dev.address].interupt(state=False, action='state')
 		###### TOGGLE ######
 		elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
 			if dev.onState:
 				cmd = "off"
-				# if dev.pluginProps['devPoll']:
-				# 	self.tpThreads[dev.address].interupt(state=False, action='state')
+				if dev.pluginProps['devPoll']:
+					self.tpThreads[dev.address].interupt(state=False, action='state')
 			else:
 				cmd = "on"
-				# if dev.pluginProps['devPoll']:
-				# 	self.tpThreads[dev.address].interupt(state=True, action='state')
+				if dev.pluginProps['devPoll']:
+					self.tpThreads[dev.address].interupt(state=True, action='state')
 		else:
 			self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
 			return
