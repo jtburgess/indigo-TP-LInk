@@ -355,6 +355,10 @@ class Plugin(indigo.PluginBase):
 		self.logger.debug(u"%s: left with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 
 
+		if not valuesDict['energyCapable']:
+			valuesDict['SupportsEnergyMeter'] = False
+			valuesDict['SupportsEnergyMeterCurPower'] = False
+
 		# cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
 		# response = os.system(cmd)
 		# self.logger.info("Response: %s " % (response))
@@ -584,7 +588,24 @@ class Plugin(indigo.PluginBase):
 
 		return
 
+	########################################
+	# General Action callback
+	######################
+	def actionControlUniversal(self, action, dev):
+		###### ENERGY UPDATE ######
+		if action.deviceAction == indigo.kUniversalAction.EnergyUpdate:
+			if dev.pluginProps['energyCapable'] == True :
+				self.logger.info("Energy Status Update Requested for " + dev.name)
+				self.getInfo("", dev)
+			else: self.logger.info("Device " + dev.name + " not energy capable.")
+
+		###### STATUS REQUEST ######
+		elif action.deviceAction == indigo.kUniversalAction.RequestStatus:
+			self.getInfo("", dev)
+
+	########################################
 	# Device ConfigUI Callbacks
+	######################
 	def getTpDevice(self, filter="", valuesDict=None, typeId="", targetId=0):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))

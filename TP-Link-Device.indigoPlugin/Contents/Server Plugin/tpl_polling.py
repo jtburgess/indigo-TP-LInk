@@ -111,7 +111,7 @@ class myThread(Thread):
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
 		lastState = 0
 		lastStateMulti = {}
-		error_counter = 0
+		error_counter = 2
 
 		while True:
 			try:
@@ -144,7 +144,7 @@ class myThread(Thread):
 									self.logger.debug(u"%s: YES %s" % (outletName, outletNum))
 									# self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", outletName, lastStateMulti[outletNum], devState)
 									if not outletNum in lastStateMulti:
-										lastStateMulti[outletNum] = 0
+										lastStateMulti[outletNum] = 2
 
 									if devState != lastStateMulti[outletNum]:
 										if devState:
