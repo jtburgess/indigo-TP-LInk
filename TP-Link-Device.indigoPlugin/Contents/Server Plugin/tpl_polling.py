@@ -263,10 +263,9 @@ class pollingThread(Thread):
 										curWatts = data['emeter']['get_realtime']['power_mw']/1000
 										curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 										curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-										if totAccuUsage > 0:
-											totWattHrs = round(totAccuUsage - float(data['emeter']['get_realtime']['total_wh'])/100, 1)
-										else:
-											totWattHrs = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
+										totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
+										
+											
 										state_update_list = [
 											{'key':'curWatts', 'value':curWatts},
 											{'key':'totWattHrs', 'value':totWattHrs},
@@ -301,8 +300,8 @@ class pollingThread(Thread):
 							curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 							curAmps  = data['emeter']['get_realtime']['current_ma']/1000
 							# totWattHrs = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
-							totWattHrs = round(totAccuUsage - float(data['emeter']['get_realtime']['total_wh'])/100, 1)
-
+							totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
+							
 							state_update_list = [
 								{'key':'curWatts', 'value':curWatts},
 								{'key':'totWattHrs', 'value':totWattHrs},
