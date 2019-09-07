@@ -19,8 +19,8 @@ import pdb
 # Note the "indigo" module is automatically imported and made available inside
 # our global name space by the host process.
 
-class myThread(Thread):
-	def __init__(self, logger, dev, pluginPrefs):
+class pollingThread(Thread):
+	def __init__(self, logger, dev, logOnOff, pluginPrefs):
 		Thread.__init__(self)
 		self.logger = logger
 		func = inspect.stack()[0][3]
@@ -28,8 +28,10 @@ class myThread(Thread):
 		self.dev = dev
 		self.name = dev.name
 		self.lastState = 1
+		self.localOnOff = False
 		self.lastMultiPlugOnCount = 0
 		self.pluginPrefs = pluginPrefs
+		self.logOnOff = logOnOff
 
 		self.outlets = {}
 		outletNum = dev.pluginProps['outletNum']
@@ -45,8 +47,6 @@ class myThread(Thread):
 		else:
 			self.onPoll = int(dev.pluginProps['onPoll'])
 			self.offPoll = int(dev.pluginProps['offPoll'])
-			
-		# self.configured = self.dev.configured
 
 		self.onOffState = dev.states['onOffState']
 		if self.onOffState:
@@ -84,12 +84,17 @@ class myThread(Thread):
 			self.logger.error(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
 			return
 
+		if action == 'state':
+			self.localOnOff = True
+
 		time.sleep(0.5)
 		self.changed = True
 		return(True)
 			
 	def stop(self):
-		self.logger.debug(u"from: %s  time to quit" % (self.name))
+		# We should probably tell someone
+		self.logger.info(u"Polling stopped for %s@%s.", self.name, self.dev.address)
+
 		self._is_running = False
 
 	def run(self):
@@ -98,10 +103,6 @@ class myThread(Thread):
 		dev = self.dev
 		devType = dev.deviceTypeId
 		energyCapable = dev.pluginProps['energyCapable']
-
-		# if dev.address == "":
-		# 	devAddr = dev.pluginProps['addressManual']
-		# else:
 		devAddr = dev.address
 		devPort = 9999
 		self.logger.debug(u"%s multiPlug is %s" % (dev.name, self.multiPlug))
@@ -109,9 +110,10 @@ class myThread(Thread):
 		self.logger.debug(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
-		lastState = 0
+		lastState = 2
 		lastStateMulti = {}
-		error_counter = 2
+		error_counter = 0
+		pollErrors = 0
 
 		while True:
 			try:
@@ -122,7 +124,18 @@ class myThread(Thread):
 
 				# Check if we got an error back
 				if 'error' in data:
-					self.logger.error(u"Polling error for device \"%s\": %s" % (self.name, data['error']))
+					pollErrors += 1
+					if pollErrors == 2:
+						self.logger.error(u"2 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
+					elif pollErrors == 5:
+						self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
+					elif pollErrors == 8:
+						self.logger.error(u"8 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
+					elif pollErrors >= 10:
+						self.logger.error(u"Unable to poll device \"%s\": %s after 10 attempts. Polling for this device will now shut down." % (self.name, data['error']))
+						indigo.device.enable(dev.id, value=False)
+						return
+
 				else:
 					# First, we check the onOff state of each plug
 					if self.multiPlug:
@@ -163,9 +176,12 @@ class myThread(Thread):
 											{'key':'alias', 'value':alias}
 											]
 										self.outlets[outlet].updateStatesOnServer(state_update_list)
+
+										if not self.localOnOff:
+											if self.logOnOff:
+												self.logger.info(u"%s - s remotely set to %s", self.name, outletName, logState)
+
 										self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
-
-
 
 						# Before we go, check to see if we need to update the polling interval
 						if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
@@ -177,6 +193,7 @@ class myThread(Thread):
 							self.logger.debug(u"%s: Changing polling interval to on for %s" % (func, self.dev.address))
 							self.interupt(state=False, action='state')
 						self.lastMultiPlugOnCount = multiPlugOnCount
+						self.localOnOff = False
 						
 					else:  # we have a single outlet device
 						# self.logger.debug(u"%s: Got Here 0 with %s" % (self.name, data))
@@ -187,14 +204,14 @@ class myThread(Thread):
 							if devState:
 								state = True
 								logState = "On"
-								self.interupt(state=True, action='state')
+								# self.interupt(state=True, action='state')
 							else:
 								state = False
 								logState = "Off"
-								self.interupt(state=False, action='state')
+								# self.interupt(state=False, action='state')
 							lastState = devState	
 
-							self.logger.debug(u"%s: 2 state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
+							self.logger.debug(u"%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
 
 							alias = data['system']['get_sysinfo']['alias']
 							rssi = data['system']['get_sysinfo']['rssi']
@@ -204,6 +221,16 @@ class myThread(Thread):
 								{'key':'alias', 'value':alias}
 								]
 							dev.updateStatesOnServer(state_update_list)
+
+							self.logger.debug(u"%s is now %s: localOnOff=%s, logOnOff=%s", self.name, logState, self.localOnOff, self.logOnOff)
+										
+							if not self.localOnOff:
+								if self.logOnOff:
+									self.logger.info(u"%s remotely set to %s", self.name, logState)
+							
+							self.interupt(state=state, action='state')
+							self.localOnOff = False
+
 							self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
 							self.logger.debug(u"%s: %s, updated state on server to %s (%s, %s)", func, self.name, state, rssi, alias)
 					
@@ -311,6 +338,7 @@ class myThread(Thread):
 			except Exception as e:
 				if error_counter == 10:
 					self.logger.error("Unable to update %s: after 10 attempts. Polling for this device will now shut down. (%s)" % (self.name, str(e)))
+					indigo.device.enable(dev.id, value=False)
 					return
 				else:
 					error_counter += 1
