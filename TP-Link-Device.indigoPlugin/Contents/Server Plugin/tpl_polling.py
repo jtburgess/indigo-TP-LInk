@@ -180,7 +180,7 @@ class pollingThread(Thread):
 
 										if not self.localOnOff:
 											if self.logOnOff:
-												self.logger.info(u"%s - s remotely set to %s", self.name, outletName, logState)
+												self.logger.info(u"%s -%s remotely set to %s", self.name, outletName, logState)
 
 										self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
 
