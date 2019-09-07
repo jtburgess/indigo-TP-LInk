@@ -138,6 +138,7 @@ class pollingThread(Thread):
 
 				else:
 					# First, we check the onOff state of each plug
+					pollErrors = 0
 					if self.multiPlug:
 						self.logger.debug(u"%s: entered multiPlug state block" % (self.name))
 						multiPlugOnCount = 0
