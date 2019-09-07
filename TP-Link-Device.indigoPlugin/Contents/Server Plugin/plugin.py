@@ -632,13 +632,13 @@ class Plugin(indigo.PluginBase):
 			if dev.pluginProps['energyCapable']: # abd the device does energy reporting
 				# Add the energy reporting states
 
-				accuWattHrs = self.getDeviceStateDictForNumberType(u"accuWattHrs", u"accuWattHrs", u"accuWattHrs")
+				#accuWattHrs = self.getDeviceStateDictForNumberType(u"accuWattHrs", u"accuWattHrs", u"accuWattHrs")
 				curWatts = self.getDeviceStateDictForNumberType(u"curWatts", u"curWatts", u"curWatts")
 				totWattHrs = self.getDeviceStateDictForNumberType(u"totWattHrs", u"totWattHrs", u"totWattHrs")
 				curVolts = self.getDeviceStateDictForNumberType(u"curVolts", u"curVolts", u"curVolts")
 				curAmps = self.getDeviceStateDictForNumberType(u"curAmps", u"curAmps", u"curAmps")
 				
-				statesDict.append(accuWattHrs)
+				#statesDict.append(accuWattHrs)
 				statesDict.append(curWatts)
 				statesDict.append(totWattHrs)
 				statesDict.append(curVolts)
