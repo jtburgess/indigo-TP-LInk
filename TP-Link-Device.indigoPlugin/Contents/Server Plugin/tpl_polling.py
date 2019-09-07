@@ -220,6 +220,8 @@ class myThread(Thread):
 								childId = element['id'][-2:]
 								if childId in self.outlets:
 									indigoDevice = self.outlets[childId]
+									totAccuUsage = float(indigoDevice.pluginProps['totAccuUsage'])
+
 									self.logger.debug(u"Found entry for outlet %s devId is %s", childId, indigoDevice.id)
 
 									state = element['state']
@@ -233,15 +235,15 @@ class myThread(Thread):
 										curWatts = data['emeter']['get_realtime']['power_mw']/1000
 										curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 										curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-										totWatts = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
+										totWattHrs = round(totAccuUsage - float(data['emeter']['get_realtime']['total_wh'])/100, 1)
 
 										state_update_list = [
 											{'key':'curWatts', 'value':curWatts},
-											{'key':'totWatts', 'value':totWatts},
+											{'key':'totWattHrs', 'value':totWattHrs},
 											{'key':'curVolts', 'value':curVolts},
 											{'key':'curAmps', 'value':curAmps},
 											{'key':"curEnergyLevel", 'value':curWatts, 'uiValue':str(curWatts) + " w"},
-											{'key':'accumEnergyTotal', 'value':totWatts, 'uiValue':str(totWatts) + " kwh"}
+											{'key':'accumEnergyTotal', 'value':totWattHrs, 'uiValue':str(totWattHrs) + " kwh"}
 											]
 										indigoDevice.updateStatesOnServer(state_update_list)
 
@@ -263,16 +265,19 @@ class myThread(Thread):
 							result = tplink_dev_energy.send('energy')
 							data = json.loads(result)
 							self.logger.debug("Received result: |%s|" % (result))
+
+							totAccuUsage = float(dev.pluginProps['totAccuUsage'])
 							curWatts = data['emeter']['get_realtime']['power_mw']/1000
 							curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 							curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-							totWatts = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
+							# totWattHrs = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
+							totWattHrs = round(totAccuUsage - float(data['emeter']['get_realtime']['total_wh'])/100, 1)
 
 							state_update_list = [
 								{'key':'curWatts', 'value':curWatts},
-								{'key':'totWatts', 'value':totWatts},
+								{'key':'totWattHrs', 'value':totWattHrs},
 								{'key':'curEnergyLevel', 'value':curWatts, 'uiValue':str(curWatts) + " w"},
-								{'key':'accumEnergyTotal', 'value':totWatts, 'uiValue':str(totWatts) + " kwh"},
+								{'key':'accumEnergyTotal', 'value':totWattHrs, 'uiValue':str(totWattHrs) + " kwh"},
 								{'key':'curVolts', 'value':curVolts},
 								{'key':'curAmps', 'value':curAmps}
 								]

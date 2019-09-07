@@ -14,6 +14,7 @@
 				</Field>
 				<Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
 					<Label>Enter the IP Address:</Label>
+					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
 				<Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id="actionButton" 
@@ -51,11 +52,15 @@
 				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
 					<Label>Check to re-read device parameters:</Label>
 				</Field>
+				<Field id="totAccuUsage" type="textfield" defaultValue="0" hidden="true">
+					<Label>Store total accumulated energy</Label>
+				</Field>
 				<Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
             	<Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
 			</ConfigUI>
 			<States>
-				<State id="rssi">
+			<!-- States are now dynamically created on plugin.py getDeviceStateList() -->
+				<!-- <State id="rssi">
 					<ValueType>String</ValueType>
 					<TriggerLabel>Signal Strength</TriggerLabel>
 					<ControlPageLabel>Signal Strength</ControlPageLabel>
@@ -84,7 +89,7 @@
 					<ValueType>Float</ValueType>
 					<TriggerLabel>Current Amps</TriggerLabel>
 					<ControlPageLabel>Current Amps</ControlPageLabel>
-				</State>
+				</State> -->
 			</States>
 		</Device>
 </Devices>

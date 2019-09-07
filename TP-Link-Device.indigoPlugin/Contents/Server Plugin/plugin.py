@@ -389,6 +389,9 @@ class Plugin(indigo.PluginBase):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s@%s.", func, dev.name, dev.address)
 		# Called for each device on startup
+		# Commit any state changes
+		dev.stateListOrDisplayStateIdChanged()
+
 		# get some data for local use from the device
 		name      = dev.name
 		address   = dev.address
@@ -561,21 +564,6 @@ class Plugin(indigo.PluginBase):
 			# Else log failure but do NOT update state on Indigo Server.
 			self.logger.error(u'send "{}" {} failed with result "{}"'.format(dev.name, cmd, result))
 
-	# ########################################
-	# # General Action callback
-	# ######################
-	# def actionControlGeneral(self, action, dev):
-	# 	func = inspect.stack()[0][3]
-	# 	self.logger.info(u"%s: action: %s for device: %s." % (func, action, dev.name))
-	# 	if action.deviceAction == indigo.kDeviceGeneralAction.RequestStatus:
-	# 		self.getInfo(action, dev)
-	# 	else:
-	# 		self.logger.error(u'unsupported Action callback "{}" {}'.format(dev.name, action))
-
-	########################################
-	# Custom Plugin Action callbacks (defined in Actions.xml)
-	######################
-
 	# The 'status' callback
 	def getInfo(self, pluginAction, dev):
 		func = inspect.stack()[0][3]
@@ -593,6 +581,8 @@ class Plugin(indigo.PluginBase):
 	########################################
 	# General Action callback
 	######################
+
+	# Energy and Status callback
 	def actionControlUniversal(self, action, dev):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: action: %s for device: %s." % (func, action, dev.name))
@@ -609,11 +599,53 @@ class Plugin(indigo.PluginBase):
 
 		###### ENERGY RESET ######
 		elif action.deviceAction == indigo.kUniversalAction.EnergyReset:
-			self.logger.info("Device " + dev.name + " wants an energy reset")
+			self.logger.info("%s: energy reset for Device: %s", func, dev.name)
+
+			# Get the plugionProps, modify them, and save them back
+			pluginProps = dev.pluginProps
+			accuUsage = float(pluginProps['totAccuUsage'])
+			curTotEnergy = float(dev.states['totWattHrs'])
+			accuUsage += curTotEnergy
+			pluginProps['totAccuUsage'] = accuUsage
+			dev.replacePluginPropsOnServer(pluginProps)
+
+			# and now reset the Indigo Device Detail display
+			dev.updateStateOnServer("accumEnergyTotal", 0.0)
+
 
 	########################################
 	# Device ConfigUI Callbacks
 	######################
+
+	# Dynamically create/update the states list for each device
+	def getDeviceStateList(self, dev):
+		func = inspect.stack()[0][3]
+		self.logger.debug(u"%s: called for: %s." % (func, dev))
+
+		statesDict = indigo.PluginBase.getDeviceStateList(self, dev)
+		rssi  = self.getDeviceStateDictForNumberType(u"rssi", u"rssi", u"rssi")
+		alias = self.getDeviceStateDictForNumberType(u"alias", u"alias", u"alias")
+		statesDict.append(rssi)
+		statesDict.append(alias)
+	
+		if len(dev.pluginProps) >0: # We actually have a device here...
+			if dev.pluginProps['energyCapable']: # abd the device does energy reporting
+				# Add the energy reporting states
+
+				accuWattHrs = self.getDeviceStateDictForNumberType(u"accuWattHrs", u"accuWattHrs", u"accuWattHrs")
+				curWatts = self.getDeviceStateDictForNumberType(u"curWatts", u"curWatts", u"curWatts")
+				totWattHrs = self.getDeviceStateDictForNumberType(u"totWattHrs", u"totWattHrs", u"totWattHrs")
+				curVolts = self.getDeviceStateDictForNumberType(u"curVolts", u"curVolts", u"curVolts")
+				curAmps = self.getDeviceStateDictForNumberType(u"curAmps", u"curAmps", u"curAmps")
+				
+				statesDict.append(accuWattHrs)
+				statesDict.append(curWatts)
+				statesDict.append(totWattHrs)
+				statesDict.append(curVolts)
+				statesDict.append(curAmps)
+
+		return statesDict
+
 	def getTpDevice(self, filter="", valuesDict=None, typeId="", targetId=0):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s, %s, %s, %s." % (func, filter, typeId, targetId, valuesDict))
