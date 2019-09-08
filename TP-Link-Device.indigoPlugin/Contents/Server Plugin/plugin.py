@@ -368,7 +368,7 @@ class Plugin(indigo.PluginBase):
 			except Exception as e:
 				self.logger.error("Discovery connection failed with (%s)" % (str(e)))
 
-			self.logger.info(u"%s: received %s" % (func, self.deviceSearchResults))
+			self.logger.debug(u"%s: received %s" % (func, self.deviceSearchResults))
 
 			for address in self.deviceSearchResults:
 				model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
