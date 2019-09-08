@@ -21,251 +21,54 @@
 #
 
 import socket
+import sys
 import argparse
-import struct
-from struct import pack
 import json
+from protocol import tplink_smartplug
 
 version = 0.2
 
 debug = False
 
-# Predefined Smart Plug Commands
-# For a full list of commands, consult tplink_commands.txt
-commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
-			'on'       : '{"system":{"set_relay_state":{"state":1}}}',
-			'off'      : '{"system":{"set_relay_state":{"state":0}}}',
-			'cloudinfo': '{"cnCloud":{"get_info":{}}}',
-			'wlanscan' : '{"netif":{"get_scaninfo":{"refresh":0}}}',
-			'time'     : '{"time":{"get_time":{}}}',
-			'discover' : '{"system":{"get_sysinfo":{}}}',
-			'schedule' : '{"schedule":{"get_rules":{}}}',
-			'countdown': '{"count_down":{"get_rules":{}}}',
-			'antitheft': '{"anti_theft":{"get_rules":{}}}',
-			'reboot'   : '{"system":{"reboot":{"delay":1}}}',
-			'reset'    : '{"system":{"reset":{"delay":1}}}',
-			'e+i'      : '{ "emeter": { "get_realtime": {} }, "system": { "get_sysinfo": {} } }',
-			'energy'   : '{"emeter":{"get_realtime":{}}}'
-}
 
-# Encryption and Decryption of TP-Link Smart Home Protocol
-# XOR Autokey Cipher with starting key = 171
-def encrypt(string):
-	key = 171
-	result = pack('>I', len(string))
-	for i in string:
-		a = key ^ ord(i)
-		key = a
-		result += chr(a)
-	return result
 
-def decrypt(string):
-	key = 171
-	result = ""
-	for i in string:
-		a = key ^ ord(i)
-		key = ord(i)
-		result += chr(a)
-	return result
-
-########################
-# the class has an optional deviceID string, used by power Strip devices (and others???)
-# and the send command has an optional childID representing the socket on the power Strip
-class tplink_smartplug():
-	def __init__(self, ip, port, deviceID = None, childID = None):
-		self.ip = ip
-		self.port = port
-
-		# both or neither deviceID and childID should be set
-		if (deviceID is not None and childID is not None) or (deviceID is None and childID is None):
-			pass # both combinations are ok
-		else:
-			quit("ERROR: both deviceID and childID must be set together")
-
-		self.deviceID = deviceID
-		self.childID = childID
-		if debug:
-			print("init with host=%s, port=%s" % ( ip, port) )
-		return
-
-	# Send command and receive reply
-	def send(self, cmd):
-		print cmd
-		if cmd != 'discover':
-			cmd = commands[cmd]
-			# else:
-			# 	quit("ERROR: unknown command: %s" % (cmd, ))
-
-			print ("Got %s" % cmd)
-
-			# if both deviceID and childID are set, { context... } is prepended to the command
-			if self.deviceID is not None and self.childID is not None:
-				context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
-				# now replace the initial '{' of the command with that string
-				cmd = context + cmd[1:]
-			# note error checking on deviceID and childID is done in __init__
-
-			if debug:
-				print ("send cmd=%s" % (cmd, ))
-			
-			### Insert pyHS100 code here
-			timeout = 10
-			try:
-				# sock = socket.create_connection((self.ip, self.port), timeout)
-
-				sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-				sock.settimeout(3.0)
-				sock.connect((self.ip, 9999))
-
-				# _LOGGER.debug("> (%i) %s", len(cmd), cmd)
-				sock.send(encrypt(cmd))
-
-				buffer = bytes()
-				# Some devices send responses with a length header of 0 and
-				# terminate with a zero size chunk. Others send the length and
-				# will hang if we attempt to read more data.
-				length = -1
-				while True:
-					chunk = sock.recv(4096)
-					if length == -1:
-						length = struct.unpack(">I", chunk[0:4])[0]
-					buffer += chunk
-					if (length > 0 and len(buffer) >= length + 4) or not chunk:
-						break
-			except socket.timeout:
-				return json.dumps({'error': 'TP-Link connection timeout'})
-			except Exception as e:
-				return json.dumps({'error': "TP-Link error: " + str(e)})
-		
-			finally:
-				try:
-					if sock:
-						sock.shutdown(socket.SHUT_RDWR)
-				except OSError:
-					# OSX raises OSError when shutdown() gets called on a closed
-					# socket. We ignore it here as the data has already been read
-					# into the buffer at this point.
-					pass
-
-				finally:
-					if sock:
-						sock.close()
-			response = decrypt(buffer[4:])
-
-			return response
-		else: # the discover command
-			cmd = commands['discover']
-			ip = '255.255.255.255'
-			port = 9999
-			timeout = 4.0
-			discovery_packets = 3
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-			sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			sock.settimeout(float(timeout))
-
-			req = cmd
-			print("Sending discovery to %s:%s   %s" % (ip, port, req))
-
-			encrypted_req = encrypt(req)
-			for i in range(discovery_packets):
-				sock.sendto(encrypted_req[4:], (ip, port))
-
-			print("Waiting %s seconds for responses..." % timeout)
-
-			foundDevs = {}
-			foundCount = 0
-
-			try:
-				while True:
-					data, addr = sock.recvfrom(4096)
-					ip, port = addr
-					info = json.loads(decrypt(data))
-					print("%s\n%s\n" % (ip, info))
-					if not ip in foundDevs:
-						foundDevs[ip] = info
-						foundCount += 1
-			# except socket.timeout:
-			# 	return json.dumps({'error': 'TP-Link connection timeout'})
-			except:
-				return foundDevs
-				
-			# print("Found %s devices" % (foundCount))
-			# for device in foundDevs:
-			# 	print("%s: %s\n" % (device, foundDevs[device]))
-
-			# print("Test: %s" % foundDevs['192.168.5.113']['system']['get_sysinfo']['model'])
-
-			return foundDevs
-
-# Check if hostname is valid
-def validHostname(hostname):
-	try:
-		socket.gethostbyname(hostname)
-	except socket.error:
-		parser.error("Invalid hostname.")
-	return hostname
-
-########################
-# for debugging
 def main():
-	try:
-		import json
-	except ImportError:
-		print ("using simplejson")
-		import simplejson as json
-
 	global debug
+	# Check if hostname is valid
+	def validHostname(hostname):
+		try:
+			socket.gethostbyname(hostname)
+		except socket.error:
+			parser.error("Invalid hostname.")
+		return hostname
+	
+	my_target = tplink_smartplug(None, None)
+
 	# Parse commandline arguments
 	parser = argparse.ArgumentParser(description="TP-Link Wi-Fi Smart Plug Client v" + str(version))
 	parser.add_argument("-t", "--target", metavar="<hostname>", required=False, help="Target hostname or IP address", type=validHostname)
 	group = parser.add_mutually_exclusive_group(required=True)
-	group.add_argument("-c", "--command", metavar="<command>", help="Preset command to send. Choices are: "+", ".join(commands), choices=commands)
+	group.add_argument("-c", "--command", metavar="<command>", help="Preset command to send. Choices are: "+", ".join(my_target.listCommands()), choices=my_target.listCommands())
 	group.add_argument("-C", "--CMD", metavar="<command>", help="unvalidated Command")
 	group.add_argument("-j", "--json", metavar="<JSON string>", help="Full JSON string of command to send")
 	parser.add_argument("-d", "--deviceID", metavar="<deviceID>", required=False, help="device ID for testing powerstrip")
 	parser.add_argument("-p", "--childID", metavar="<childID>", required=False, help="port on device", type=int)
 
 	args = parser.parse_args()
-
-
-#	if (args.deviceID is None) ^ (args.childID is None):
-#		# this is true if one is set and the other isn't
-#		# we need BOTH to be set or both NOT set
-#		print "both device and port must be set or not set"
-#		exit(1)
-	print ("args2 = %s" % args)
-	debug = True
-	if args.deviceID:
-		my_target = tplink_smartplug(args.target, 9999, deviceID=args.deviceID, childID=args.childID)
-	else:
-		my_target = tplink_smartplug(args.target, 9999)
+	debug = False
+	my_target = tplink_smartplug(args.target, 9999, args.deviceID, args.childID)
 
 	if args.command is None:
-		cmd = args.json
+		response = my_target.send(args.json)
 	elif args.command == 'discover':
-		cmd = 'discover'
+		response = my_target.discover()
 	else:
-		cmd = commands[args.command]
-	print ("args2 = %s" % args)
-	print ("args.command = %s" % args.command)
-
-	if args.childID:
-		data = my_target.send(args.command)
-	else:
-		data = my_target.send(cmd)
-
-	print "Sent:     ", args.command
-	print data
-	# data[0] = "{"
-	response = data #json.loads(data)
+		response = json.loads(my_target.send(args.command))
 
 	try:
-		# pretty print the json result
-		# json_result = json.loads(data)
 		print "Received: ", json.dumps(response, sort_keys=True, indent=2, separators=(',', ': '))
 	except ValueError, e:
-		print ("Json value error: %s on %s" % (e, data) )
+		print ("Json value error: %s on %s" % (e, response) )
 
 
 ###### main for testing #####

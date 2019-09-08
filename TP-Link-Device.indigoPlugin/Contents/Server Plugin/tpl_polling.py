@@ -118,8 +118,13 @@ class pollingThread(Thread):
 		while True:
 			try:
 				self.logger.debug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
-				result = tplink_dev_states.send('info')
-				data = json.loads(result)
+				try:
+					result = tplink_dev_states.send('info')
+					self.logger.debug("%s connection received (%s)" % (self.name, result))
+					data = json.loads(result)
+				except Exception as e:
+					self.logger.error("%s connection failed with (%s)" % (self.name, str(e)))
+
 				self.logger.debug(u"%s: finished state data collection with %s" % (self.name, data))
 
 				# Check if we got an error back
@@ -248,7 +253,7 @@ class pollingThread(Thread):
 								childId = element['id'][-2:]
 								if childId in self.outlets:
 									indigoDevice = self.outlets[childId]
-									totAccuUsage = float(indigoDevice.pluginProps['totAccuUsage'])
+									# totAccuUsage = float(indigoDevice.pluginProps['totAccuUsage'])
 
 									self.logger.debug(u"Found entry for outlet %s devId is %s", childId, indigoDevice.id)
 
@@ -263,7 +268,8 @@ class pollingThread(Thread):
 										curWatts = data['emeter']['get_realtime']['power_mw']/1000
 										curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 										curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-										totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
+										# totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
+										totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100), 1)
 										
 											
 										state_update_list = [
@@ -295,13 +301,13 @@ class pollingThread(Thread):
 							data = json.loads(result)
 							self.logger.debug("Received result: |%s|" % (result))
 
-							totAccuUsage = float(dev.pluginProps['totAccuUsage'])
+							# totAccuUsage = float(dev.pluginProps['totAccuUsage'])
 							curWatts = data['emeter']['get_realtime']['power_mw']/1000
 							curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
 							curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-							# totWattHrs = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
-							totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
-							
+							totWattHrs = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
+							# totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
+
 							state_update_list = [
 								{'key':'curWatts', 'value':curWatts},
 								{'key':'totWattHrs', 'value':totWattHrs},

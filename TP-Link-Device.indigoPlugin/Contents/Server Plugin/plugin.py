@@ -363,8 +363,12 @@ class Plugin(indigo.PluginBase):
 			return deviceArray
 		else:
 			tplink_discover = tplink_smartplug(None, None)
-			self.deviceSearchResults = tplink_discover.send('discover')
-			self.logger.debug(u"%s: received %s" % (func, self.deviceSearchResults))
+			try:
+				self.deviceSearchResults = tplink_discover.discover()
+			except Exception as e:
+				self.logger.error("Discovery connection failed with (%s)" % (str(e)))
+
+			self.logger.info(u"%s: received %s" % (func, self.deviceSearchResults))
 
 			for address in self.deviceSearchResults:
 				model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
