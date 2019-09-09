@@ -7,7 +7,7 @@ The TP-Link Device plugin makes TP-Link Wi-fi-based SmartPlugs appear as __Relay
 This plugin supports all known TP-Link smart plugs, including single, dual and 6 outlet plug strips.
 
 Double-click the plugin to install it in indigo 7 or higher. Then add a new device with type **TP-Link Device** and Model **TP-Link Smart plug (all versions)**.
-There will be a short (4 second) delay while the plugin looks for smart plugs on the local network. You will then see a window with a pull-down menu. Here you will find any plugs that were discovered and the option to enter the plug information manually. If you select manual entry, you will be prompted for the IP Address of the device, enter that and click Continue. 
+There will be a short (4 second) delay while the plugin searches for smart plugs on the local network. You will then see a window with a pull-down menu. Here you will find any plugs that were discovered and the option to enter the plug information manually. If you select manual entry, you will be prompted for the IP Address of the device, enter that and click Continue. 
 
 If you don't know the IP Address, you can get from your DHCP server (probably your router).
 You might also want to make the DHCP address assignment permanent, with a static mapping. By doing this you won't have to change indigo should the plug's IP address change, which can happen, for example, if you lose power.
