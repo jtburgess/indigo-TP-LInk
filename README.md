@@ -6,7 +6,7 @@ Overview
 The TP-Link Device plugin makes Wifi-based SmartPlugs appear as Relay (on/off) devices.
 This plugin supports all known TP-Link smart plugs, including single, dual and 6 outlet plug strips.
 
-Simply install the plug-in in indigo 7, then add a new device with type **TP-Link Device** and Model **TP-Link Smart plug (all versions)**.
+Simply install the plugin in indigo 7, then add a new device with type **TP-Link Device** and Model **TP-Link Smart plug (all versions)**.
 There will be a short (4 second) delay while the plugin looks for any smart plugs on the local network. You will then see a window with a pull-down menu. Here you will find any plugs that were discovered and the option to enter the plug information manually. If you select manual entry, yopu will then be prompted for the IP Address of the device, enter that and click Continue. 
 
 If you don't know the IP Address, you can get from your DHCP server (i.e., router).
