@@ -23,4 +23,4 @@ There is one other setting you may wish to enable, __on__/__off__ logging. This 
 
 Click __Save__ and then simply click __on__ or __off__ on your device. _Toggle_ is supported. 
 
-A command line tool for manually querying TP-Link smart plug devices, **tplink_smartplug.py** is contained in the Plugins Server Plugin folder.
+A command line tool for manually querying TP-Link smart plug devices, **tplink_smartplug.py** is included with the Plugin.

@@ -26,7 +26,9 @@ import argparse
 import json
 from protocol import tplink_smartplug
 
-version = 0.2
+sys.path.append('./TP-Link-Device.indigoPlugin/Contents/Server Plugin')
+
+version = 0.5
 
 debug = False
 
