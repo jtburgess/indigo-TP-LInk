@@ -9,7 +9,7 @@
         <Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
         <Label>Polling interval when multi-plug device is On</Label>
     </Field>
-    <Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
+    <Field id="offPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true">
         <Label>Polling interval when multi-plug device is Off</Label>
     </Field>
 	<Field id="simpleSeparator1" type="separator"/>

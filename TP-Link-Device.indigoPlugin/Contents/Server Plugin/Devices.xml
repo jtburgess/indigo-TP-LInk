@@ -37,7 +37,7 @@
 				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="multiPlug"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
 					<Label>Polling interval when device is Off</Label>
 				</Field>
-				<Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="multiPlug"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+				<Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="multiPlug"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
 					<Label>Polling interval when device is On</Label>
 				</Field>
 				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
