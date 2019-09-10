@@ -112,6 +112,7 @@ class pollingThread(Thread):
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
 		lastState = 2
 		lastStateMulti = {}
+		firstRun = False
 		error_counter = 0
 		pollErrors = 0
 
@@ -164,6 +165,9 @@ class pollingThread(Thread):
 									# self.logger.debug(u"%s: indigo device onOffState is %s, actual is %s", outletName, lastStateMulti[outletNum], devState)
 									if not outletNum in lastStateMulti:
 										lastStateMulti[outletNum] = 2
+										foundMsg = 'found'
+									else:
+										foundMsg = 'remotely'
 
 									if devState != lastStateMulti[outletNum]:
 										if devState:
@@ -185,7 +189,7 @@ class pollingThread(Thread):
 
 										if not self.localOnOff:
 											if self.logOnOff:
-												self.logger.info(u"%s -%s remotely set to %s", self.name, outletName, logState)
+												self.logger.info(u"%s -%s %s set to %s", self.name, outletName, foundMsg, logState)
 
 										self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
 
@@ -205,6 +209,11 @@ class pollingThread(Thread):
 						# self.logger.debug(u"%s: Got Here 0 with %s" % (self.name, data))
 						devState = data['system']['get_sysinfo']['relay_state']
 						self.logger.debug(u"%s: single outlet device 1 state= %s, lastState=%s" % (self.name, devState, lastState))
+						if not firstRun:  # set the logOnOff msg to reflect a first pass in the poll
+							firstRun = True
+							foundMsg = 'found'
+						else:
+							foundMsg = 'remotely'
 						
 						if devState != lastState:
 							if devState:
@@ -232,7 +241,7 @@ class pollingThread(Thread):
 										
 							if not self.localOnOff:
 								if self.logOnOff:
-									self.logger.info(u"%s remotely set to %s", self.name, logState)
+									self.logger.info(u"%s %s set to %s", self.name, foundMsg, logState)
 							
 							self.interupt(state=state, action='state')
 							self.localOnOff = False

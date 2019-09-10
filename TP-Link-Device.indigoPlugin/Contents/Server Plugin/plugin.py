@@ -2,23 +2,29 @@
 # -*- coding: utf-8 -*-
 ####################
 
-import indigo
-import os
-import sys
+import indigo				# Added here to stop pylint errors
+import inspect				# Not needed once we convert logging to use format
 import json
-from threading import Event
-from threading import Thread
-from Queue import Queue
-# import threading
-from tplink_smartplug import tplink_smartplug
-import time
-import inspect
-import logging
 import pdb
+from Queue import Queue
+import socket
 from tpl_polling import pollingThread
+from tplink_smartplug import tplink_smartplug	
 
-# Note the "indigo" module is automatically imported and made available inside
-# our global name space by the host process.				
+# Method to verify existance of an accessable TP-Link plug
+def check_server(address):
+	# Create a TCP socket
+	s = socket.socket()
+	s.settimeout(2.0)
+	port = 9999
+	# Check availability of port at address
+	try:
+		s.connect((address, port))
+		return True
+	except socket.error:
+		return False
+	finally:
+		s.close()		
 
 ################################################################################
 class Plugin(indigo.PluginBase):
@@ -48,10 +54,6 @@ class Plugin(indigo.PluginBase):
 		self.logger.debug(u"%s: called with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
 		errorsDict = indigo.Dict()
 
-		# if not valuesDict['outletNum'] or valuesDict['outletNum'] == None or valuesDict['outletNum'] == "":
-		# 	valuesDict['outletNum']   = "00"
-		# 	self.logger.debug(u"%s: GOT HERE 1", func)
-
 		if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
 			valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
 		self.logger.debug(u"%s: left with typeId=%s, devId=%s, and valuesDict=%s.", func, typeId, devId, valuesDict)
@@ -60,16 +62,6 @@ class Plugin(indigo.PluginBase):
 		if not valuesDict['energyCapable']:
 			valuesDict['SupportsEnergyMeter'] = False
 			valuesDict['SupportsEnergyMeterCurPower'] = False
-
-		# cmd = "/sbin/ping -c1 -t5 -q " + valuesDict['address'] + " >/dev/null 2>&1" 
-		# response = os.system(cmd)
-		# self.logger.info("Response: %s " % (response))
-		
-		# #and then check the response...
-		# if int(response) != 0:
-		# 	self.logger.info(u"%s is not reachable" % valuesDict['address'])
-		# 	errorsDict["address"] = "Host unreachable"
-		# 	return (False, valuesDict, errorsDict)
 			
 		# If we have been asked to re-initialize this device...
 		if ('initialize' in valuesDict and valuesDict['initialize']):
@@ -80,7 +72,7 @@ class Plugin(indigo.PluginBase):
 		return (True, valuesDict, errorsDict)
 
 	def validatePrefsConfigUi(self, valuesDict):
-		# this is where we will detect a change in polling settings so we can update the polling threads
+		# this is where we will detect a change in plugin config polling settings so we can update the polling threads
 		# self.logger.info(u"validatePrefsConfigUi called with %s" % valuesDict)
 		return (True, valuesDict)
 
@@ -157,8 +149,7 @@ class Plugin(indigo.PluginBase):
 	def initializeDev(self, valuesDict):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s." % (func, valuesDict))
-		# if valuesDict['address'] == "":
-		# 	valuesDict['address'] = valuesDict['addressManual']
+	
 		self.logger.debug(u"%s: 2 called for: %s." % (func, valuesDict))
 		devAddr = valuesDict['address']
 		devName = "new device at " + devAddr
@@ -384,7 +375,7 @@ class Plugin(indigo.PluginBase):
 		func = inspect.stack()[0][3]
 		self.logger.debug(u"%s: called for: %s, %s, %s." % (func, typeId, devId, valuesDict))
 
-		if valuesDict['addressSelect'] != 'manual': 
+		if valuesDict['addressSelect'] != 'manual':  # A plug from the discovery list has been selected, so we can continue
 			self.logger.debug("%s: %s -- %s\n" % (func, valuesDict['addressSelect'], valuesDict['manualAddressResponse']))
 			valuesDict['address'] = valuesDict['addressSelect']
 			address = valuesDict['address']
@@ -395,18 +386,26 @@ class Plugin(indigo.PluginBase):
 			valuesDict['displayOk'] = True
 			valuesDict['displayManAddress'] = True
 			
-		elif valuesDict['manualAddressResponse']:
+		elif valuesDict['manualAddressResponse']:  # An ip address has been manually entered, so we can continue
 			self.logger.debug("%s: %s -- %s\n" % (func, valuesDict['address'], valuesDict['manualAddressResponse']))
+			# Now make sure there is actually a plug we can talk to at this address
+			if not check_server(valuesDict['address']):
+				# Bail out
+				errorsDict = indigo.Dict()
+				errorsDict['address'] = "Address not reachable"
+				return valuesDict, errorsDict
+			# Ok, we can continue
 			valuesDict = self.initializeDev(valuesDict)
 			valuesDict['displayOk'] = True
 			valuesDict['displayManAddressButton'] = False
 
-		elif valuesDict['addressSelect'] == 'manual':
+		elif valuesDict['addressSelect'] == 'manual':  # They want to enter an ip address manually, so we display a textfield & return
 			valuesDict['displayManAddress'] = True
 			valuesDict['displayManAddressButton'] = True
 			valuesDict['manualAddressResponse'] = True
 			return valuesDict
 
+		# Since we got here, we must have a valid address
 		address = valuesDict['address']
 		if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
 			self.logger.debug(u"%s: %s has child_id", func, address)
@@ -538,5 +537,3 @@ class Plugin(indigo.PluginBase):
 		self.logger.info("%s", report)
 
 		return
-
-	

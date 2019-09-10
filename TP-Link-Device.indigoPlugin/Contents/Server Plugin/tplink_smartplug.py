@@ -30,25 +30,35 @@ sys.path.append('./TP-Link-Device.indigoPlugin/Contents/Server Plugin')
 
 version = 0.5
 
-debug = False
-
-
-
 def main():
-	global debug
-	# Check if hostname is valid
-	def validHostname(hostname):
+	# def validHostname(hostname):  # Check if hostname is valid
+	# 	try:
+	# 		socket.gethostbyname(hostname)
+	# 	except socket.error:
+	# 		parser.error("Invalid hostname.")
+	# 	return hostname
+
+	def check_server(address):
+		# Create a TCP socket
+		s = socket.socket()
+		s.settimeout(2.0)
+		port = 9999
+		# print "Checking availability of %s on port %s" % (address, port)
 		try:
-			socket.gethostbyname(hostname)
-		except socket.error:
+			s.connect((address, port))
+			# print "Connected to %s on port %s" % (address, port)
+			return address
+		except socket.error, e:
+			print "Connection to %s on port %s failed: %s" % (address, port, e)
 			parser.error("Invalid hostname.")
-		return hostname
+		finally:
+			s.close()
 	
 	my_target = tplink_smartplug(None, None)
 
 	# Parse commandline arguments
 	parser = argparse.ArgumentParser(description="TP-Link Wi-Fi Smart Plug Client v" + str(version))
-	parser.add_argument("-t", "--target", metavar="<hostname>", required=False, help="Target hostname or IP address", type=validHostname)
+	parser.add_argument("-t", "--target", metavar="<hostname>", required=False, help="Target hostname or IP address", type=check_server)
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("-c", "--command", metavar="<command>", help="Preset command to send. Choices are: "+", ".join(my_target.listCommands()), choices=my_target.listCommands())
 	group.add_argument("-C", "--CMD", metavar="<command>", help="unvalidated Command")
@@ -57,7 +67,7 @@ def main():
 	parser.add_argument("-p", "--childID", metavar="<childID>", required=False, help="port on device", type=int)
 
 	args = parser.parse_args()
-	debug = False
+
 	my_target = tplink_smartplug(args.target, 9999, args.deviceID, args.childID)
 
 	if args.command is None:

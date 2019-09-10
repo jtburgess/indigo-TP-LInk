@@ -20,15 +20,15 @@
 # limitations under the License.
 #
 
+import json
 import socket
 import struct
-from struct import pack
-import json
 import sys
 
-version = 0.2
-
-debug = False
+istty = False
+if sys.stdin.isatty():
+	# running interactively
+	istty = True
 
 # Predefined Smart Plug Commands
 # This list can be extended
@@ -52,7 +52,7 @@ commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
 # XOR Autokey Cipher with starting key = 171
 def encrypt(string):
 	key = 171
-	result = pack('>I', len(string))
+	result = struct.pack('>I', len(string))
 	for i in string:
 		a = key ^ ord(i)
 		key = a
@@ -84,23 +84,8 @@ class tplink_smartplug():
 		else:
 			quit("ERROR: both deviceID and childID must be set together")
 
-		if debug:
-			print("init with host=%s, port=%s" % ( address, port) )
-
-		self.istty = False
-		if sys.stdin.isatty():
-			# running interactively
-			self.istty = True
-		
-		return
-
 	# Send command and receive reply
 	def send(self, request):
-		istty = False
-		if sys.stdin.isatty():
-			# running interactively
-			istty = True
-
 		if request in commands:
 			cmd = commands[request]
 		else:
@@ -165,18 +150,15 @@ class tplink_smartplug():
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.settimeout(float(timeout))
 
-		req = cmd
-		print("Sending discovery to %s:%s   %s" % (address, port, req))
+		if istty: print("Sending discovery to %s:%s   %s" % (address, port, cmd))
 
-		encrypted_req = encrypt(req)
+		encrypted_cmd = encrypt(cmd)
 		for _ in range(discovery_packets):
-			sock.sendto(encrypted_req[4:], (address, port))
+			sock.sendto(encrypted_cmd[4:], (address, port))
 
-		print("Waiting %s seconds for responses..." % timeout)
+		if istty: print("Waiting %s seconds for responses..." % timeout)
 
 		foundDevs = {}
-		foundCount = 0
-
 		try:
 			while True:
 				data, addr = sock.recvfrom(4096)
@@ -185,7 +167,6 @@ class tplink_smartplug():
 				# print("%s\n%s\n" % (ip, info))
 				if not ip in foundDevs:
 					foundDevs[ip] = info
-					foundCount += 1
 		except:
 			pass
 			
