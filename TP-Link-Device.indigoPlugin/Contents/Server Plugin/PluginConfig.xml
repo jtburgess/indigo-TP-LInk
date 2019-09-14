@@ -20,7 +20,7 @@
 		<Label>Enable debuging:</Label>
 		<Description>(not recommended)</Description>
 	</Field> -->
-    <Field id='logLevel' type='menu' defaultValue="info" >
+    <Field id='logLevel' type='menu' defaultValue="None" >
         <Label>Set log level to:</Label>
         <List>
             <Option value="info">Info</Option>

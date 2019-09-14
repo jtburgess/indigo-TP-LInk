@@ -73,7 +73,7 @@ class Plugin(indigo.PluginBase):
         self.logger.addHandler(self.my_debug_handler)
         self.logger.removeHandler(self.indigo_log_handler)
 
-        self.loglevel = pluginPrefs.get("showDebugInfo", "info")
+        self.loglevel = pluginPrefs.get("logLevel", "info")
         self.my_debug_handler.setLogLevel(self.loglevel)
         self.logger.info(u"Log level set to {}".format(self.loglevel))
         self.logOnOff = pluginPrefs.get('logOnOff', False)
@@ -118,15 +118,17 @@ class Plugin(indigo.PluginBase):
         valuesDict['initialize'] = False
         return (True, valuesDict, errorsDict)
 
+    ######################
     def validatePrefsConfigUi(self, valuesDict):
         """set the log level dynamically"""
-        self.logger.threaddebug(u"received valuesDict={}".format(valuesDict))
+        self.logger.debug(u"Current log level:{} received log level={}".format(self.loglevel, valuesDict['logLevel']))
+        self.logger.threaddebug(u"Current:{} received valuesDict={}".format(self.loglevel, valuesDict))
         self.loglevel = valuesDict['logLevel']
-        self.pluginPrefs["showDebugInfo"] = self.loglevel
+        self.pluginPrefs["logLevel"] = self.loglevel
         self.my_debug_handler.setLogLevel(self.loglevel)
-        self.logger.info("Changing log level to {}".format(self.loglevel))
+        self.logger.info("Changed log level to {}".format(self.loglevel))
 
-        return True
+        return(True, valuesDict)
 
 
     ########################################
@@ -516,15 +518,6 @@ class Plugin(indigo.PluginBase):
     ########################################
     # Menu callbacks defined in MenuItems.xml
     ########################################
-    def setLogLevel(self, valuesDict, action):
-        """set the log level"""
-        self.logger.threaddebug(u"received valuesDict={} & {}".format(valuesDict, action))
-        self.loglevel = valuesDict['logLevel']
-        self.pluginPrefs["showDebugInfo"] = self.loglevel
-        self.my_debug_handler.setLogLevel(self.loglevel)
-        self.logger.info("Changing log level to {}".format(self.loglevel))
-
-        return True
 
     ########################################
     # Device reporting
