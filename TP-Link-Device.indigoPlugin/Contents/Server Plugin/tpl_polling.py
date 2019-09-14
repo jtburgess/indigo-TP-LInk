@@ -3,28 +3,21 @@
 ####################
 
 import indigo
-import os
-import sys
-import json
-from threading import Event
-from threading import Thread
-from Queue import Queue
-from tplink_smartplug import tplink_smartplug
-import time
 import inspect
-import logging
+import json
 import pdb
-# import threading
+from threading import Thread
+from time import sleep
+from tplink_smartplug import tplink_smartplug
 
-# Note the "indigo" module is automatically imported and made available inside
-# our global name space by the host process.
 
+################################################################################
 class pollingThread(Thread):
+	####################################################################
 	def __init__(self, logger, dev, logOnOff, pluginPrefs):
 		Thread.__init__(self)
 		self.logger = logger
-		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called for: %s." % (func, dev.name))
+		self.logger.debug(u"called for: %s." % (dev.name))
 		self.dev = dev
 		self.name = dev.name
 		self.lastState = 1
@@ -43,7 +36,7 @@ class pollingThread(Thread):
 			self.onPoll = int(self.pluginPrefs['onPoll'])
 			self.offPoll = int(self.pluginPrefs['offPoll'])
 			self.outlets[outletNum] = self.dev
-			self.logger.debug(u"outlet dict =%s" % (self.outlets))					
+			self.logger.debug(u"outlet dict =%s" % (self.outlets))
 		else:
 			self.onPoll = int(dev.pluginProps['onPoll'])
 			self.offPoll = int(dev.pluginProps['offPoll'])
@@ -60,8 +53,7 @@ class pollingThread(Thread):
 		self.start()
 
 	def interupt(self, state=None, dev=None, action=None):
-		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
+		self.logger.debug(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 
 		# self.logger.debug(u"%s: Before, poll freq is %s" % (dev.name, self.pollFreq))
 		if action == 'state' and state:
@@ -81,16 +73,16 @@ class pollingThread(Thread):
 		elif action == 'status':
 			self.dev = dev
 		else:
-			self.logger.error(u"%s: called for %s with action=%s, state=%s" % (func, self.dev.id, action, state))
+			self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 			return
 
 		if action == 'state':
 			self.localOnOff = True
 
-		time.sleep(0.5)
+		sleep(0.5)
 		self.changed = True
 		return(True)
-			
+
 	def stop(self):
 		# We should probably tell someone
 		self.logger.info(u"Polling stopped for %s@%s.", self.name, self.dev.address)
@@ -98,15 +90,14 @@ class pollingThread(Thread):
 		self._is_running = False
 
 	def run(self):
-		func = inspect.stack()[0][3]
-		self.logger.debug(u"%s: called for: %s." % (func, self.dev))
+		self.logger.debug(u"called for: %s." % (self.dev))
 		dev = self.dev
 		devType = dev.deviceTypeId
 		energyCapable = dev.pluginProps['energyCapable']
 		devAddr = dev.address
 		devPort = 9999
 		self.logger.debug(u"%s multiPlug is %s" % (dev.name, self.multiPlug))
-		
+
 		self.logger.debug(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
 		tplink_dev_states = tplink_smartplug(devAddr, devPort)
@@ -155,7 +146,7 @@ class pollingThread(Thread):
 							multiPlugOnCount += int(element['state'])
 							outletName = element['alias']
 							outletNum = element['id'][-2:]
-							# self.logger.error(u"%s: on count = %s last on count was %s for %s" % (func, multiPlugOnCount, self.lastMultiPlugOnCount, self.dev.address))
+							# self.logger.error(u"on count = %s last on count was %s for %s" % (multiPlugOnCount, self.lastMultiPlugOnCount, self.dev.address))
 							devState = bool(element['state'])
 							self.logger.debug(u"%s: Starting new element... id=%s, outletNum=%s, element=%s" % (outletName, element['id'], outletNum, element))
 							for outlet in self.outlets:
@@ -176,7 +167,7 @@ class pollingThread(Thread):
 										else:
 											state = False
 											logState = "Off"
-										lastStateMulti[outletNum] = devState								
+										lastStateMulti[outletNum] = devState
 
 										alias = element['alias']
 										rssi = data['system']['get_sysinfo']['rssi']
@@ -191,20 +182,20 @@ class pollingThread(Thread):
 											if self.logOnOff:
 												self.logger.info(u"%s -%s %s set to %s", self.name, outletName, foundMsg, logState)
 
-										self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
+										self.logger.debug(u"Polling found %s set to %s", self.name, logState)
 
 						# Before we go, check to see if we need to update the polling interval
 						if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
 							# we have transitioned from all plugs off to at least one plug on
-							self.logger.debug(u"%s: Changing polling interval to on for %s" % (func, self.dev.address))
+							self.logger.debug(u"Changing polling interval to on for %s" % (self.dev.address))
 							self.interupt(state=True, action='state')
 						elif self.lastMultiPlugOnCount > 0 and multiPlugOnCount == 0:
 							# we have transitioned from at least one plug on to all plugs off
-							self.logger.debug(u"%s: Changing polling interval to on for %s" % (func, self.dev.address))
+							self.logger.debug(u"Changing polling interval to on for %s" % (self.dev.address))
 							self.interupt(state=False, action='state')
 						self.lastMultiPlugOnCount = multiPlugOnCount
 						self.localOnOff = False
-						
+
 					else:  # we have a single outlet device
 						# self.logger.debug(u"%s: Got Here 0 with %s" % (self.name, data))
 						devState = data['system']['get_sysinfo']['relay_state']
@@ -214,7 +205,7 @@ class pollingThread(Thread):
 							foundMsg = 'found'
 						else:
 							foundMsg = 'remotely'
-						
+
 						if devState != lastState:
 							if devState:
 								state = True
@@ -224,7 +215,7 @@ class pollingThread(Thread):
 								state = False
 								logState = "Off"
 								# self.interupt(state=False, action='state')
-							lastState = devState	
+							lastState = devState
 
 							self.logger.debug(u"%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
 
@@ -238,17 +229,17 @@ class pollingThread(Thread):
 							dev.updateStatesOnServer(state_update_list)
 
 							self.logger.debug(u"%s is now %s: localOnOff=%s, logOnOff=%s", self.name, logState, self.localOnOff, self.logOnOff)
-										
+
 							if not self.localOnOff:
 								if self.logOnOff:
-									self.logger.info(u"%s %s set to %s", self.name, foundMsg, logState)
-							
+									self.logger.info(u"{} {} set to {}".format(self.name, foundMsg, logState))
+
 							self.interupt(state=state, action='state')
 							self.localOnOff = False
 
-							self.logger.debug(u"%s: Polling found %s set to %s", func, self.name, logState)
-							self.logger.debug(u"%s: %s, updated state on server to %s (%s, %s)", func, self.name, state, rssi, alias)
-					
+							self.logger.debug(u"Polling found %s set to %s", self.name, logState)
+							self.logger.debug(u"%s, updated state on server to %s (%s, %s)", self.name, state, rssi, alias)
+
 					self.logger.debug(u"%s: finished state update %s" % (self.name, data))
 
 					# Now we start looking for energy data... if the plug is capable
@@ -279,8 +270,8 @@ class pollingThread(Thread):
 										curAmps  = data['emeter']['get_realtime']['current_ma']/1000
 										# totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
 										totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100), 1)
-										
-											
+
+
 										state_update_list = [
 											{'key':'curWatts', 'value':curWatts},
 											{'key':'totWattHrs', 'value':totWattHrs},
@@ -300,10 +291,10 @@ class pollingThread(Thread):
 											{'key':"curEnergyLevel", 'value':0, 'uiValue':str(0) + " w"}
 											]
 										indigoDevice.updateStatesOnServer(state_update_list)
-									
+
 							else:
 								self.logger.debug(u"Outlet %s: outlet=%s not configured. No energy usage collected" % (self.name, childId))
-							
+
 						else:    # we have a single outlet device
 							tplink_dev_energy = tplink_smartplug (devAddr, devPort, None, None)
 							result = tplink_dev_energy.send('energy')
@@ -332,7 +323,7 @@ class pollingThread(Thread):
 				self.logger.debug(u"%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
 				pTime = 0.5
 				cTime = float(self.pollFreq)
-			
+
 				error_counter = 0
 				while cTime > 0:
 					# self.logger.debug(u"%s: Looping Timer = %s", self.name, cTime)
@@ -342,14 +333,14 @@ class pollingThread(Thread):
 						cTime = 0
 					else:
 						# self.logger.debug(u"starting mini sleep for %6.4f" % (pTime))
-						time.sleep(pTime)
+						sleep(pTime)
 						cTime = cTime - pTime
 						# self.logger.debug(u"Timer = %6.4f" % (cTime))
 
 					# self.logger.debug(u"Timer loop finished for %s", self.name)
 				if not self._is_running:
 					break
-				
+
 				self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name))
 
 			except Exception as e:
@@ -360,5 +351,5 @@ class pollingThread(Thread):
 				else:
 					error_counter += 1
 					self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
-				
+
 

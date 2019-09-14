@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 #
-# TP-Link Wi-Fi Smart Plug Protocol Client
-# For use with TP-Link HS-100 or HS-110
-#
-# by Lubomir Stroetmann
+# based on work by by Lubomir Stroetmann
 # Copyright 2016 softScheck GmbH
 #  from: https://github.com/softScheck/tplink-smartplug/blob/master/tplink_smartplug.py
 #
@@ -30,14 +27,9 @@ sys.path.append('./TP-Link-Device.indigoPlugin/Contents/Server Plugin')
 
 version = 0.5
 
+################################################################################
 def main():
-	# def validHostname(hostname):  # Check if hostname is valid
-	# 	try:
-	# 		socket.gethostbyname(hostname)
-	# 	except socket.error:
-	# 		parser.error("Invalid hostname.")
-	# 	return hostname
-
+	####################################################################
 	def check_server(address):
 		# Create a TCP socket
 		s = socket.socket()

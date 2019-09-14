@@ -51,19 +51,19 @@
 			<Field id="energyCapable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
 				<Label>Energy reporting<datagrid></datagrid>:</Label>
 			</Field>
-			<Field id="actionButton" 
-					type="button" 
-					tooltip="Click to display device information" 
-					visibleBindingId="displayOk" 
+			<Field id="actionButton"
+					type="button"
+					tooltip="Click to display device information"
+					visibleBindingId="displayOk"
 					visibleBindingValue="false">
 				<!-- <Label>Visible button's label:</Label> -->
 				<Title>Display Device Data</Title>
 				<CallbackMethod>displayButtonPressed</CallbackMethod>
 			</Field>
-			<Field id="printButton" 
-					type="button" 
-					tooltip="Click to print device information to the log" 
-					visibleBindingId="displayOk" 
+			<Field id="printButton"
+					type="button"
+					tooltip="Click to print device information to the log"
+					visibleBindingId="displayOk"
 					visibleBindingValue="true">
 				<!-- <Label>Visible button's label:</Label> -->
 				<Title>Print to log</Title>
@@ -72,8 +72,19 @@
 			<Field id="separator1" type="separator" />
         </ConfigUI>
 	</MenuItem>
-	<MenuItem id="toggleDebug">
-		<Name>Toggle Debugging</Name>
-        <CallbackMethod>toggleDebugging</CallbackMethod>
-	</MenuItem>
+<!-- 	<MenuItem id="setLogLevel">
+		<Name>Change Log Level</Name>
+        <CallbackMethod>setLogLevel</CallbackMethod>
+		<ButtonTitle>Done</ButtonTitle>
+		<ConfigUI>
+			<Field id='logLevel' type='menu' defaultValue="info" >
+				<Label>Set log level to:</Label>
+				<List>
+					<Option value="info">Info</Option>
+					<Option value="trace">trace</Option>
+					<Option value="debug">debug</Option>
+				</List>
+			</Field>
+		</ConfigUI>
+	</MenuItem> -->
 </MenuItems>

@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 #
-# TP-Link Wi-Fi Smart Plug Protocol Client
-# For use with TP-Link HS-100 or HS-110
-#
-# by Lubomir Stroetmann
+# based on work by by Lubomir Stroetmann and others
 # Copyright 2016 softScheck GmbH
 #  from: https://github.com/softScheck/tplink-smartplug/blob/master/tplink_smartplug.py
 #
@@ -25,13 +22,8 @@ import socket
 import struct
 import sys
 
-istty = False
-if sys.stdin.isatty():
-	# running interactively
-	istty = True
-
 # Predefined Smart Plug Commands
-# This list can be extended
+# This list can be extended or edited by adding/removing dictionary entries
 commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
 			'on'       : '{"system":{"set_relay_state":{"state":1}}}',
 			'off'      : '{"system":{"set_relay_state":{"state":0}}}',
@@ -47,6 +39,12 @@ commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
 			'e+i'      : '{ "emeter": { "get_realtime": {} }, "system": { "get_sysinfo": {} } }',
 			'energy'   : '{"emeter":{"get_realtime":{}}}'
 }
+
+# We don't want to print if this class has been called from Indigo
+istty = False
+if sys.stdin.isatty():
+	# running interactively
+	istty = True
 
 # Encryption and Decryption of TP-Link Smart Home Protocol
 # XOR Autokey Cipher with starting key = 171
@@ -68,10 +66,9 @@ def decrypt(string):
 		result += chr(a)
 	return result
 
-########################
-# the class has an optional deviceID string, used by power Strip devices (and others???)
-# and the send command has an optional childID representing the socket on the power Strip
+################################################################################
 class tplink_smartplug():
+	####################################################################
 	def __init__(self, address, port, deviceID = None, childID = None):
 		self.address  = address
 		self.port 	  = port
