@@ -520,15 +520,11 @@ class Plugin(indigo.PluginBase):
 
     ########################################
     # Device reporting
-    def dumpDeviceInfo(self, valuesDict, clg_func):
-        self.logger.debug("called for targetDevice {} from ".format(valuesDict['targetDevice'], clg_func))
-        self.logger.threaddebug("called with {}".format(valuesDict['targetDevice']))
-        return(True)
 
     def displayButtonPressed(self, valuesDict, clg_func):
+        """ Prepare the report for the Menu Items configUI display """
         self.logger.debug("called for targetDevice {} from ".format(valuesDict['targetDevice'], clg_func))
         self.logger.threaddebug("called with valuesDict={}".format(valuesDict))
-
 
         try:
             devNumber = int(valuesDict['targetDevice'])
@@ -560,6 +556,7 @@ class Plugin(indigo.PluginBase):
         return(valuesDict)
 
     def printToLogPressed(self, valuesDict, clg_func):
+        """ Prepare the report for display in the log """
         self.logger.debug("called for dev {} from {}".format(valuesDict['targetDevice'], clg_func))
         self.logger.threaddebug("Received {}".format(valuesDict))
         devNumber = int(valuesDict['targetDevice'])
