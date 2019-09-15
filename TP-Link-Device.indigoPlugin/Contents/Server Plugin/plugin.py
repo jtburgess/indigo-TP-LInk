@@ -565,7 +565,7 @@ class Plugin(indigo.PluginBase):
         devNumber = int(valuesDict['targetDevice'])
         dev = indigo.devices[devNumber]
 
-        rpt_fmt = "            {0:<25s}{1:s}\n"
+        rpt_fmt = "            {0!s:25}{1!s}\n"
         report = "Tp-Link plugin device report\n" + \
             rpt_fmt.format("Indigo Device Name:", dev.name) + \
             rpt_fmt.format("IP Address:", valuesDict['address']) + \
@@ -576,9 +576,9 @@ class Plugin(indigo.PluginBase):
             rpt_fmt.format("On state polling freq:", valuesDict['onPoll']) + \
             rpt_fmt.format("Off state polling freq:", valuesDict['offPoll']) + \
             rpt_fmt.format("MAC Address:", valuesDict['mac']) + \
-            rpt_fmt.format("Polling enabled:", str(valuesDict['devPoll'])) + \
-            rpt_fmt.format("Multiple Outlets:", str(valuesDict['multiPlug'])) + \
-            rpt_fmt.format("Energy reporting:", str(valuesDict['energyCapable']))
+            rpt_fmt.format("Polling enabled:", valuesDict['devPoll']) + \
+            rpt_fmt.format("Multiple Outlets:", valuesDict['multiPlug']) + \
+            rpt_fmt.format("Energy reporting:", valuesDict['energyCapable'])
 
         self.logger.info("%s", report)
 
