@@ -511,7 +511,6 @@ class Plugin(indigo.PluginBase):
                     menuEntry = (str(internalOutlet).zfill(2), outlet+1)
                     outletArray.append(menuEntry)
 
-
         self.logger.debug(u"returned: OA=%s" % (outletArray))
         return outletArray
 
@@ -521,18 +520,27 @@ class Plugin(indigo.PluginBase):
 
     ########################################
     # Device reporting
-    def dumpDeviceInfo(self, valuesDict, b):
-        self.logger.debug("called with a=%s and b=%s", str(valuesDict), b)
-
+    def dumpDeviceInfo(self, valuesDict, clg_func):
+        self.logger.debug("called for targetDevice {} from ".format(valuesDict['targetDevice'], clg_func))
+        self.logger.threaddebug("called with {}".format(valuesDict['targetDevice']))
         return(True)
 
-    def displayButtonPressed(self, valuesDict, bar):
-        self.logger.debug("called with valuesDict=%s", valuesDict)
+    def displayButtonPressed(self, valuesDict, clg_func):
+        self.logger.debug("called for targetDevice {} from ".format(valuesDict['targetDevice'], clg_func))
+        self.logger.threaddebug("called with valuesDict={}".format(valuesDict))
 
-        devNumber = int(valuesDict['targetDevice'])
-        dev = indigo.devices[devNumber]
+
+        try:
+            devNumber = int(valuesDict['targetDevice'])
+            dev = indigo.devices[devNumber]
+        except:
+            errorsDict = indigo.Dict()
+            errorsDict['targetDevice'] = "You must select a device"
+            errorsDict["showAlertText"] = "You must select a device"
+            return(valuesDict, errorsDict)
+
         props = dev.pluginProps
-        self.logger.debug("pluginPropsr=%s", props)
+        self.logger.threaddebug("pluginPropsr=%s", props)
 
         valuesDict['address']       = props['address']
         valuesDict['devPoll']       = props['devPoll']
@@ -547,28 +555,30 @@ class Plugin(indigo.PluginBase):
         valuesDict['alias']         = dev.states['alias']
         valuesDict['displayOk']     = True
 
-        self.logger.debug("Device info = %s", valuesDict)
+        self.logger.threaddebug("Device info = %s", valuesDict)
 
         return(valuesDict)
 
-    def printToLogPressed(self, valuesDict, bar):
-        self.logger.debug("called with foo=%s bar=%s", valuesDict, bar)
+    def printToLogPressed(self, valuesDict, clg_func):
+        self.logger.debug("called for dev {} from {}".format(valuesDict['targetDevice'], clg_func))
+        self.logger.threaddebug("Received {}".format(valuesDict))
         devNumber = int(valuesDict['targetDevice'])
         dev = indigo.devices[devNumber]
-        tabs = "\t\t\t\t"
-        report = "Tp-Link plugin device report" + \
-            tabs + "Indigo Device Name:\t" + dev.name + "\n" + \
-            tabs + "IP Address:\t\t\t" + valuesDict['address'] + "\n" + \
-            tabs + "Device ID:\t\t\t" + valuesDict['deviceId'] + "\n" + \
-            tabs + "Alias:\t\t\t\t" + valuesDict['alias'] + "\n" + \
-            tabs + "Outlet Number:\t\t" + valuesDict['outletNum'] + "\n" + \
-            tabs + "Model:\t\t\t\t" + valuesDict['model'] + "\n" + \
-            tabs + "On state polling freq:\t" + valuesDict['onPoll'] + "\n" + \
-            tabs + "Off state polling freq:\t" + valuesDict['offPoll'] + "\n" + \
-            tabs + "MAC Address:\t\t\t" + valuesDict['mac'] + "\n" + \
-            tabs + "Polling enabled:\t\t" + str(valuesDict['devPoll']) + "\n" + \
-            tabs + "Multiple Outlets:\t\t" + str(valuesDict['multiPlug']) + "\n" + \
-            tabs + "Energy reporting:\t\t" + str(valuesDict['energyCapable']) + "\n"
+
+        rpt_fmt = "            {0:<25s}{1:s}\n"
+        report = "Tp-Link plugin device report\n" + \
+            rpt_fmt.format("Indigo Device Name:", dev.name) + \
+            rpt_fmt.format("IP Address:", valuesDict['address']) + \
+            rpt_fmt.format("Device ID:", valuesDict['deviceId']) + \
+            rpt_fmt.format("Alias:", valuesDict['alias']) + \
+            rpt_fmt.format("Outlet Number:", valuesDict['outletNum']) + \
+            rpt_fmt.format("Model:", valuesDict['model']) + \
+            rpt_fmt.format("On state polling freq:", valuesDict['onPoll']) + \
+            rpt_fmt.format("Off state polling freq:", valuesDict['offPoll']) + \
+            rpt_fmt.format("MAC Address:", valuesDict['mac']) + \
+            rpt_fmt.format("Polling enabled:", str(valuesDict['devPoll'])) + \
+            rpt_fmt.format("Multiple Outlets:", str(valuesDict['multiPlug'])) + \
+            rpt_fmt.format("Energy reporting:", str(valuesDict['energyCapable']))
 
         self.logger.info("%s", report)
 

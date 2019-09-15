@@ -14,7 +14,7 @@
 			<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
 			<Field id='hideCheckBox' type='checkbox' hidden="true" defaultValue="true" />
 
-			<Field id="targetDevice" type="menu" defaultValue="" enabledBindingId="displayOk" enabledBindingNegate="true">
+			<Field id="targetDevice" type="menu" defaultValue="None" enabledBindingId="displayOk" enabledBindingNegate="true">
 				<Label>Select the plug device:</Label>
 				<List class="indigo.devices" filter="self"/>
 			</Field>
