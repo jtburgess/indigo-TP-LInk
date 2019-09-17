@@ -1,13 +1,83 @@
 <?xml version="1.0"?>
-<!-- If your plugin wants to add menu items to it's submenu off the new Extensions menu,
-	 define them here. Each should have a unique menu id, a Name, and an Action. The last
-	 is a method name in your python file that will be called when the user selects that
-	 menu item. Note - nothing will be returned to the client, so if you need to communicate
-	 back to the user you can post information into the Event Log.
--->
 <MenuItems>
-	<MenuItem id="toggleDebug">
-		<Name>Toggle Debugging</Name>
-        <CallbackMethod>toggleDebugging</CallbackMethod>
+	<MenuItem id="dumpDeviceInfo">
+		<Name>Display device information</Name>
+		 <ButtonTitle>Done</ButtonTitle>
+		<ConfigUI>
+			<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
+			<Field id='hideCheckBox' type='checkbox' hidden="true" defaultValue="true" />
+
+			<Field id="targetDevice" type="menu" defaultValue="None" enabledBindingId="displayOk" enabledBindingNegate="true">
+				<Label>Select the plug device:</Label>
+				<List class="indigo.devices" filter="self"/>
+			</Field>
+			<Field id="address" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>IP Address:</Label>
+			</Field>
+			<Field id="deviceId" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Device ID:</Label>
+			</Field>
+			<Field id="alias" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Alias:</Label>
+			</Field>
+			<Field id="outletNum" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Outlet number:</Label>
+			</Field>
+			<Field id="model" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Model:</Label>
+			</Field>
+			<Field id="onPoll" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>On state polling freq</Label>
+			</Field>
+			<Field id="offPoll" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Off state polling freq</Label>
+			</Field>
+			<Field id="mac" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>MAC Address</Label>
+			</Field>
+			<Field id="devPoll" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+				<Label>Polling enabled:</Label>
+			</Field>
+			<Field id="multiPlug" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+				<Label>Multiple outlets:</Label>
+			</Field>
+			<Field id="energyCapable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+				<Label>Energy reporting<datagrid></datagrid>:</Label>
+			</Field>
+			<Field id="actionButton"
+					type="button"
+					tooltip="Click to display device information"
+					visibleBindingId="displayOk"
+					visibleBindingValue="false">
+				<!-- <Label>Visible button's label:</Label> -->
+				<Title>Display Device Data</Title>
+				<CallbackMethod>displayButtonPressed</CallbackMethod>
+			</Field>
+			<Field id="printButton"
+					type="button"
+					tooltip="Click to print device information to the log"
+					visibleBindingId="displayOk"
+					visibleBindingValue="true">
+				<!-- <Label>Visible button's label:</Label> -->
+				<Title>Print to log</Title>
+				<CallbackMethod>printToLogPressed</CallbackMethod>
+			</Field>
+			<Field id="separator1" type="separator" />
+        </ConfigUI>
 	</MenuItem>
+<!-- 	<MenuItem id="setLogLevel">
+		<Name>Change Log Level</Name>
+        <CallbackMethod>setLogLevel</CallbackMethod>
+		<ButtonTitle>Done</ButtonTitle>
+		<ConfigUI>
+			<Field id='logLevel' type='menu' defaultValue="info" >
+				<Label>Set log level to:</Label>
+				<List>
+					<Option value="info">Info</Option>
+					<Option value="trace">trace</Option>
+					<Option value="debug">debug</Option>
+				</List>
+			</Field>
+		</ConfigUI>
+	</MenuItem> -->
 </MenuItems>
