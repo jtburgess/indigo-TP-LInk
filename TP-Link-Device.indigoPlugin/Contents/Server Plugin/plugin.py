@@ -313,7 +313,7 @@ class Plugin(indigo.PluginBase):
 
     # The 'status' callback
     def getInfo(self, pluginAction, dev):
-        self.logger.debug(u"%called for: %s." % (dev.name))
+        self.logger.debug(u"Called for: %s." % (dev.name))
         address = dev.address
 
         try:
@@ -330,7 +330,7 @@ class Plugin(indigo.PluginBase):
 
     # Energy and Status callback
     def actionControlUniversal(self, action, dev):
-        self.logger.debug(u"%s: \action: %s for device: %s." % (action, dev.name))
+        self.logger.debug(u"Action: %s for device: %s." % (action, dev.name))
         ###### ENERGY UPDATE ######
         if action.deviceAction == indigo.kUniversalAction.EnergyUpdate:
             if dev.pluginProps['energyCapable'] == True :
