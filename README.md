@@ -1,6 +1,6 @@
 **Important**:
 If you used the previous (0.2.0) release, be aware that you cannot use any devices from that version as is.  
- [Please read this Indigo forum thread:](https://forums.indigodomo.com/viewtopic.php?p=180390#p180390) .
+ [Please read this Indigo forum thread](https://forums.indigodomo.com/viewtopic.php?f=132&t=17064&start=75) .
 Perhaps the simplest option is to delete the old devices, install the new version and let it auto-discover your devices.
 
 Indigo-TP-LInk
