@@ -1,1 +1,0 @@
-TP-Link-Device.indigoPlugin/Contents/Server Plugin/tplink_smartplug.py

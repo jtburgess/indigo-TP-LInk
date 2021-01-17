@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <PluginConfig>
-	<Field id="logOnOff" type="checkbox" defaultValue="false">
+    <Field id="logOnOff" type="checkbox" defaultValue="false">
         <Label>Log On and Off events</Label>
     </Field>
-	<Field id="devPoll" type="checkbox" defaultValue="true">
+    <Field id="devPoll" type="checkbox" defaultValue="true">
         <Label>Enable multi-plug device polling</Label>
     </Field>
         <Field id="onPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true">
@@ -12,14 +12,14 @@
     <Field id="offPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true">
         <Label>Polling interval when multi-plug device is Off</Label>
     </Field>
-	<Field id="simpleSeparator1" type="separator"/>
-	<Field id="topLabel" type="label">
-		<Label>If you are having problems with the plugin (or you are instructed by support), you can enable extra logging in the Event Log window by selecting log level trace or debug. Use with caution.</Label>
-	</Field>
-<!-- 	<Field type="textfield" id="showDebugInfo">
-		<Label>Enable debuging:</Label>
-		<Description>(not recommended)</Description>
-	</Field> -->
+    <Field id="simpleSeparator1" type="separator"/>
+    <Field id="topLabel" type="label">
+        <Label>If you are having problems with the plugin (or you are instructed by support), you can enable extra logging in the Event Log window by selecting log level trace or debug. Use with caution.</Label>
+    </Field>
+<!--     <Field type="textfield" id="showDebugInfo">
+        <Label>Enable debuging:</Label>
+        <Description>(not recommended)</Description>
+    </Field> -->
     <Field id='logLevel' type='menu' defaultValue="None" >
         <Label>Set log level to:</Label>
         <List>

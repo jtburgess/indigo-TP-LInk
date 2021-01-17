@@ -1,5 +1,8 @@
 <?xml version="1.0"?>
 <MenuItems>
+	<!-- can this be made device Type specific?
+		so there are different menu items for Relays/Plugs and Dimmers/Lights
+	 -->
 	<MenuItem id="dumpDeviceInfo">
 		<Name>Display device information</Name>
 		 <ButtonTitle>Done</ButtonTitle>
@@ -8,42 +11,59 @@
 			<Field id='hideCheckBox' type='checkbox' hidden="true" defaultValue="true" />
 
 			<Field id="targetDevice" type="menu" defaultValue="None" enabledBindingId="displayOk" enabledBindingNegate="true">
-				<Label>Select the plug device:</Label>
+				<Label>Select a device:</Label>
 				<List class="indigo.devices" filter="self"/>
+			</Field>
+			<Field id='deviceTypeId' type='textfield' hidden="false" readonly='YES' 
+					visibleBindingId="displayOk"
+					visibleBindingValue="true">
+				<Label>TP device Type:</Label>
 			</Field>
 			<Field id="address" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
 				<Label>IP Address:</Label>
-			</Field>
-			<Field id="deviceId" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Device ID:</Label>
-			</Field>
 			<Field id="alias" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
 				<Label>Alias:</Label>
-			</Field>
-			<Field id="outletNum" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Outlet number:</Label>
 			</Field>
 			<Field id="model" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
 				<Label>Model:</Label>
 			</Field>
-			<Field id="onPoll" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>On state polling freq</Label>
-			</Field>
-			<Field id="offPoll" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
-				<Label>Off state polling freq</Label>
-			</Field>
 			<Field id="mac" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
 				<Label>MAC Address</Label>
 			</Field>
-			<Field id="devPoll" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+			</Field>
+			<Field id="deviceId" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Device ID:</Label>
+			</Field>
+
+			<Field id="devPoll" type="checkbox" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
 				<Label>Polling enabled:</Label>
 			</Field>
-			<Field id="multiPlug" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+			<Field id="onPoll" type="textfield" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>On state polling freq</Label>
+			</Field>
+			<Field id="offPoll" type="textfield" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" >
+				<Label>Off state polling freq</Label>
+			</Field>
+
+      <!-- Relay-type (tplinkSmartPlug) specific fields -->
+			<Field id="outletNum" type="textfield" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="deviceTypeId"  visibleBindingValue="tplinkSmartPlug" >
+				<Label>Outlet number:</Label>
+			</Field>
+			<Field id="multiPlug" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="deviceTypeId"  visibleBindingValue="tplinkSmartPlug" >
 				<Label>Multiple outlets:</Label>
 			</Field>
-			<Field id="energyCapable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" enabledBindingNegate="true">
+			<Field id="energyCapable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="deviceTypeId"  visibleBindingValue="tplinkSmartPlug" >
 				<Label>Energy reporting<datagrid></datagrid>:</Label>
 			</Field>
+			
+      <!-- Dimmer-type (tplinkSmartBulb) specific fields -->
+				<Field id="isDimmable" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="deviceTypeId"  visibleBindingValue="tplinkSmartBulb">
+					<Label>Supports Dimming:</Label>
+				</Field>
+				<Field id="isColor" type="checkbox" readonly='YES' alwaysUseInDialogHeightCalc="true" visibleBindingId="deviceTypeId"  visibleBindingValue="tplinkSmartBulb">
+					<Label>Supports colors:</Label>
+				</Field>
+
 			<Field id="actionButton"
 					type="button"
 					tooltip="Click to display device information"
@@ -58,26 +78,9 @@
 					tooltip="Click to print device information to the log"
 					visibleBindingId="displayOk"
 					visibleBindingValue="true">
-				<!-- <Label>Visible button's label:</Label> -->
 				<Title>Print to log</Title>
 				<CallbackMethod>printToLogPressed</CallbackMethod>
 			</Field>
-			<Field id="separator1" type="separator" />
-        </ConfigUI>
+    </ConfigUI>
 	</MenuItem>
-<!-- 	<MenuItem id="setLogLevel">
-		<Name>Change Log Level</Name>
-        <CallbackMethod>setLogLevel</CallbackMethod>
-		<ButtonTitle>Done</ButtonTitle>
-		<ConfigUI>
-			<Field id='logLevel' type='menu' defaultValue="info" >
-				<Label>Set log level to:</Label>
-				<List>
-					<Option value="info">Info</Option>
-					<Option value="trace">trace</Option>
-					<Option value="debug">debug</Option>
-				</List>
-			</Field>
-		</ConfigUI>
-	</MenuItem> -->
 </MenuItems>

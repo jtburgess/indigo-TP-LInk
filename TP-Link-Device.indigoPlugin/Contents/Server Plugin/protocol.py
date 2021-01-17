@@ -22,152 +22,147 @@ import socket
 import struct
 import sys
 
-# Predefined Smart Plug Commands
-# This list can be extended or edited by adding/removing dictionary entries
-commands = {'info'     : '{"system":{"get_sysinfo":{}}}',
-			'on'       : '{"system":{"set_relay_state":{"state":1}}}',
-			'off'      : '{"system":{"set_relay_state":{"state":0}}}',
-			'cloudinfo': '{"cnCloud":{"get_info":{}}}',
-			'wlanscan' : '{"netif":{"get_scaninfo":{"refresh":0}}}',
-			'time'     : '{"time":{"get_time":{}}}',
-			'discover' : '{"system":{"get_sysinfo":{}}}',
-			'schedule' : '{"schedule":{"get_rules":{}}}',
-			'countdown': '{"count_down":{"get_rules":{}}}',
-			'antitheft': '{"anti_theft":{"get_rules":{}}}',
-			'reboot'   : '{"system":{"reboot":{"delay":1}}}',
-			'reset'    : '{"system":{"reset":{"delay":1}}}',
-			'e+i'      : '{ "emeter": { "get_realtime": {} }, "system": { "get_sysinfo": {} } }',
-			'energy'   : '{"emeter":{"get_realtime":{}}}'
-}
 
 # We don't want to print if this class has been called from Indigo
 istty = False
 if sys.stdin.isatty():
-	# running interactively
-	istty = True
+  # running interactively
+  istty = True
 
 # Encryption and Decryption of TP-Link Smart Home Protocol
 # XOR Autokey Cipher with starting key = 171
 def encrypt(string):
-	key = 171
-	result = struct.pack('>I', len(string))
-	for i in string:
-		a = key ^ ord(i)
-		key = a
-		result += chr(a)
-	return result
+  key = 171
+  result = struct.pack('>I', len(string))
+  for i in string:
+    a = key ^ ord(i)
+    key = a
+    result += chr(a)
+  return result
 
 def decrypt(string):
-	key = 171
-	result = ""
-	for i in string:
-		a = key ^ ord(i)
-		key = ord(i)
-		result += chr(a)
-	return result
+  key = 171
+  result = ""
+  for i in string:
+    a = key ^ ord(i)
+    key = ord(i)
+    result += chr(a)
+  return result
 
 ################################################################################
-class tplink_smartplug():
-	####################################################################
-	def __init__(self, address, port, deviceID = None, childID = None):
-		self.address  = address
-		self.port 	  = port
-		self.deviceID = deviceID
-		self.childID  = childID
- 
-		# both or neither deviceID and childID should be set
-		if (deviceID is not None and childID is not None) or (deviceID is None and childID is None):
-			pass # both combinations are ok
-		else:
-			quit("ERROR: both deviceID and childID must be set together")
+class tplink_protocol(object):
+####################################################################
+  def __init__(self, address, port, deviceID = None, childID = None):
+    """ ToDo child ID should be restricted to _relay_ devces, but this works, for now
+    """
+    self.address  = address
+    self.port     = port
+    self.deviceID = deviceID
+    self.childID  = childID
 
-	# Send command and receive reply
-	def send(self, request):
-		if request in commands:
-			cmd = commands[request]
-		else:
-			cmd = request
+    # both or neither deviceID and childID should be set
+    if (deviceID is not None and childID is not None) or (deviceID is None and childID is None):
+      pass # both combinations are ok
+    else:
+      quit("ERROR: both deviceID and childID must be set together")
 
-		# if both deviceID and childID are set, { context... } is prepended to the command
-		if self.deviceID is not None and self.childID is not None:
-			context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
-			# now replace the initial '{' of the command with that string
-			cmd = context + cmd[1:]
+  # Send command and receive reply
+  def send(self, request):
+    if request in self.commands():
+      cmd = self.commands()[request]
+    else:
+      cmd = request
 
-		if istty: print "Sent:     ", cmd 
-		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			sock.settimeout(3.0)
-			sock.connect((self.address, 9999))
-			sock.send(encrypt(cmd))
+    # if both deviceID and childID are set, { context... } is prepended to the command
+    if self.deviceID is not None and self.childID is not None:
+      context = '{"context":{"child_ids":["' + self.deviceID + "{:02d}".format(int(self.childID)) +'"]},'
+      # now replace the initial '{' of the command with that string
+      cmd = context + cmd[1:]
 
-			buffer = bytes()
-			# Some devices send responses with a length header of 0 and
-			# terminate with a zero size chunk. Others send the length and
-			# will hang if we attempt to read more data.
-			length = -1
-			while True:
-				chunk = sock.recv(4096)
-				if length == -1:
-					length = struct.unpack(">I", chunk[0:4])[0]
-				buffer += chunk
-				if (length > 0 and len(buffer) >= length + 4) or not chunk:
-					break
-		except socket.timeout:
-			return json.dumps({'error': 'TP-Link connection timeout'})
-		except Exception as e:
-			return json.dumps({'error': "TP-Link error: " + str(e)})
-	
-		finally:
-			try:
-				if sock:
-					sock.shutdown(socket.SHUT_RDWR)
-			except OSError:
-				# OSX raises OSError when shutdown() gets called on a closed
-				# socket. We ignore it here as the data has already been read
-				# into the buffer at this point.
-				pass
+    if istty: print "Sent:     ", request, " == ", cmd
+    try:
+      sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      sock.settimeout(3.0)
+      sock.connect((self.address, 9999))
+      sock.send(encrypt(cmd))
 
-			finally:
-				if sock:
-					sock.close()
+      buffer = bytes()
+      # Some devices send responses with a length header of 0 and
+      # terminate with a zero size chunk. Others send the length and
+      # will hang if we attempt to read more data.
+      length = -1
+      while True:
+        chunk = sock.recv(4096)
+        if length == -1:
+          length = struct.unpack(">I", chunk[0:4])[0]
+        buffer += chunk
+        if (length > 0 and len(buffer) >= length + 4) or not chunk:
+          break
+    except socket.timeout:
+      return json.dumps({'error': 'TP-Link connection timeout'})
+    except Exception as e:
+      return json.dumps({'error': "TP-Link error: " + str(e)})
 
-		response = decrypt(buffer[4:])
+    finally:
+      try:
+        if sock:
+          sock.close()
+          #sock.shutdown(socket.SHUT_RDWR)
+      #except Exception:
+      except OSError:
+        # OSX raises OSError when shutdown() gets called on a closed
+        # socket. We ignore it here as the data has already been read
+        # into the buffer at this point.
+        pass
 
-		return response
+#      finally:
+#        if sock:
+#          sock.close()
 
-	def discover(self):
-		cmd = commands['discover']
-		address = '255.255.255.255'
-		port = 9999
-		timeout = 4.0
-		discovery_packets = 3
-		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		sock.settimeout(float(timeout))
+    return decrypt(buffer[4:])
 
-		if istty: print("Sending discovery to %s:%s   %s" % (address, port, cmd))
+  def discover(self):
+    cmd = self.commands()['discover']
+    address = '255.255.255.255'
+    port = 9999
+    timeout = 4.0
+    discovery_packets = 3
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.settimeout(float(timeout))
 
-		encrypted_cmd = encrypt(cmd)
-		for _ in range(discovery_packets):
-			sock.sendto(encrypted_cmd[4:], (address, port))
+    if istty: print("Sending discovery to %s:%s   %s" % (address, port, cmd))
 
-		if istty: print("Waiting %s seconds for responses..." % timeout)
+    encrypted_cmd = encrypt(cmd)
+    for _ in range(discovery_packets):
+      sock.sendto(encrypted_cmd[4:], (address, port))
 
-		foundDevs = {}
-		try:
-			while True:
-				data, addr = sock.recvfrom(4096)
-				ip, port = addr
-				info = json.loads(decrypt(data))
-				# print("%s\n%s\n" % (ip, info))
-				if not ip in foundDevs:
-					foundDevs[ip] = info
-		except:
-			pass
-			
-		return foundDevs
+    # if running from command line tester...
+    if istty: print("Waiting %s seconds for responses..." % timeout)
 
-	def listCommands(self):
-		return commands
+    foundDevs = {}
+    try:
+      while True:
+        data, addr = sock.recvfrom(4096)
+        ip, port = addr
+        info = json.loads(decrypt(data))
+        # print("%s\n%s\n" % (ip, info))
+        if not ip in foundDevs:
+          foundDevs[ip] = info
+    except:
+      pass
+
+    return foundDevs
+
+  # relay and dimmer also have device-type specific commands, which are appended in the subclass
+  def commands(self):
+    BaseCommands = {
+      'info'     : '{"system":{"get_sysinfo":{}}}',
+      'discover' : '{"system":{"get_sysinfo":{}}}',
+      'reboot'   : '{"system":{"reboot":{"delay":1}}}',
+      'reset'    : '{"system":{"reset":{"delay":1}}}',
+      'schedule' : '{"schedule":{"get_rules":{}}}',
+    }
+
+    return BaseCommands

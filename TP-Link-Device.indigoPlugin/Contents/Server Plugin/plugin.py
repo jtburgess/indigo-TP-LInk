@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 ####################
+# import indigo
 
-import indigo				# Added here to stop pylint errors
 # import inspect				# Not needed once we convert logging to use format
 import json
 import logging
@@ -10,9 +10,21 @@ from os import path
 import pdb
 from Queue import Queue
 import socket
-from tpl_polling import pollingThread
-from tplink_smartplug import tplink_smartplug
 from plugin_base import IndigoLogHandler
+
+from tplink_dimmer_plugin import tplink_dimmer, dimmerModels
+from tplink_relay_plugin import tplink_relay, relayModels
+
+# this is the generic protocol, no device specific commands
+from protocol import tplink_protocol
+# with sub classes for the two device types.
+from tplink_dimmer_protocol import tplink_dimmer_protocol
+from tplink_relay_protocol import tplink_relay_protocol
+
+# ditto for the polling thread
+# from tpl_polling import pollingThread
+from tpl_dimmer_poll import dimmer_poll
+from tpl_relay_poll import relay_poll
 
 
 # Method to verify existance of an accessable TP-Link plug
@@ -38,12 +50,15 @@ class MyDebugHandler(IndigoLogHandler, object):
         super(IndigoLogHandler, self).__init__(level)
         self.displayName = displayName
         self.debug = debug
+        return
 
     def setLogLevel(self, loglevel):
         self.loglevel = loglevel
         # indigo.server.log("Received log level {}".format(self.loglevel))
+        return
 
     def emit(self, record):
+        """ not used by this class; must be called independently by indigo """
         level = record.levelname
         is_error = False
         if level == 'THREADDEBUG' and self.loglevel == 'debug':	# 5
@@ -61,6 +76,7 @@ class MyDebugHandler(IndigoLogHandler, object):
             return
 
         indigo.server.log(message=logmessage, type=self.displayName, isError=is_error)
+        return
 
 
 ################################################################################
@@ -86,36 +102,97 @@ class Plugin(indigo.PluginBase):
         # self.logger.debug(u"{} {} {} plugin 10".format('1', '2', '3'))
         # self.logger.info(u"{} {} {} plugin 20".format('foo', 'bar', 'baz'))
         # self.logger.error(u"{} {} {} plugin 40".format('1', '2', '3'))
+        return
 
+    def getSubType(self, model):
+      """ translate model names to module sub-type strings, which are then used for sub-classes """
+      model = model[:5]  # ingore the (US) in  for example, HS105(US)
+      if model in relayModels:
+        return 'tplinkSmartPlug'
+      elif model in dimmerModels:
+        return 'tplinkSmartBulb'
+      else:
+        self.logger.error("model %s is not recognised" % model)
+        return 'unknown'
+
+    def getSubClass(self, deviceTypeId):
+      """ device-type specific functionality is broken out into sub-classes;
+          unfortunately, indigo wont directly call the subclass, so I have to hack it
+      """
+      if deviceTypeId == 'tplinkSmartPlug':
+        return tplink_relay(self.logger, self.pluginPrefs, self)
+      elif deviceTypeId == 'tplinkSmartBulb':
+        return tplink_dimmer(self.logger, self.pluginPrefs, self)
+      else:
+        self.logger.error("deviceTypeId %s not recognised" % deviceTypeId)
+        # this will cause things to crash
+        return None
+
+    def getPollClass(self, dev):
+      """ similarly, the polling function has device-type specific functionality """
+      if dev.deviceTypeId == 'tplinkSmartPlug':
+        return relay_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
+      elif dev.deviceTypeId == 'tplinkSmartBulb':
+        return dimmer_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
+      else:
+        self.logger.error("deviceTypeId %s not recognised" % dev.deviceTypeId)
+        # this will cause things to crash
+        return None
+
+    def getSubProtocol(self, dev):
+      """ to start with, just some of the commands are different,
+          but this allows other protocol things to be sub-type specific
+      """
+      addr = dev.address
+      port = 9999
+
+      if dev.deviceTypeId == 'tplinkSmartPlug':
+        if 'multiPlug' in dev.pluginProps and dev.pluginProps['multiPlug']:
+          # a sub-type of tplinkSmartPlug
+          deviceId = dev.pluginProps['deviceId']
+          childId = dev.pluginProps['outletNum']
+        else:
+          deviceId = None
+          childId = None
+        self.logger.debug(u"called with tplink_relay addr: {}, deviceID {}, chlldID {}".format(addr, deviceId, childId))
+        return tplink_relay_protocol(addr, port, deviceId, childId)
+      elif dev.deviceTypeId == 'tplinkSmartBulb':
+        self.logger.debug(u"called with tplink_dimmer addr: {}".format(addr))
+        return tplink_dimmer_protocol(addr, port, None, None)
+      else:
+        self.logger.error("deviceTypeId %s not recognised" % dev.deviceTypeId);
+        # this will cause things to crash, later
+        return None
 
     ########################################
     def startup(self):
         self.logger.debug(u"startup called")
+        return
 
     def shutdown(self):
         self.logger.debug(u"shutdown called")
+        return
 
     ########################################
     # Validation handlers
     ######################
     def validateDeviceConfigUi(self, valuesDict, typeId, devId):
-        self.logger.debug(u"called with typeId={}, devId={}, and valuesDict=%s.".format(typeId, devId, valuesDict['address']))
+        self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
         self.logger.threaddebug(u"for devId={} valuesDict={}.".format(devId, valuesDict))
         errorsDict = indigo.Dict()
-
-        if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
-            valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
-        self.logger.threaddebug(u"left with typeId=%s, devId=%s, and valuesDict=%s.", typeId, devId, valuesDict)
-
-        if not valuesDict['energyCapable']:
-            valuesDict['SupportsEnergyMeter'] = False
-            valuesDict['SupportsEnergyMeterCurPower'] = False
 
         # If we have been asked to re-initialize this device...
         if ('initialize' in valuesDict and valuesDict['initialize']):
             self.initializeDev(valuesDict)
+
+        # newDev is an invidible checkbox to enable a re-initialize button in the Device UI
         valuesDict['newDev'] = False
         valuesDict['initialize'] = False
+
+        # do any device-type specific config
+        subType = self.getSubClass(indigo.devices[devId].deviceTypeId)
+        valuesDict = subType.validateDeviceConfigUi(valuesDict, typeId, devId)
+
         return (True, valuesDict, errorsDict)
 
     ######################
@@ -139,32 +216,32 @@ class Plugin(indigo.PluginBase):
         # Called for each device on startup
         # Commit any state changes
         dev.stateListOrDisplayStateIdChanged()
+        dev.model = dev.pluginProps['model']
 
         # get some data for local use from the device
         name      = dev.name
         address   = dev.address
-        multiPlug = dev.pluginProps['multiPlug']
-        if multiPlug:
+        subType = self.getSubClass(dev.deviceTypeId)
+        subType.deviceStartComm(dev)
+
+        if 'multiPlug' in dev.pluginProps and dev.pluginProps['multiPlug']:
+            # a sub-type of tplinkSmartPlug
+            # why is this special??
             devPoll = self.pluginPrefs['devPoll']
         else:
             devPoll = dev.pluginProps['devPoll']
-
-        # Update the model display column
-        dev.model = dev.pluginProps['model']
-        dev.description = "plug " + str(int(dev.pluginProps['outletNum'])+1)
-        dev.replaceOnServer()
 
         # self.logger.debug("deviceStartComn starting %s" % (name), type="TP-Link", isError=False)
         if name in self.tpThreads:
             self.logger.debug("deviceStartComm error: Thread exists for %s , %s- %s" % (name, address, self.tpThreads[dev.name]))
             # self.tpThreads[address].interupt(None)
         elif not devPoll:
-            self.logger.info("Polling thread not started for device  %s, %s. It has polling disabled", name, address)
+            self.logger.info("Polling thread is disabled for device  %s, %s.", name, address)
         elif devPoll:
             # We start one thread per device ip address
             if address not in self.tpThreads:
-                # Create a thread
-                self.process = pollingThread(self.logger, dev, self.logOnOff, self.pluginPrefs)
+                # Create a polling thread
+                self.process = self.getPollClass(dev)
                 self.tpThreads[address] = self.process
                 self.logger.debug("Polling thread started for device %s, %s", name, address)
                 # ... and save a copy of the device that created this thread
@@ -183,8 +260,11 @@ class Plugin(indigo.PluginBase):
             else:
                 # something is horribly wrong
                 self.logger.error(u"deviceStartComm error in thread creation %s, %s", name, address)
+
         # Since we got this far, we might as well tell someone
+        dev.replaceOnServer()
         self.logger.info(u"Polling started for %s@%s.", dev.name, dev.address)
+        return
 
     def deviceStopComm(self, dev):
         # Called when communication with the hardware should be shutdown.
@@ -197,44 +277,33 @@ class Plugin(indigo.PluginBase):
             self.logger.debug("deviceStopComn ending %s, %s" % (name, address))
             self.tpThreads[address].stop()
             del self.tpThreads[address]
+        return
 
     ########################################
     ########################################
     def initializeDev(self, valuesDict):
-        self.logger.debug(u"called for: %s." % (valuesDict))
+        self.logger.debug(u" called with: %s.", (valuesDict))
 
-        self.logger.debug(u"2 called for: %s." % (valuesDict))
         devAddr = valuesDict['address']
         devName = "new device at " + devAddr
         devPort = 9999
         deviceId = None
         childId = None
-        tplink_dev = tplink_smartplug (devAddr, devPort, deviceId, childId)
+
+        # dont know the device type, so use generic protocol, and only generic commands
+        tplink_dev = tplink_protocol (devAddr, devPort, deviceId, childId)
         result = tplink_dev.send('info')
-        self.deviceSearchResults[devAddr] = result
+        # self.deviceSearchResults[devAddr] = result
 
         self.logger.debug(u"%s: InitializeDev 3 got %s" % (devName, result))
         data = json.loads(result)
         self.deviceSearchResults[devAddr] = data
         self.logger.debug(u"%s: InitializeDev 4 got %s" % (devName, data))
         valuesDict['deviceId'] = data['system']['get_sysinfo']['deviceId']
-        valuesDict['childId'] = str(deviceId) + valuesDict['outletNum']
-        valuesDict['mac'] = data['system']['get_sysinfo']['mac']
         valuesDict['model'] = data['system']['get_sysinfo']['model']
 
-        if 'child_num' in data['system']['get_sysinfo']:
-            self.logger.debug(u"%s has child_id", devName)
-            valuesDict['multiPlug'] = True
-            valuesDict['outletsAvailable'] = data['system']['get_sysinfo']['child_num']
-        else:
-            self.logger.debug(u"%s does not have child_id", devName)
-            valuesDict['multiPlug'] = False
-            valuesDict['outletsAvailable'] = 1
-
-        if 'ENE' in data['system']['get_sysinfo']['feature']:
-            valuesDict['energyCapable'] = True
-        else:
-            valuesDict['energyCapable'] = False
+        subType = self.getSubClass(self.getSubType(valuesDict['model']))
+        valuesDict =  subType.initializeDev(valuesDict, data)
 
         valuesDict['initialize'] = False
 
@@ -243,32 +312,22 @@ class Plugin(indigo.PluginBase):
     ########################################
     # Relay Action callback
     ######################
-    def actionControlDimmerRelay(self, action, dev):
-        self.logger.debug(u"called with: %s for %s." % (action, dev.name))
-        addr = dev.address
-        port = 9999
-        if dev.pluginProps['multiPlug']:
-            deviceId = dev.pluginProps['deviceId']
-            childId = dev.pluginProps['outletNum']
-        else:
-            deviceId = None
-            childId = None
-
-        tplink_dev = tplink_smartplug (addr, port, deviceId, childId)
-        self.logger.debug(u"tplink_dev set with: %s, %s, %s, %s." % (addr, port, deviceId, childId))
+    ### (deprecated) def actionControlDimmerRelay(self, action, dev):
+    def actionControlDevice (self, action, dev):
+        self.logger.debug(u"called with: {} for {}.".format(action.deviceAction, dev.name))
 
         ###### TURN ON ######
-        if action.deviceAction == indigo.kDimmerRelayAction.TurnOn:
+        if action.deviceAction == indigo.kDeviceAction.TurnOn:
             cmd = "on"
             if dev.pluginProps['devPoll']:
                 self.tpThreads[dev.address].interupt(state=True, action='state')
         ###### TURN OFF ######
-        elif action.deviceAction == indigo.kDimmerRelayAction.TurnOff:
+        elif action.deviceAction == indigo.kDeviceAction.TurnOff:
             cmd = "off"
             if dev.pluginProps['devPoll']:
                 self.tpThreads[dev.address].interupt(state=False, action='state')
         ###### TOGGLE ######
-        elif action.deviceAction == indigo.kDimmerRelayAction.Toggle:
+        elif action.deviceAction == indigo.kDeviceAction.Toggle:
             if dev.onState:
                 cmd = "off"
                 if dev.pluginProps['devPoll']:
@@ -277,39 +336,60 @@ class Plugin(indigo.PluginBase):
                 cmd = "on"
                 if dev.pluginProps['devPoll']:
                     self.tpThreads[dev.address].interupt(state=True, action='state')
+        ###### SET BRIGHTNESS (for bulbs only) ######
+        elif action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
+
+            tplink_dev = self.getSubProtocol (dev)
+            # ToDo: is different logic needed when the bulb is only on/orr?  What about color?
+            if action.actionValue == 0:
+              cmd = "off"
+            elif action.actionValue == 100:
+              cmd = "on"
+            else:
+              # call dimmer_protocol to create json for the command, which can then be passed as usual
+              cmd = tplink_dev.setBrightness (action.actionValue)
+            self.logger.debug("set Brightness to {}, cmd=<{}>".format(action.actionValue, cmd))
         else:
-            self.logger.error("Unknown command: {}".format(indigo.kDimmerRelayAction))
+            self.logger.error("Unknown command: {}".format(action.deviceAction))
             return
 
+        tplink_dev = self.getSubProtocol (dev)
         result = tplink_dev.send(cmd)
         sendSuccess = False
         try:
             result_dict = json.loads(result)
-            error_code = result_dict["system"]["set_relay_state"]["err_code"]
+            self.logger.debug("send({}) result: {}".format(cmd, result_dict))
+            error_code = tplink_dev.getErrorCode(result_dict)
             if error_code == 0:
                 sendSuccess = True
             else:
                 self.logger.error("turn {} command failed (error code: {})".format(cmd, error_code))
         except:
             pass
+
         indigo.debugger()
         if sendSuccess:
             # If success then log that the command was successfully sent.
             self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
 
             # And then tell the Indigo Server to update the state.
-            if cmd == "on":
-                state = True
-            else:
+            if cmd == "off":
                 state = False
+            else:
+                # either "on" or set brightness > 0
+                state = True
             dev.updateStateOnServer(key="onOffState", value=state)
             if self.logOnOff:
+              if action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
+                # because "cmd" is manipulated to be json, above
+                self.logger.info(u"%s brightness set to %s", dev.name, action.actionValue)
+              else:
                 self.logger.info(u"%s set to %s", dev.name, cmd)
             #self.tpThreads[dev.address].interupt(dev=dev, action='status')
 
         else:
             # Else log failure but do NOT update state on Indigo Server.
-            self.logger.error(u'send "{}" {} failed with result "{}"'.format(dev.name, cmd, result))
+            self.logger.error(u'send "{}" "{}"" failed with result "{}"'.format(dev.name, cmd, result))
 
     # The 'status' callback
     def getInfo(self, pluginAction, dev):
@@ -330,67 +410,37 @@ class Plugin(indigo.PluginBase):
 
     # Energy and Status callback
     def actionControlUniversal(self, action, dev):
-        self.logger.debug(u"Action: %s for device: %s." % (action, dev.name))
-        ###### ENERGY UPDATE ######
-        if action.deviceAction == indigo.kUniversalAction.EnergyUpdate:
-            if dev.pluginProps['energyCapable'] == True :
-                self.logger.info("Energy Status Update Requested for " + dev.name)
-                self.getInfo("", dev)
-            else: self.logger.info("Device " + dev.name + " not energy capable.")
+        self.logger.debug(u"Action: %s for device: %s." % (action.deviceAction, dev.name))
 
-        ###### STATUS REQUEST ######
-        elif action.deviceAction == indigo.kUniversalAction.RequestStatus:
+        if action.deviceAction == indigo.kUniversalAction.RequestStatus:
             self.getInfo("", dev)
+        else:
+          subType = self.getSubClass(dev.deviceTypeId)
+          subType.actionControlUniversal(action, dev)
 
-        ###### ENERGY RESET ######
-        elif action.deviceAction == indigo.kUniversalAction.EnergyReset:
-            self.logger.info("energy reset for Device: %s", dev.name)
-
-            # Get the plugionProps, modify them, and save them back
-            pluginProps = dev.pluginProps
-            accuUsage = float(pluginProps['totAccuUsage'])
-            curTotEnergy = float(dev.states['totWattHrs'])
-            accuUsage += curTotEnergy
-            pluginProps['totAccuUsage'] = accuUsage
-            dev.replacePluginPropsOnServer(pluginProps)
-
-            # and now reset the Indigo Device Detail display
-            dev.updateStateOnServer("accumEnergyTotal", 0.0)
-
+        return
 
     ########################################
     # Device ConfigUI Callbacks
     ######################
     def getDeviceStateList(self, dev):
         """Dynamically create/update the states list for each device"""
-        self.logger.debug(u"called for: %s." % (dev.name))
-        self.logger.threaddebug(u"called for: %s." % (dev))
+        self.logger.debug(u" called for: '%s'." % (dev.name))
+        self.logger.threaddebug(u"called for dev: %s." % (dev))
 
         statesDict = indigo.PluginBase.getDeviceStateList(self, dev)
         rssi  = self.getDeviceStateDictForNumberType(u"rssi", u"rssi", u"rssi")
-        alias = self.getDeviceStateDictForNumberType(u"alias", u"alias", u"alias")
+        alias = self.getDeviceStateDictForStringType(u"alias", u"alias", u"alias")
         statesDict.append(rssi)
         statesDict.append(alias)
 
-        if len(dev.pluginProps) >0: # We actually have a device here...
-            if dev.pluginProps['energyCapable']: # abd the device does energy reporting
-                # Add the energy reporting states
-
-                #accuWattHrs = self.getDeviceStateDictForNumberType(u"accuWattHrs", u"accuWattHrs", u"accuWattHrs")
-                curWatts = self.getDeviceStateDictForNumberType(u"curWatts", u"curWatts", u"curWatts")
-                totWattHrs = self.getDeviceStateDictForNumberType(u"totWattHrs", u"totWattHrs", u"totWattHrs")
-                curVolts = self.getDeviceStateDictForNumberType(u"curVolts", u"curVolts", u"curVolts")
-                curAmps = self.getDeviceStateDictForNumberType(u"curAmps", u"curAmps", u"curAmps")
-
-                #statesDict.append(accuWattHrs)
-                statesDict.append(curWatts)
-                statesDict.append(totWattHrs)
-                statesDict.append(curVolts)
-                statesDict.append(curAmps)
-
-        return statesDict
+        subType = self.getSubClass(dev.deviceTypeId)
+        return subType.getDeviceStateList(dev, statesDict)
 
     def getTpDevice(self, filter="", valuesDict=None, typeId="", targetId=0):
+        """ discover devices on the network, but restrict to the matching deviceTypeID already selected
+            a callback in Devices.xml to return a list
+        """
         self.logger.debug(u"called for: %s, %s, %s." % (filter, typeId, targetId))
         self.logger.threaddebug(u"called for: %s, %s, %s, %s." % (filter, typeId, targetId, valuesDict))
 
@@ -398,7 +448,7 @@ class Plugin(indigo.PluginBase):
         if indigo.devices[targetId].configured:
             return deviceArray
         else:
-            tplink_discover = tplink_smartplug(None, None)
+            tplink_discover = tplink_protocol(None, None)
             try:
                 self.deviceSearchResults = tplink_discover.discover()
             except Exception as e:
@@ -406,9 +456,12 @@ class Plugin(indigo.PluginBase):
 
             self.logger.debug(u"received %s" % (self.deviceSearchResults))
 
+            # This is discovery; part of which is determining which type it is.
             for address in self.deviceSearchResults:
-                model = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
-                menuText = model + " @ " + address
+                model = self.deviceSearchResults[address]['system']['get_sysinfo']['model'] #[:5]
+                devSubType = self.getSubType(model)
+                self.logger.debug(u"getSubType for model %s returned %s" % (model, devSubType))
+                menuText = model + " @ " + address + "("+devSubType+")"
                 menuEntry = (address, menuText)
                 deviceArray.append(menuEntry)
             menuEntry = ('manual', 'manual entry')
@@ -417,18 +470,19 @@ class Plugin(indigo.PluginBase):
             return deviceArray
 
     def selectTpDevice(self, valuesDict, typeId, devId):
-        # This method gets called at several different times in the device configuration process.
-        # The first if/else block sorts all that out
+        """ This method gets called at several different times in the device configuration process.
+            (See Devices.xml)
+            The first if/elif/else blocks sort all that out
+        """
         self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, valuesDict['address']))
         self.logger.threaddebug(u"called for: %s, %s." % (devId, valuesDict))
 
-        if valuesDict['addressSelect'] != 'manual':  # A plug from the discovery list has been selected, so we can continue
+        # most of this is the same for both relay and dimmer types
+        if valuesDict['addressSelect'] != 'manual':
             self.logger.debug("%s -- %s\n" % (valuesDict['addressSelect'], valuesDict['manualAddressResponse']))
             valuesDict['address'] = valuesDict['addressSelect']
             address = valuesDict['address']
             valuesDict['deviceId']  = self.deviceSearchResults[address]['system']['get_sysinfo']['deviceId']
-            valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
-            valuesDict['mac']       = self.deviceSearchResults[address]['system']['get_sysinfo']['mac']
             valuesDict['model']     = self.deviceSearchResults[address]['system']['get_sysinfo']['model']
             valuesDict['displayOk'] = True
             valuesDict['displayManAddress'] = True
@@ -439,7 +493,7 @@ class Plugin(indigo.PluginBase):
             if not check_server(valuesDict['address']):
                 # Bail out
                 errorsDict = indigo.Dict()
-                errorsDict["showAlertText"] = "Could not find a TP-Link plug device at this address"
+                errorsDict["showAlertText"] = "Could not find a TP-Link device at this address"
                 errorsDict['address'] = "Address not reachable"
                 return(valuesDict, errorsDict)
             # Ok, we can continue
@@ -455,26 +509,14 @@ class Plugin(indigo.PluginBase):
 
         # Since we got here, we must have a valid address
         address = valuesDict['address']
-        if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
-            self.logger.debug(u"%s has child_id", address)
-            valuesDict['multiPlug'] = True
-            valuesDict['outletsAvailable'] = self.deviceSearchResults[address]['system']['get_sysinfo']['child_num']
-        else:
-            self.logger.debug(u"%s does not have child_id", address)
-            valuesDict['multiPlug'] = False
-            valuesDict['outletsAvailable'] = 1
-            valuesDict['outletNum'] = "00"
 
-        if 'ENE' in self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
-            valuesDict['energyCapable'] = True
-        else:
-            valuesDict['energyCapable'] = False
-
-        self.logger.debug("returning valuesDict: %s" % valuesDict)
+        subType = self.getSubClass(indigo.devices[devId].deviceTypeId)
+        valuesDict = subType.selectTpDevice( valuesDict, typeId, devId)
 
         return valuesDict
 
     def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
+        ### specific to the Relay type; dont bother subclassing (see Devices.xml)
         self.logger.debug(u"called for: %s, %s, %s." % (filter, typeId, targetId))
         self.logger.threaddebug(u"called for: %s, %s, %s, %s." % (filter, typeId, targetId, valuesDict))
 
@@ -504,7 +546,7 @@ class Plugin(indigo.PluginBase):
                         outletArray.append(menuEntry)
 
             elif valuesDict['outletsAvailable'] > 0:
-                self.logger.debug(u"outlets 2 avail %s" % (valuesDict['outletsAvailable']))
+                self.logger.debug(u"outlets avail: %s" % (valuesDict['outletsAvailable']))
                 for outlet in range(0, int(valuesDict['outletsAvailable'])):
                     self.logger.debug(u"loop %s" % (outlet))
                     internalOutlet = int(outlet)
@@ -516,14 +558,16 @@ class Plugin(indigo.PluginBase):
 
     ########################################
     # Menu callbacks defined in MenuItems.xml
+    # I haven't been able to figure out how to make these calls soecific to the device Type
     ########################################
 
     ########################################
     # Device reporting
-
     def displayButtonPressed(self, valuesDict, clg_func):
-        """ Prepare the report for the Menu Items configUI display """
-        self.logger.debug("called for targetDevice {} from ".format(valuesDict['targetDevice'], clg_func))
+        """ callback to prepare the data for the "display device information" configUI display
+             (See MenuItems.xml)
+        """
+        self.logger.debug("called for targetDevice {} from {}".format(valuesDict['targetDevice'], clg_func))
         self.logger.threaddebug("called with valuesDict={}".format(valuesDict))
 
         try:
@@ -539,44 +583,47 @@ class Plugin(indigo.PluginBase):
         self.logger.threaddebug("pluginPropsr=%s", props)
 
         valuesDict['address']       = props['address']
-        valuesDict['devPoll']       = props['devPoll']
-        valuesDict['deviceId']      = props['deviceId']
-        valuesDict['energyCapable'] = props['energyCapable']
-        valuesDict['mac']           = props['mac']
+        valuesDict['alias']         = dev.states['alias']
+        valuesDict['deviceTypeId']  = dev.deviceTypeId
         valuesDict['model']         = props['model']
-        valuesDict['multiPlug']     = props['multiPlug']
+        valuesDict['description']   = dev.description
+        valuesDict['deviceId']      = props['deviceId']
+        valuesDict['mac']           = props['mac']
+        valuesDict['devPoll']       = props['devPoll']
         valuesDict['offPoll']       = props['offPoll']
         valuesDict['onPoll']        = props['onPoll']
-        valuesDict['outletNum']     = int(props['outletNum'])+1
-        valuesDict['alias']         = dev.states['alias']
         valuesDict['displayOk']     = True
 
+        subType = self.getSubClass(dev.deviceTypeId)
+        valuesDict = subType.displayButtonPressed(dev, valuesDict)
         self.logger.threaddebug("Device info = %s", valuesDict)
 
         return(valuesDict)
 
     def printToLogPressed(self, valuesDict, clg_func):
-        """ Prepare the report for display in the log """
+        """ callback to prepare the report for display in the log
+             (See MenuItems.xml)
+        """
         self.logger.debug("called for dev {} from {}".format(valuesDict['targetDevice'], clg_func))
         self.logger.threaddebug("Received {}".format(valuesDict))
+
         devNumber = int(valuesDict['targetDevice'])
         dev = indigo.devices[devNumber]
-
         rpt_fmt = "            {0!s:25}{1!s}\n"
-        report = "Tp-Link plugin device report\n" + \
+        subType = self.getSubClass(dev.deviceTypeId)
+
+        report = "Tp-Link device report\n" + \
+            rpt_fmt.format("TP-link Device Type:", dev.deviceTypeId) + \
             rpt_fmt.format("Indigo Device Name:", dev.name) + \
             rpt_fmt.format("IP Address:", valuesDict['address']) + \
+            rpt_fmt.format("MAC Address:", valuesDict['mac']) + \
             rpt_fmt.format("Device ID:", valuesDict['deviceId']) + \
             rpt_fmt.format("Alias:", valuesDict['alias']) + \
-            rpt_fmt.format("Outlet Number:", valuesDict['outletNum']) + \
             rpt_fmt.format("Model:", valuesDict['model']) + \
+            rpt_fmt.format("Polling enabled:", valuesDict['devPoll']) + \
             rpt_fmt.format("On state polling freq:", valuesDict['onPoll']) + \
             rpt_fmt.format("Off state polling freq:", valuesDict['offPoll']) + \
-            rpt_fmt.format("MAC Address:", valuesDict['mac']) + \
-            rpt_fmt.format("Polling enabled:", valuesDict['devPoll']) + \
-            rpt_fmt.format("Multiple Outlets:", valuesDict['multiPlug']) + \
-            rpt_fmt.format("Energy reporting:", valuesDict['energyCapable'])
+            subType.printToLogPressed( valuesDict, rpt_fmt)
 
         self.logger.info("%s", report)
-
         return
