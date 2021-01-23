@@ -30,7 +30,9 @@ class tplink_dimmer():
 
   def deviceStartComm(self, dev):
     # Update the model display column
-    dev.description = dev.pluginProps['description']
+    # description is the Notes Field. Jay requested to only set this on initilaiztion
+    if len(dev.description) == 0:
+      dev.description = description
     return
 
   def deviceStopComm(self, dev):
@@ -44,7 +46,37 @@ class tplink_dimmer():
 
     return valuesDict
 
-  def actionControlDevice (self, action, dev):
+  def actionControlDevice (self, action, dev, cmd, logOnOff=True):
+    """ called on send Success to update state, etc. """
+    self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
+
+    # tell the Indigo Server to update states
+    uiState = cmd
+    if cmd == "off":
+        state = False
+        brightnessLevel = 0
+        uiBrightness = '0'
+    elif cmd == "on":
+        state = True
+        brightnessLevel = 100
+        uiBrightness = '100'
+    else:
+        # must be the brightness slider
+        state = True
+        uiState = "on"
+        brightnessLevel = action.actionValue
+        uiBrightness = "{}".format(brightnessLevel)
+
+    dev.updateStateOnServer(key="onOffState", value=state, uiValue=uiState)
+    dev.updateStateOnServer(key="brightnessLevel", value=brightnessLevel, uiValue=uiBrightness)
+
+    if logOnOff:
+      if action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
+        # because "cmd" is manipulated to be json, above
+        self.logger.info(u"%s brightness set to %s", dev.name, brightnessLevel)
+      else:
+        self.logger.info(u"%s set to %s", dev.name, cmd)
+    #self.tpThreads[dev.address].interupt(dev=dev, action='status')
     return
 
   def getInfo(self, pluginAction, dev):
@@ -56,6 +88,9 @@ class tplink_dimmer():
   def getDeviceStateList(self, dev, statesDict):
     self.logger.debug(u" called for: %s." % statesDict)
 
+    # brightness level is pre-defined. No need to add it here
+    #brightnessLevel = self.tpLink_self.getDeviceStateDictForNumberType(u"brightnessLevel", u"brightnessLevel", u"brightnessLevel")
+    #statesDict.append(brightnessLevel)
     hue = self.tpLink_self.getDeviceStateDictForNumberType(u"hue", u"hue", u"hue")
     statesDict.append(hue)
     # brightnessLevel is bullt-in
@@ -84,5 +119,5 @@ class tplink_dimmer():
 
   def printToLogPressed(self, valuesDict, rpt_fmt):
 
-    return rpt_fmt.format("Supports Dimming:", valuesDict['brightness']) + \
-        rpt_fmt.format("Other attributes:", "TBD")
+    return rpt_fmt.format("Supports Dimming:", valuesDict['isDimmable']) + \
+        rpt_fmt.format("Supports Color:", valuesDict['isColor'])
