@@ -45,9 +45,10 @@ class tplink_relay():
     return(True, valuesDict)
 
   def deviceStartComm(self, dev):
-
     # Update the model display column
-    dev.description = "plug " + str(int(dev.pluginProps['outletNum'])+1)
+    # description is the Notes Field. Jay requested to only set this on initilaiztion
+    if len(dev.description) == 0:
+      dev.description = description
     return
 
   def deviceStopComm(self, dev):
@@ -75,8 +76,21 @@ class tplink_relay():
         valuesDict['energyCapable'] = False
     return valuesDict
 
-  def actionControlDevice (self, action, dev):
-      return
+  def actionControlDevice (self, action, dev, cmd, logOnOff=True):
+    """ called on send Success to update state, etc. """
+    self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
+
+    # tell the Indigo Server to update the state.
+    if cmd == "off":
+        state = False
+    else:
+        state = True
+    dev.updateStateOnServer(key="onOffState", value=state)
+
+    if logOnOff:
+      self.logger.info(u"%s set to %s", dev.name, cmd)
+    #self.tpThreads[dev.address].interupt(dev=dev, action='status')
+    return
 
   def getInfo(self, pluginAction, dev):
     return
@@ -127,6 +141,7 @@ class tplink_relay():
 
   def selectTpDevice(self, valuesDict, typeId, devId):
     address = valuesDict['address']
+
     self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
 
     if valuesDict['addressSelect'] != 'manual':
@@ -137,6 +152,7 @@ class tplink_relay():
         self.logger.debug(u"%s has child_id", address)
         valuesDict['multiPlug'] = True
         valuesDict['outletsAvailable'] = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']['child_num']
+        valuesDict['outletNum'] = valuesDict['outletsAvailable']
     else:
         self.logger.debug(u"%s does not have child_id", address)
         valuesDict['multiPlug'] = False

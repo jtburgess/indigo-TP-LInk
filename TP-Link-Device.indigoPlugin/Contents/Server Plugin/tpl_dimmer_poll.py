@@ -109,7 +109,6 @@ class dimmer_poll(pollingThread):
             alias = data['system']['get_sysinfo']['alias']
             rssi = data['system']['get_sysinfo']['rssi']
             ### ToDo - what other properties SHOULD be saved??
-            ### do I need to send a 'light_state' command
             brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
             hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
             state_update_list = [

@@ -341,9 +341,9 @@ class Plugin(indigo.PluginBase):
 
             tplink_dev = self.getSubProtocol (dev)
             # ToDo: is different logic needed when the bulb is only on/orr?  What about color?
-            if action.actionValue == 0:
+            if action.actionValue <= 1:
               cmd = "off"
-            elif action.actionValue == 100:
+            elif action.actionValue >= 99:
               cmd = "on"
             else:
               # call dimmer_protocol to create json for the command, which can then be passed as usual
@@ -353,6 +353,7 @@ class Plugin(indigo.PluginBase):
             self.logger.error("Unknown command: {}".format(action.deviceAction))
             return
 
+        # even though the command is the same, the JSON may be different for different devices
         tplink_dev = self.getSubProtocol (dev)
         result = tplink_dev.send(cmd)
         sendSuccess = False
@@ -369,23 +370,10 @@ class Plugin(indigo.PluginBase):
 
         indigo.debugger()
         if sendSuccess:
-            # If success then log that the command was successfully sent.
-            self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
-
-            # And then tell the Indigo Server to update the state.
-            if cmd == "off":
-                state = False
-            else:
-                # either "on" or set brightness > 0
-                state = True
-            dev.updateStateOnServer(key="onOffState", value=state)
-            if self.logOnOff:
-              if action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
-                # because "cmd" is manipulated to be json, above
-                self.logger.info(u"%s brightness set to %s", dev.name, action.actionValue)
-              else:
-                self.logger.info(u"%s set to %s", dev.name, cmd)
-            #self.tpThreads[dev.address].interupt(dev=dev, action='status')
+            # If success then log that the command was successfully sent, and update state vars
+            subType = self.getSubClass(dev.deviceTypeId)
+            subType.actionControlDevice (action, dev, cmd, self.logOnOff)
+            dev.stateListOrDisplayStateIdChanged()
 
         else:
             # Else log failure but do NOT update state on Indigo Server.
@@ -488,7 +476,7 @@ class Plugin(indigo.PluginBase):
             valuesDict['displayManAddress'] = True
 
         elif valuesDict['manualAddressResponse']:  # An ip address has been manually entered, so we can continue
-            self.logger.threaddebug("%s -- %s\n" % (valuesDict['address'], valuesDict['manualAddressResponse']))
+            self.logger.  threaddebug("%s -- %s\n" % (valuesDict['address'], valuesDict['manualAddressResponse']))
             # First, make sure there is actually a plug we can talk to at this address
             if not check_server(valuesDict['address']):
                 # Bail out
