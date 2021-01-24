@@ -319,23 +319,15 @@ class Plugin(indigo.PluginBase):
         ###### TURN ON ######
         if action.deviceAction == indigo.kDeviceAction.TurnOn:
             cmd = "on"
-            if dev.pluginProps['devPoll']:
-                self.tpThreads[dev.address].interupt(state=True, action='state')
         ###### TURN OFF ######
         elif action.deviceAction == indigo.kDeviceAction.TurnOff:
             cmd = "off"
-            if dev.pluginProps['devPoll']:
-                self.tpThreads[dev.address].interupt(state=False, action='state')
         ###### TOGGLE ######
         elif action.deviceAction == indigo.kDeviceAction.Toggle:
             if dev.onState:
                 cmd = "off"
-                if dev.pluginProps['devPoll']:
-                    self.tpThreads[dev.address].interupt(state=False, action='state')
             else:
                 cmd = "on"
-                if dev.pluginProps['devPoll']:
-                    self.tpThreads[dev.address].interupt(state=True, action='state')
         ###### SET BRIGHTNESS (for bulbs only) ######
         elif action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
 
@@ -378,6 +370,12 @@ class Plugin(indigo.PluginBase):
         else:
             # Else log failure but do NOT update state on Indigo Server.
             self.logger.error(u'send "{}" "{}"" failed with result "{}"'.format(dev.name, cmd, result))
+            return
+
+        # force a poll if everything went well
+        if dev.pluginProps['devPoll']:
+            self.tpThreads[dev.address].interupt(state=True, action='state')
+        return
 
     # The 'status' callback
     def getInfo(self, pluginAction, dev):

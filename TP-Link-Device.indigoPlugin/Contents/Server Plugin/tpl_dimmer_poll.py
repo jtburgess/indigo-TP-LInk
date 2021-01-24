@@ -94,13 +94,14 @@ class dimmer_poll(pollingThread):
             foundMsg = 'remotely'
 
           if devState != lastState:
-            if devState:
-              state = True
-              logState = "On"
-              # self.interupt(state=True, action='state')
-            else:
+            # the device state changed; update indigo states
+            if devState == 0:
               state = False
               logState = "Off"
+              # self.interupt(state=True, action='state')
+            else: # on or dimmed
+              state = True
+              logState = "On"
               # self.interupt(state=False, action='state')
             lastState = devState
 
@@ -108,17 +109,13 @@ class dimmer_poll(pollingThread):
 
             alias = data['system']['get_sysinfo']['alias']
             rssi = data['system']['get_sysinfo']['rssi']
-            ### ToDo - what other properties SHOULD be saved??
-            brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
-            hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
             state_update_list = [
-                {'key':'onOffState', 'value':state},
+                {'key':'onOffState', 'value':state, 'uiValue':logState},
                 {'key':'rssi',  'value':rssi},
                 {'key':'alias', 'value':alias},
-                {'key':'brightnessLevel', 'value':brightness},
-                {'key':'hue',   'value':hue}
               ]
             dev.updateStatesOnServer(state_update_list)
+            self.logger.debug(u"{}, updated state on server: onOff={}, alias={}".format(self.name, state, alias))
 
             self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s", self.name, logState, self.localOnOff, self.logOnOff)
 
@@ -126,11 +123,54 @@ class dimmer_poll(pollingThread):
               if self.logOnOff:
                 self.logger.info(u"{} {} set to {}".format(self.name, foundMsg, logState))
 
+            if state:
+              # only get brightness from the device if the bulb is on (or dimmed)
+              # the data returned by 'info' has several different formats...
+              ### ToDo - what other properties SHOULD be saved??
+              if "dft_on_state" in  data['system']['get_sysinfo']['light_state']:
+                brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
+                fromObject = 'dft_on_state'
+                # hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
+              elif "brightness" in  data['system']['get_sysinfo']['light_state']:
+                brightness = data['system']['get_sysinfo']['light_state']['brightness']
+                fromObject = 'light_state'
+                # hue        = data['system']['get_sysinfo']['light_state']['hue']
+              else:
+                self.logger.debug(u"{}, brightness not in light_state data: {}".format(self.name, data['system']['get_sysinfo']['light_state']))
+                brightness = None
+
+              if brightness is not None:
+                state_update_list = [
+                    {'key':'brightnessLevel', 'value':brightness},
+                    # {'key':'hue',   'value':hue}
+                  ]
+                dev.updateStatesOnServer(state_update_list)
+                self.logger.debug(u"{}, updated state on server: brightnessLevel={} from {}".format(self.name, brightness, fromObject))
+
+            else:
+                # if the bulb is off, just set to 0
+                state_update_list = [
+                    {'key':'brightnessLevel', 'value':0},
+                    {'key':'hue',   'value':0}
+                  ]
+                dev.updateStatesOnServer(state_update_list)
+
             self.interupt(state=state, action='state')
             self.localOnOff = False
 
-            self.logger.threaddebug(u"Polling found %s set to %s", self.name, logState)
-            self.logger.threaddebug(u"%s, updated state on server to %s (%s, %s)", self.name, state, rssi, alias)
+            self.logger.threaddebug(u"Polling %s %s set to %s", (self.name, foundMsg, logState))
+
+          elif devState and "dft_on_state" in data['system']['get_sysinfo']['light_state']:
+            # if the device is on, update the brighness - maybe we didn't get it last time
+            brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
+            hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
+
+            state_update_list = [
+                {'key':'brightnessLevel', 'value':brightness},
+                {'key':'hue',   'value':hue}
+              ]
+            dev.updateStatesOnServer(state_update_list)
+            self.logger.debug(u"{}, no state change; update state on server: brightnessLevel={}, hue={}".format(self.name, brightness, hue))
 
           self.logger.debug(u"%s: finished state update %s" % (self.name, data))
 

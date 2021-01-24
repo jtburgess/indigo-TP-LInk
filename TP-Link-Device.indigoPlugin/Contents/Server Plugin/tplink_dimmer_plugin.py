@@ -31,8 +31,9 @@ class tplink_dimmer():
   def deviceStartComm(self, dev):
     # Update the model display column
     # description is the Notes Field. Jay requested to only set this on initilaiztion
+    # where is a better place to do this, so it only happens when a device is FIRST set up?
     if len(dev.description) == 0:
-      dev.description = description
+      dev.description = dev.pluginProps['description']
     return
 
   def deviceStopComm(self, dev):
@@ -55,20 +56,21 @@ class tplink_dimmer():
     if cmd == "off":
         state = False
         brightnessLevel = 0
-        uiBrightness = '0'
     elif cmd == "on":
         state = True
         brightnessLevel = 100
-        uiBrightness = '100'
     else:
         # must be the brightness slider
         state = True
-        uiState = "on"
+        uiState = "On"
         brightnessLevel = action.actionValue
-        uiBrightness = "{}".format(brightnessLevel)
 
-    dev.updateStateOnServer(key="onOffState", value=state, uiValue=uiState)
-    dev.updateStateOnServer(key="brightnessLevel", value=brightnessLevel, uiValue=uiBrightness)
+    state_update_list = [
+        {'key':'onOffState', 'value':state, 'uiValue':uiState},
+        {'key':'brightnessLevel', 'value':brightnessLevel},
+        #{'key':'hue', 'value':TBD},
+      ]
+    dev.updateStatesOnServer(state_update_list)
 
     if logOnOff:
       if action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
