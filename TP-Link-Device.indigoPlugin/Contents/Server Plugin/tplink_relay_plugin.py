@@ -13,7 +13,8 @@ relayModels = {
     "HS105", # original plug-in
     "HS107", # 2 port plug-in
     "HS110",
-    "HS200", # wall switch (If dimmable, belongs in the dimmer list)
+    "HS200", # wall switch
+    "HS210", # wall switch
     "HS300", # 6 port power strip
     "KP303", # 3 port power strip
     "KP400", # outdoor

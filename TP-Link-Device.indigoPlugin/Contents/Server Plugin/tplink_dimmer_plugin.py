@@ -8,6 +8,7 @@ import indigo
 
 # outside the class because it may be needed to determine the class
 dimmerModels = {
+    "HS220", # dimmable wall switch
     "KL100", # lightbulb (if not dimmable, does it follow Relay properties and commands?)
     "KL110", # dimmable bulb
     "KL120", # tunable-white bulb
