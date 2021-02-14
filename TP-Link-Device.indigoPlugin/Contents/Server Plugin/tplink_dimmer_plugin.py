@@ -8,7 +8,6 @@ import indigo
 
 # outside the class because it may be needed to determine the class
 dimmerModels = {
-    "HS220", # dimmable wall switch
     "KL100", # lightbulb (if not dimmable, does it follow Relay properties and commands?)
     "KL110", # dimmable bulb
     "KL120", # tunable-white bulb
@@ -24,6 +23,9 @@ class tplink_dimmer():
     return
 
   def validateDeviceConfigUi(self, valuesDict, typeId, devId):
+    self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
+    dev = indigo.devices[devId]
+    dev.pluginProps['rampTime'] = valuesDict['rampTime']
     return valuesDict
 
   def validatePrefsConfigUi(self, valuesDict):
@@ -48,7 +50,7 @@ class tplink_dimmer():
 
     return valuesDict
 
-  def actionControlDevice (self, action, dev, cmd, logOnOff=True):
+  def actionControlDevice (self, action, dev, cmd, logOnOff=True, bright=None):
     """ called on send Success to update state, etc. """
     self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
 
@@ -92,11 +94,8 @@ class tplink_dimmer():
     self.logger.debug(u" called for: %s." % statesDict)
 
     # brightness level is pre-defined. No need to add it here
-    #brightnessLevel = self.tpLink_self.getDeviceStateDictForNumberType(u"brightnessLevel", u"brightnessLevel", u"brightnessLevel")
-    #statesDict.append(brightnessLevel)
     hue = self.tpLink_self.getDeviceStateDictForNumberType(u"hue", u"hue", u"hue")
     statesDict.append(hue)
-    # brightnessLevel is bullt-in
 
     return statesDict
 
@@ -111,6 +110,12 @@ class tplink_dimmer():
     valuesDict['description'] = self.tpLink_self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['description']
     valuesDict['energyCapable'] = False
 
+    dev = indigo.devices[devId]
+    if 'rampTime' in dev.pluginProps:
+      valuesDict['rampTime'] = dev.pluginProps['rampTime']
+    else:
+      valuesDict['rampTime'] = 1000 # default to 1 second
+
     self.logger.debug("returning valuesDict: %s" % valuesDict)
     return valuesDict
 
@@ -118,9 +123,48 @@ class tplink_dimmer():
     props = dev.pluginProps
     valuesDict['isDimmable']  = props['isDimmable']
     valuesDict['isColor']     = props['isColor']
+    valuesDict['rampTime']    = props['rampTime']
     return(valuesDict)
 
   def printToLogPressed(self, valuesDict, rpt_fmt):
 
     return rpt_fmt.format("Supports Dimming:", valuesDict['isDimmable']) + \
-        rpt_fmt.format("Supports Color:", valuesDict['isColor'])
+           rpt_fmt.format("Supports Color:", valuesDict['isColor'])
+
+
+  ########################################
+  # Menu callbacks defined in Actions.xml
+  # So far, These actions are specific to the RelaySwitch type
+  ########################################
+
+  def SetDoubleClickAction(self, pluginAction, dev):
+      indigo.server.log("SetDoubleClickAction only applies to device type RelaySwitch ")
+      return(None)
+
+  def SetLongPressAction(self, pluginAction, dev):
+      indigo.server.log("SetLongPressAction only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_gentle_off_time(self, pluginAction, dev):
+      indigo.server.log("set_gentle_off_time only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_gentle_on_time(self, pluginAction, dev):
+      indigo.server.log("set_gentle_on_time only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_fade_on_time(self, pluginAction, dev):
+      rampTime = str(pluginAction.props.get(u"setFOnT"))
+      newProps = dev.pluginProps
+      newProps['rampTime'] = rampTime
+      dev.replacePluginPropsOnServer(newProps)
+      indigo.server.log("set_fade_on_time: set the Ramp Time to {} ".format(rampTime))
+      return(None)
+
+  def set_fade_off_time(self, pluginAction, dev):
+      rampTime = str(pluginAction.props.get(u"setFOT"))
+      newProps = dev.pluginProps
+      newProps['rampTime'] = rampTime
+      dev.replacePluginPropsOnServer(newProps)
+      indigo.server.log("set_fade_off_time: set the Ramp Time to {} ".format(rampTime))
+      return(None)

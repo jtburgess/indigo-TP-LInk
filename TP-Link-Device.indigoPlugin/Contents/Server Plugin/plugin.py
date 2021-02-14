@@ -14,17 +14,20 @@ from plugin_base import IndigoLogHandler
 
 from tplink_dimmer_plugin import tplink_dimmer, dimmerModels
 from tplink_relay_plugin import tplink_relay, relayModels
+from tplink_relayswitch_plugin import tplink_relayswitch, relayswitchModels
 
 # this is the generic protocol, no device specific commands
 from protocol import tplink_protocol
 # with sub classes for the two device types.
 from tplink_dimmer_protocol import tplink_dimmer_protocol
 from tplink_relay_protocol import tplink_relay_protocol
+from tplink_relayswitch_protocol import tplink_relayswitch_protocol
 
 # ditto for the polling thread
 # from tpl_polling import pollingThread
 from tpl_dimmer_poll import dimmer_poll
 from tpl_relay_poll import relay_poll
+from tpl_relayswitch_poll import relayswitch_poll
 
 
 # Method to verify existance of an accessable TP-Link plug
@@ -109,10 +112,12 @@ class Plugin(indigo.PluginBase):
       model = model[:5]  # ingore the (US) in  for example, HS105(US)
       if model in relayModels:
         return 'tplinkSmartPlug'
+      elif model in relayswitchModels:
+        return 'tplinkSmartSwitch'
       elif model in dimmerModels:
         return 'tplinkSmartBulb'
       else:
-        self.logger.error("model %s is not recognised" % model)
+        self.logger.error("model '%s' is not recognised" % model)
         return 'unknown'
 
     def getSubClass(self, deviceTypeId):
@@ -121,10 +126,12 @@ class Plugin(indigo.PluginBase):
       """
       if deviceTypeId == 'tplinkSmartPlug':
         return tplink_relay(self.logger, self.pluginPrefs, self)
+      elif deviceTypeId == 'tplinkSmartSwitch':
+        return tplink_relayswitch(self.logger, self.pluginPrefs, self)
       elif deviceTypeId == 'tplinkSmartBulb':
         return tplink_dimmer(self.logger, self.pluginPrefs, self)
       else:
-        self.logger.error("deviceTypeId %s not recognised" % deviceTypeId)
+        self.logger.error("deviceTypeId '%s' is not recognised" % deviceTypeId)
         # this will cause things to crash
         return None
 
@@ -132,10 +139,12 @@ class Plugin(indigo.PluginBase):
       """ similarly, the polling function has device-type specific functionality """
       if dev.deviceTypeId == 'tplinkSmartPlug':
         return relay_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
+      elif dev.deviceTypeId == 'tplinkSmartSwitch':
+        return relayswitch_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
       elif dev.deviceTypeId == 'tplinkSmartBulb':
         return dimmer_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
       else:
-        self.logger.error("deviceTypeId %s not recognised" % dev.deviceTypeId)
+        self.logger.error("deviceTypeId '%s' is not recognised" % dev.deviceTypeId)
         # this will cause things to crash
         return None
 
@@ -155,12 +164,19 @@ class Plugin(indigo.PluginBase):
           deviceId = None
           childId = None
         self.logger.debug(u"called with tplink_relay addr: {}, deviceID {}, chlldID {}".format(addr, deviceId, childId))
-        return tplink_relay_protocol(addr, port, deviceId, childId)
+        return tplink_relay_protocol(addr, port, deviceId, childId, logger=self.logger)
+      elif dev.deviceTypeId == 'tplinkSmartSwitch':
+        self.logger.debug(u"called with tplink_relayswitch addr: {}".format(addr))
+        return tplink_relayswitch_protocol(addr, port, None, None, logger=self.logger)
       elif dev.deviceTypeId == 'tplinkSmartBulb':
         self.logger.debug(u"called with tplink_dimmer addr: {}".format(addr))
-        return tplink_dimmer_protocol(addr, port, None, None)
+        if 'rampTime' in dev.pluginProps:
+          arg2 = dev.pluginProps['rampTime']
+        else:
+          arg2 = 1000 # default 1 second
+        return tplink_dimmer_protocol(addr, port, None, None, logger=self.logger, arg2=arg2)
       else:
-        self.logger.error("deviceTypeId %s not recognised" % dev.deviceTypeId);
+        self.logger.error("deviceTypeId '%s' is not recognised" % dev.deviceTypeId);
         # this will cause things to crash, later
         return None
 
@@ -248,11 +264,11 @@ class Plugin(indigo.PluginBase):
                 self.tpDevices[address] = dev
             elif address in self.tpThreads:
                 self.logger.debug(u"deviceStartComm IN thread update %s, %s", name, address)
-                myDeviceId  = dev.pluginProps['deviceId']
-                if not myDeviceId:
+                deviceID  = dev.pluginProps['deviceId']
+                if not deviceID:
                     self.logger.error("%s: Oops.No deviceId for %s", name, address)
                 else:
-                    self.logger.debug("%s: Already had deviceId  %s", name, myDeviceId)
+                    self.logger.debug("%s: Already had deviceId  %s", name, address)
 
                 # self.logger.info(u"deviceStartComm related to device %s, %s", deviceId, "foio")
                 # Since a thread already exists, this is probably a multiPlug
@@ -316,9 +332,13 @@ class Plugin(indigo.PluginBase):
     def actionControlDevice (self, action, dev):
         self.logger.debug(u"called with: {} for {}.".format(action.deviceAction, dev.name))
 
+        arg1 = action.actionValue
+        arg2 = None
+
         ###### TURN ON ######
         if action.deviceAction == indigo.kDeviceAction.TurnOn:
             cmd = "on"
+            arg1 = dev.brightness
         ###### TURN OFF ######
         elif action.deviceAction == indigo.kDeviceAction.TurnOff:
             cmd = "off"
@@ -328,26 +348,27 @@ class Plugin(indigo.PluginBase):
                 cmd = "off"
             else:
                 cmd = "on"
-        ###### SET BRIGHTNESS (for bulbs only) ######
+        ###### SET BRIGHTNESS  ######
         elif action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
-
-            tplink_dev = self.getSubProtocol (dev)
-            # ToDo: is different logic needed when the bulb is only on/orr?  What about color?
+            # ToDo: is different logic needed when the bulb is only on/off?  What about color?
+            # trim the edge cases to pure on/off
             if action.actionValue <= 1:
               cmd = "off"
             elif action.actionValue >= 99:
               cmd = "on"
+              arg1 = dev.brightness
             else:
-              # call dimmer_protocol to create json for the command, which can then be passed as usual
-              cmd = tplink_dev.setBrightness (action.actionValue)
-            self.logger.debug("set Brightness to {}, cmd=<{}>".format(action.actionValue, cmd))
+              cmd = "setBright"
+
+            self.logger.debug("set Brightness to {}, cmd=<{}>".format(arg1, cmd))
         else:
             self.logger.error("Unknown command: {}".format(action.deviceAction))
             return
 
         # even though the command is the same, the JSON may be different for different devices
+        # and some (set brghtness) require parameters
         tplink_dev = self.getSubProtocol (dev)
-        result = tplink_dev.send(cmd)
+        result = tplink_dev.send(cmd, str(arg1), arg2)
         sendSuccess = False
         try:
             result_dict = json.loads(result)
@@ -364,7 +385,7 @@ class Plugin(indigo.PluginBase):
         if sendSuccess:
             # If success then log that the command was successfully sent, and update state vars
             subType = self.getSubClass(dev.deviceTypeId)
-            subType.actionControlDevice (action, dev, cmd, self.logOnOff)
+            subType.actionControlDevice (action, dev, cmd, logOnOff=self.logOnOff, bright=arg1)
             dev.stateListOrDisplayStateIdChanged()
 
         else:
@@ -613,3 +634,33 @@ class Plugin(indigo.PluginBase):
 
         self.logger.info("%s", report)
         return
+
+    ########################################
+    # Menu callbacks defined in Actions.xml
+    # I haven't been able to figure out how to make these calls soecific to the device Type
+    ########################################
+
+    def SetDoubleClickAction(self, pluginAction, dev):
+        subType = self.getSubClass (dev.deviceTypeId)
+        return subType.SetDoubleClickAction(pluginAction, dev)
+
+    def SetLongPressAction(self, pluginAction, dev):
+        subType = self.getSubClass (dev.deviceTypeId)
+        return subType.SetLongPressAction(pluginAction, dev)
+
+    def set_gentle_off_time(self, pluginAction, dev):
+        subType = self.getSubClass (dev.deviceTypeId)
+        return subType.set_gentle_off_time(pluginAction, dev)
+
+    def set_gentle_on_time(self, pluginAction, dev):
+        subType = self.getSubClass (dev.deviceTypeId)
+        return subType.set_gentle_on_time(pluginAction, dev)
+
+    def set_fade_on_time(self, pluginAction, dev):
+        subType = self.getSubClass (dev.deviceTypeId)
+        return subType.set_fade_on_time(pluginAction, dev)
+
+    def set_fade_off_time(self, pluginAction, dev):
+        subType = self.getSubClass (dev.deviceTypeId)
+        return subType.set_fade_off_time(pluginAction, dev)
+

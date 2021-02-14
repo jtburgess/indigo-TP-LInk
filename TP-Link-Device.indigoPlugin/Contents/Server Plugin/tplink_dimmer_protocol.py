@@ -2,40 +2,47 @@
 #
 # protocol subclass for the lightbulb dimmer device type
 
+import sys
 from protocol import tplink_protocol
 
-
 class tplink_dimmer_protocol(tplink_protocol):
+
+  def __init__(self, address, port, deviceID = None, childID = None, logger = None, arg2=1000):
+    super(tplink_dimmer_protocol, self).__init__(address, port, deviceID=deviceID, childID=childID, logger=logger)
+
+    self.arg2 = arg2 # default, because dev[] is not available
 
   # all functions not defined here revert to the super(), i.e., base class
 
   # Predefined Dimmer Commands
+  #   XXX and YYY are replaced in send() to change color or Brightness or rampTime
   def commands(self):
     dimmer_cmds = {
-      'on'       : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":10,"mode":"normal","brightness":100,"on_off":1}}}',
-      'off'       : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":10,"mode":"normal","brightness":0,"on_off":0}}}',
+      'on'       : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":YYY,"mode":"normal","brightness":100,"on_off":1}}}',
+      'off'       : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":YYY,"mode":"normal","brightness":0,"on_off":0}}}',
       'light_state' : '{"smartlife.iot.smartbulb.lightingservice":{"get_light_state":""}}',
       'light_details' : '{"smartlife.iot.smartbulb.lightingservice":{"get_light_details":""}}',
-      # FYI this needs arguments filled in before using to change color or Brightness (see below)
-      'transition_light_state' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":150,"mode":"normal","hue":120,"on_off":1,"saturation":65,"color_temp":0,"brightness":10}}}',
+
+      # set brightness level
+      'setBright' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state": {"ignore_default":1,"transition_period":YYY,"brightness":XXX,"color_temp":0,"on_off":1}}}',
+
+      # generic command, use it to change hue?
+      'transition_light_state' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":YYY,"mode":"normal","hue":120,"on_off":1,"saturation":65,"color_temp":0,"brightness":10}}}',
     }
 
     dimmer_cmds.update( super(tplink_dimmer_protocol, self).commands() )
     return dimmer_cmds
-
-  def setBrightness(self, brightness, transition_period = '1'):
-    """ construct the full json string
-        'ramp time' aka 'transition period' can be supplied as optional second parameter
-    """
-
-    return "{\"smartlife.iot.smartbulb.lightingservice\":" +\
-          "{\"transition_light_state\": {\"ignore_default\":1" +\
-          ",\"transition_period\":" + transition_period +\
-          ",\"brightness\":" + str(brightness) + ",\"color_temp\":0,\"on_off\":1}}}"
-          ## or use saturation??
 
   def getErrorCode(self, result_dict):
     """ the JSON for relay and dimmer is different.
         find and return the error code from the result
     """
     return result_dict["smartlife.iot.smartbulb.lightingservice"]["transition_light_state"]["err_code"]
+
+  def send(self, request, arg1=None, arg2=None):
+    # it doesn't hurt to have a default if YYY is undefined
+    if arg2 == None:
+      arg2 = self.arg2
+
+    self.debugLog("arg1={}, arg2={}".format(arg1, arg2))
+    return super(tplink_dimmer_protocol, self).send(request, str(arg1), str(arg2))

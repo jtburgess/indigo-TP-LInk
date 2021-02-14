@@ -23,11 +23,6 @@ import struct
 import sys
 
 
-# We don't want to print if this class has been called from Indigo
-istty = False
-if sys.stdin.isatty():
-  # running interactively
-  istty = True
 
 # Encryption and Decryption of TP-Link Smart Home Protocol
 # XOR Autokey Cipher with starting key = 171
@@ -52,13 +47,21 @@ def decrypt(string):
 ################################################################################
 class tplink_protocol(object):
 ####################################################################
-  def __init__(self, address, port, deviceID = None, childID = None):
+  def __init__(self, address, port, deviceID = None, childID = None, logger = None):
     """ ToDo child ID should be restricted to _relay_ devces, but this works, for now
     """
     self.address  = address
     self.port     = port
     self.deviceID = deviceID
     self.childID  = childID
+    self.logger   = logger
+
+    # We don't want to print if this class has been called from Indigo
+    if sys.stdin.isatty():
+      # running interactively
+      self.isatty = True
+    else:
+      self.isatty = False
 
     # both or neither deviceID and childID should be set
     if (deviceID is not None and childID is not None) or (deviceID is None and childID is None):
@@ -67,11 +70,25 @@ class tplink_protocol(object):
       quit("ERROR: both deviceID and childID must be set together")
 
   # Send command and receive reply
-  def send(self, request):
+  # some commands require a parameter. These are encoded as XXX and YYY in the command definition
+  def send(self, request, arg1=None, arg2=None):
     if request in self.commands():
       cmd = self.commands()[request]
     else:
       cmd = request
+
+    if "XXX" in cmd:
+      if arg1 is not None:
+        cmd=cmd.replace("XXX", arg1)
+        # self.debugLog (u"send: XXX replaced with {}, cmd='{}'".format(arg1, cmd))
+      else:
+        return json.dumps({ 'error':  "TP-Link  command '{}' requires a parameter".format(request) })
+    if "YYY" in cmd:
+      if arg2 is not None:
+        cmd=cmd.replace("YYY", arg2)
+        # self.debugLog(u"send: YYY replaced with {}, cmd='{}'".format(arg2, cmd))
+      else:
+        return json.dumps({ 'error':  "TP-Link  command '{}' requires two parameters".format(request) })
 
     # if both deviceID and childID are set, { context... } is prepended to the command
     if self.deviceID is not None and self.childID is not None:
@@ -79,7 +96,7 @@ class tplink_protocol(object):
       # now replace the initial '{' of the command with that string
       cmd = context + cmd[1:]
 
-    if istty: print "Sent:     ", request, " == ", cmd
+    self.debugLog ("Sent:  " + cmd + " == " + request)
     try:
       sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       sock.settimeout(3.0)
@@ -101,7 +118,7 @@ class tplink_protocol(object):
     except socket.timeout:
       return json.dumps({'error': 'TP-Link connection timeout'})
     except Exception as e:
-      return json.dumps({'error': "TP-Link error: " + str(e)})
+      return json.dumps({'error': "TP-Link error: " + str(e) + "; cmd:" + str(request)})
 
     finally:
       try:
@@ -132,14 +149,14 @@ class tplink_protocol(object):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.settimeout(float(timeout))
 
-    if istty: print("Sending discovery to %s:%s   %s" % (address, port, cmd))
+    self.debugLog ("Sending discovery to %s:%s   %s" % (address, port, cmd))
 
     encrypted_cmd = encrypt(cmd)
     for _ in range(discovery_packets):
       sock.sendto(encrypted_cmd[4:], (address, port))
 
     # if running from command line tester...
-    if istty: print("Waiting %s seconds for responses..." % timeout)
+    self.debugLog("Waiting %s seconds for responses..." % timeout)
 
     foundDevs = {}
     try:
@@ -155,7 +172,8 @@ class tplink_protocol(object):
 
     return foundDevs
 
-  # relay and dimmer also have device-type specific commands, which are appended in the subclass
+  # These are the same across all types.
+  # There are also have device-type specific commands, which are merged in the subclass
   def commands(self):
     BaseCommands = {
       'info'     : '{"system":{"get_sysinfo":{}}}',
@@ -166,3 +184,10 @@ class tplink_protocol(object):
     }
 
     return BaseCommands
+
+  # logging -- to terminal if called from command line, or use self.logger()
+  def debugLog(self, stringToPrint):
+    if self.isatty:
+      print stringToPrint
+    else:
+      self.logger.debug(stringToPrint)

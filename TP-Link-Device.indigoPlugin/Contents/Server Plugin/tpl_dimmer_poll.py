@@ -48,7 +48,7 @@ class dimmer_poll(pollingThread):
 
     self.logger.threaddebug(u"Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
-    tplink_dev_states = tplink_dimmer_protocol(devAddr, devPort)
+    tplink_dev_states = tplink_dimmer_protocol(devAddr, devPort, self.deviceId)
     lastState = 2
     lastStateMulti = {}
     firstRun = False

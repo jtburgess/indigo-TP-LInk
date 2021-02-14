@@ -13,8 +13,7 @@ relayModels = {
     "HS105", # original plug-in
     "HS107", # 2 port plug-in
     "HS110",
-    "HS200", # wall switch
-    "HS210", # wall switch
+    "KP200", #2 port wall outlet
     "HS300", # 6 port power strip
     "KP303", # 3 port power strip
     "KP400", # outdoor
@@ -30,7 +29,7 @@ class tplink_relay():
     return
 
   def validateDeviceConfigUi(self, valuesDict, typeId, devId):
-    """ seems redundant with initializeDev ??? """
+    """ initialize first, then validate """
     self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
 
     if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
@@ -77,7 +76,7 @@ class tplink_relay():
         valuesDict['energyCapable'] = False
     return valuesDict
 
-  def actionControlDevice (self, action, dev, cmd, logOnOff=True):
+  def actionControlDevice (self, action, dev, cmd, logOnOff=True, bright=None):
     """ called on send Success to update state, etc. """
     self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
 
@@ -187,3 +186,32 @@ class tplink_relay():
         rpt_fmt.format("Energy reporting:", valuesDict['energyCapable'])
 
     return
+
+  ########################################
+  # Menu callbacks defined in Actions.xml
+  # So far, These actions are specific to the RelaySwitch type
+  ########################################
+
+  def SetDoubleClickAction(self, pluginAction, dev):
+      indigo.server.log("SetDoubleClickAction only applies to device type RelaySwitch ")
+      return(None)
+
+  def SetLongPressAction(self, pluginAction, dev):
+      indigo.server.log("SetLongPressAction only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_gentle_off_time(self, pluginAction, dev):
+      indigo.server.log("set_gentle_off_time only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_gentle_on_time(self, pluginAction, dev):
+      indigo.server.log("set_gentle_on_time only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_fade_on_time(self, pluginAction, dev):
+      indigo.server.log("set_fade_on_time only applies to device type RelaySwitch ")
+      return(None)
+
+  def set_fade_off_time(self, pluginAction, dev):
+      indigo.server.log("set_fade_off_time only applies to device type RelaySwitch ")
+      return(None)

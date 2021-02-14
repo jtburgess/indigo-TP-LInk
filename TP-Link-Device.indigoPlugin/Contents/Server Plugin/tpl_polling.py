@@ -12,7 +12,6 @@ from time import sleep
 # only works for Relay devices
 from protocol import tplink_protocol
 
-
 ################################################################################
 class pollingThread(Thread):
 	####################################################################
@@ -31,25 +30,38 @@ class pollingThread(Thread):
 		self.logger.debug(u"called for %s with action=%s, state=%s" % (self.dev.name, action, state))
 
 		# self.logger.threaddebug(u"%s: Before, poll freq is %s" % (dev.name, self.pollFreq))
-		if action == 'state' and state:
-			if self.multiPlug:
-				self.pollFreq = self.pluginPrefs['onPoll']
+		if self.dev.deviceTypeId =='tplinkSmartPlug':
+			if action == 'state' and state:
+				if self.multiPlug:
+					self.pollFreq = self.pluginPrefs['onPoll']
+				else:
+					self.pollFreq = self.dev.pluginProps['onPoll']
+			elif action == 'state' and not state:
+				if self.multiPlug:
+					self.pollFreq = self.pluginPrefs['offPoll']
+				else:
+					self.pollFreq = self.dev.pluginProps['offPoll']
+			elif action == 'dev':
+				outletNum = dev.pluginProps['outletNum']
+				self.outlets[outletNum] = dev
+				self.dev = dev
+			elif action == 'status':
+				self.dev = dev
 			else:
+				self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
+				return
+		else: # if self.dev.deviceTypeId =='tplinkSmartSwitch' or self.dev.deviceTypeId =='tplinkSmartBulb'
+			if action == 'state' and state:
 				self.pollFreq = self.dev.pluginProps['onPoll']
-		elif action == 'state' and not state:
-			if self.multiPlug:
-				self.pollFreq = self.pluginPrefs['offPoll']
-			else:
+			elif action == 'state' and not state:
 				self.pollFreq = self.dev.pluginProps['offPoll']
-		elif action == 'dev':
-			outletNum = dev.pluginProps['outletNum']
-			self.outlets[outletNum] = dev
-			self.dev = dev
-		elif action == 'status':
-			self.dev = dev
-		else:
-			self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
-			return
+			elif action == 'dev':
+				self.dev = dev
+			elif action == 'status':
+				self.dev = dev
+			else:
+				self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
+				return
 
 		if action == 'state':
 			self.localOnOff = True
