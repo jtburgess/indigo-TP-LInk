@@ -338,7 +338,8 @@ class Plugin(indigo.PluginBase):
         ###### TURN ON ######
         if action.deviceAction == indigo.kDeviceAction.TurnOn:
             cmd = "on"
-            arg1 = dev.brightness
+            # why not set to 100 for smart light switch?
+            if dev.deviceTypeId == 'tplinkSmartSwitch': arg1 = dev.brightness
         ###### TURN OFF ######
         elif action.deviceAction == indigo.kDeviceAction.TurnOff:
             cmd = "off"
@@ -354,9 +355,10 @@ class Plugin(indigo.PluginBase):
             # trim the edge cases to pure on/off
             if action.actionValue <= 1:
               cmd = "off"
+              arg1 = 0
             elif action.actionValue >= 99:
               cmd = "on"
-              arg1 = dev.brightness
+              arg1 = 100
             else:
               cmd = "setBright"
 

@@ -57,10 +57,14 @@ class tplink_protocol(object):
     self.logger   = logger
 
     # We don't want to print if this class has been called from Indigo
-    if sys.stdin.isatty():
-      # running interactively
-      self.isatty = True
-    else:
+    # but we do want to print if called from command line tool
+    try:
+      if sys.stdin.isatty():
+        # running interactively
+        self.isatty = True
+      else:
+        self.isatty = False
+    except ValueError: # I/O operation on closed file (?)
       self.isatty = False
 
     # both or neither deviceID and childID should be set
