@@ -307,7 +307,7 @@ class Plugin(indigo.PluginBase):
         childId = None
 
         # dont know the device type, so use generic protocol, and only generic commands
-        tplink_dev = tplink_protocol (devAddr, devPort, deviceId, childId)
+        tplink_dev = tplink_protocol (devAddr, devPort, deviceId, childId, logger=self.logger)
         result = tplink_dev.send('info')
         # self.deviceSearchResults[devAddr] = result
 

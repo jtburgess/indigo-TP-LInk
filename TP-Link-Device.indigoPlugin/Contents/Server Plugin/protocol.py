@@ -185,9 +185,9 @@ class tplink_protocol(object):
 
     return BaseCommands
 
-  # logging -- to terminal if called from command line, or use self.logger()
+  # logging -- to terminal if called from command line, or use self.logger() if initialized with a logger
   def debugLog(self, stringToPrint):
     if self.isatty:
       print stringToPrint
-    else:
+    elif self.logger is not None:
       self.logger.debug(stringToPrint)

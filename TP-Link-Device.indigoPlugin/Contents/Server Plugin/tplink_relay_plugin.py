@@ -32,11 +32,11 @@ class tplink_relay():
     """ initialize first, then validate """
     self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
 
-    if not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
+    if 'childId' not in valuesDict or not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
         valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
     self.logger.threaddebug(u"left with typeId=%s, devId=%s, and valuesDict=%s.", typeId, devId, valuesDict)
 
-    if not valuesDict['energyCapable']:
+    if 'energyCapable' not in valuesDict or not valuesDict['energyCapable']:
         valuesDict['SupportsEnergyMeter'] = False
         valuesDict['SupportsEnergyMeterCurPower'] = False
     return valuesDict
