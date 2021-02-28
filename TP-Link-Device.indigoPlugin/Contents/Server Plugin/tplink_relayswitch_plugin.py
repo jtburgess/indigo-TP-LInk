@@ -55,6 +55,7 @@ class tplink_relayswitch():
     if cmd == "off":
         state = False
         dev.updateStateOnServer(key="onOffState", value=0)
+        dev.updateStateOnServer(key="brightnessLevel", value=0)
         if logOnOff:
             self.logger.info(u"%s set to %s", dev.name, cmd)
     elif cmd == "on":

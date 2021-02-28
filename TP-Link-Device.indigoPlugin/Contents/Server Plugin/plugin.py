@@ -252,7 +252,7 @@ class Plugin(indigo.PluginBase):
             self.logger.debug("deviceStartComm error: Thread exists for %s , %s- %s" % (name, address, self.tpThreads[dev.name]))
             # self.tpThreads[address].interupt(None)
         elif not devPoll:
-            self.logger.info("Polling thread is disabled for device  %s, %s.", name, address)
+            self.logger.info("Polling thread is disabled for %s, %s.", name, address)
         elif devPoll:
             # We start one thread per device ip address
             if address not in self.tpThreads:
@@ -279,7 +279,8 @@ class Plugin(indigo.PluginBase):
 
         # Since we got this far, we might as well tell someone
         dev.replaceOnServer()
-        self.logger.info(u"Polling started for %s@%s.", dev.name, dev.address)
+        if devPoll:
+          self.logger.info(u"Polling started for %s@%s.", dev.name, dev.address)
         return
 
     def deviceStopComm(self, dev):
@@ -406,8 +407,20 @@ class Plugin(indigo.PluginBase):
         address = dev.address
 
         try:
-            self.tpThreads[address].interupt(dev=dev, action='status')
-            self.logger.info("%s: Device reachable and states updated.", dev.name)
+            if address in self.tpThreads:
+              self.tpThreads[address].interupt(dev=dev, action='status')
+              self.logger.info("{}: Device reachable and states updated.".format(dev.name))
+            else:
+              self.logger.info("{}: Device polling is disabled.".format(dev.name))
+
+            self.logger.info("    IP address: {}".format(dev.address))
+            if dev.displayStateId == "onOffState":
+              curState =  'on' if dev.states['onOffState'] else 'off'
+            elif "brightnessLevel" in dev.states:
+              curState = "brightness=" + str(dev.states["brightnessLevel"])
+            else:
+              curState = self.displayStateId
+            self.logger.info("    current state: {}".format(curState))
         except Exception as e:
             self.logger.error("%s: Device not reachable and states could not be updated. %s", dev.name, str(e))
 
