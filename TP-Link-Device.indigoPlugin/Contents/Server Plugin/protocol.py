@@ -86,13 +86,13 @@ class tplink_protocol(object):
         cmd=cmd.replace("XXX", arg1)
         # self.debugLog (u"send: XXX replaced with {}, cmd='{}'".format(arg1, cmd))
       else:
-        return json.dumps({ 'error':  "TP-Link  command '{}' requires a parameter".format(request) })
+        return json.dumps({ 'error':  "TP-Link  command '{}' requires XXX value".format(request) })
     if "YYY" in cmd:
       if arg2 is not None:
         cmd=cmd.replace("YYY", arg2)
         # self.debugLog(u"send: YYY replaced with {}, cmd='{}'".format(arg2, cmd))
       else:
-        return json.dumps({ 'error':  "TP-Link  command '{}' requires two parameters".format(request) })
+        return json.dumps({ 'error':  "TP-Link  command '{}' requires YYY value".format(request) })
 
     # if both deviceID and childID are set, { context... } is prepended to the command
     if self.deviceID is not None and self.childID is not None:
@@ -122,7 +122,7 @@ class tplink_protocol(object):
     except socket.timeout:
       return json.dumps({'error': 'TP-Link connection timeout'})
     except Exception as e:
-      return json.dumps({'error': "TP-Link error: " + str(e) + "; cmd:" + str(request)})
+      return json.dumps({'error': {"python error" : str(e), "cmd" : cmd}})
 
     finally:
       try:
@@ -146,7 +146,7 @@ class tplink_protocol(object):
     cmd = self.commands()['discover']
     address = '255.255.255.255'
     port = 9999
-    timeout = 4.0
+    timeout = 5.0
     discovery_packets = 3
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
