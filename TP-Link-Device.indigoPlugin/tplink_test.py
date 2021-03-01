@@ -113,8 +113,9 @@ def main():
       my_target = tplink_relayswitch_protocol(args.target, 9999, logger=logger)
       print "using RelaySwitch protocol"
       choices = my_target.commands()
-  else:
+  elif args.command != 'discover':
       print "unknown device type: {}".format(args.switch)
+      sys.exit(1)
 
   if args.command == 'discover':
       # discover and info are generic
