@@ -8,15 +8,16 @@ import indigo
 
 # outside the class because it may be needed to determine the class
 relayModels = {
-    "HS100",
-    "HS103",
-    "HS105", # original plug-in
-    "HS107", # 2 port plug-in
-    "HS110",
-    "KP200", #2 port wall outlet
-    "HS300", # 6 port power strip
-    "KP303", # 3 port power strip
-    "KP400", # outdoor
+    "HS100", # basic 1-outlet
+    "HS103", # plug "lite"
+    "HS105", # original plug "mini"
+    "HS107", # 2-outlet plug
+    "HS110", # plug with energy monitor
+    "HS300", # 6-outlet power strip
+    "KP100", # plug "slim edition"
+    "KP200", # 2-outlet wall outlet
+    "KP303", # 3-outlet power strip
+    "KP400", # 2-outlet outdoor
 }
 
 class tplink_relay():
