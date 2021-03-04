@@ -538,7 +538,8 @@ class Plugin(indigo.PluginBase):
         devTypeID = indigo.devices[devId].deviceTypeId
         discoveredTypeID = self.getSubType(valuesDict['model'])
         if devTypeID != discoveredTypeID:
-            self.logger.error("Error: selected and actual Device types don't match ({} vs {})".format(devTypeID,             self.logger.error("    Delete and try again.")
+            self.logger.error("Error: selected and actual Device types don't match ({} vs {})".format(devTypeID, discoveredTypeID))
+            self.logger.error("    Delete and try again.")
             valuesDict['devPoll'] = False
             return valuesDict
 

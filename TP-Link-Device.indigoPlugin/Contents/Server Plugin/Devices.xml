@@ -8,7 +8,7 @@
 				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
-					<Label>TP-Link plug device:</Label>
+					<Label>TP-Link Smart Plug:</Label>
 					<List class='self' method='getTpDevice' />
 					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
@@ -71,7 +71,7 @@
 				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
-					<Label>TP-Link plug device:</Label>
+					<Label>TP-Link Dimmer Switch:</Label>
 					<List class='self' method='getTpDevice' />
 					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
@@ -116,7 +116,7 @@
 				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
 				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
-					<Label>TP-Link bulb:</Label>
+					<Label>TP-Link Smart Bulb:</Label>
 					<List class='self' method='getTpDevice' />
 					<CallbackMethod>selectTpDevice</CallbackMethod>
 				</Field>
