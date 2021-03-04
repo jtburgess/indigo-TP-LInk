@@ -35,8 +35,8 @@ class tplink_relayswitch():
   def deviceStartComm(self, dev):
     # Update the model display column
     # description is the Notes Field. Jay requested to only set this on initilaiztion
-    if len(dev.description) == 0:
-      dev.description = description
+    if len(dev.description) == 0 and 'description' in dev.pluginProps:
+      dev.description = dev.pluginProps['description']
     return
 
   def deviceStopComm(self, dev):
@@ -112,9 +112,12 @@ class tplink_relayswitch():
 
     self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
 
-    if valuesDict['addressSelect'] != 'manual':
-        valuesDict['childId']   = None
-        valuesDict['mac']       = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']['mac']
+    sys_info = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']
+    valuesDict['childId']   = None
+    valuesDict['mac']       = sys_info['mac']
+    # add an initial description from the dev_name, if it exists
+    if 'dev_name' in sys_info:
+        valuesDict['description'] = sys_info['dev_name']
 
     self.logger.debug("returning valuesDict: %s" % valuesDict)
     return valuesDict

@@ -48,8 +48,8 @@ class tplink_relay():
   def deviceStartComm(self, dev):
     # Update the model display column
     # description is the Notes Field. Jay requested to only set this on initilaiztion
-    if len(dev.description) == 0:
-      dev.description = description
+    if len(dev.description) == 0 and 'description' in dev.pluginProps:
+      dev.description = dev.pluginProps['description']
     return
 
   def deviceStopComm(self, dev):
@@ -141,18 +141,20 @@ class tplink_relay():
     return statesDict
 
   def selectTpDevice(self, valuesDict, typeId, devId):
+    # This sub-method gets called in the device configuration process, once address resolution is successful
     address = valuesDict['address']
 
     self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
 
+    sys_info = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']
     if valuesDict['addressSelect'] != 'manual':
         valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
-        valuesDict['mac']       = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']['mac']
+        valuesDict['mac']       = sys_info['mac']
 
-    if 'child_num' in self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']:
+    if 'child_num' in sys_info:
         self.logger.debug(u"%s has child_id", address)
         valuesDict['multiPlug'] = True
-        valuesDict['outletsAvailable'] = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']['child_num']
+        valuesDict['outletsAvailable'] = sys_info['child_num']
         valuesDict['outletNum'] = valuesDict['outletsAvailable']
     else:
         self.logger.debug(u"%s does not have child_id", address)
@@ -160,11 +162,14 @@ class tplink_relay():
         valuesDict['outletsAvailable'] = 1
         valuesDict['outletNum'] = "00"
 
-    if 'ENE' in self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']['feature']:
+    if 'ENE' in sys_info['feature']:
         valuesDict['energyCapable'] = True
     else:
         valuesDict['energyCapable'] = False
 
+    # add an initial description from the dev_name, if it exists
+    if 'dev_name' in sys_info:
+        valuesDict['description'] = sys_info['dev_name']
     self.logger.debug("returning valuesDict: %s" % valuesDict)
     return valuesDict
 

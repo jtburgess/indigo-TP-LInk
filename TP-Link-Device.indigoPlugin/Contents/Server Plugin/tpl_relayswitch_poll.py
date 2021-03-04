@@ -61,6 +61,10 @@ class relayswitch_poll(pollingThread):
           result = tplink_dev_states.send('info',"","")
           self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
           data = json.loads(result)
+        except Exception as e:
+          self.logger.error("%s connection failed with (%s)" % (self.name, str(e)))
+
+        try:
           result = tplink_dev_states.send('getParam',"","")
           self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
           data1 = json.loads(result)
@@ -68,7 +72,11 @@ class relayswitch_poll(pollingThread):
           self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
           data2 = json.loads(result)['smartlife.iot.dimmer']['get_default_behavior']
         except Exception as e:
-          self.logger.error("%s connection failed with (%s)" % (self.name, str(e)))
+          self.logger.error("{} error getting RelaySwitch data. Is this the right device type?".format(self.name))
+          self.logger.error("    error was '{}'".format(str(e)))
+          self.logger.error("    Polling for this device will now shut down.")
+          indigo.device.enable(dev.id, value=False)
+          return
 
         self.logger.threaddebug(u"%s: finished state data collection with %s" % (self.name, data))
 
@@ -124,12 +132,12 @@ class relayswitch_poll(pollingThread):
             softOn=data2['soft_on']['mode']
             longPress=data2['long_press']['mode']
             doubleClick=data2['double_click']['mode']
-            
+
  #             indigo,server.log("update state:"+str(state))
             bright=devBright
             if state==False:
                   bright=0
-                  
+
             state_update_list = [
                   {'key':'onOffState', 'value':state},
                   {'key':'brightnessLevel', 'value':bright},

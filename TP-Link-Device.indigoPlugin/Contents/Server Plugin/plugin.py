@@ -232,7 +232,6 @@ class Plugin(indigo.PluginBase):
         # Called for each device on startup
         # Commit any state changes
         dev.stateListOrDisplayStateIdChanged()
-        dev.model = dev.pluginProps['model']
 
         # get some data for local use from the device
         name      = dev.name
@@ -460,7 +459,9 @@ class Plugin(indigo.PluginBase):
         return subType.getDeviceStateList(dev, statesDict)
 
     def getTpDevice(self, filter="", valuesDict=None, typeId="", targetId=0):
-        """ discover devices on the network, but restrict to the matching deviceTypeID already selected
+        """ discover TP-Link devices on the network,
+                (ToDo? Restrict to the matching deviceTypeID already selected
+                 or not, so you can see if you picked the wrong deviceType)
             a callback in Devices.xml to return a list
         """
         self.logger.debug(u"called for: %s, %s, %s." % (filter, typeId, targetId))
@@ -475,6 +476,7 @@ class Plugin(indigo.PluginBase):
                 self.deviceSearchResults = tplink_discover.discover()
             except Exception as e:
                 self.logger.error("Discovery connection failed with (%s)" % (str(e)))
+                return deviceArray
 
             self.logger.debug(u"received %s" % (self.deviceSearchResults))
 
@@ -499,7 +501,7 @@ class Plugin(indigo.PluginBase):
         self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, valuesDict['address']))
         self.logger.threaddebug(u"called for: %s, %s." % (devId, valuesDict))
 
-        # most of this is the same for both relay and dimmer types
+        # most of this is the same for all sub types
         if valuesDict['addressSelect'] != 'manual':
             self.logger.debug("%s -- %s\n" % (valuesDict['addressSelect'], valuesDict['manualAddressResponse']))
             valuesDict['address'] = valuesDict['addressSelect']
@@ -532,8 +534,21 @@ class Plugin(indigo.PluginBase):
         # Since we got here, we must have a valid address
         address = valuesDict['address']
 
-        subType = self.getSubClass(indigo.devices[devId].deviceTypeId)
-        valuesDict = subType.selectTpDevice( valuesDict, typeId, devId)
+        # validate actual discovered device type vs that indicated by user
+        devTypeID = indigo.devices[devId].deviceTypeId
+        discoveredTypeID = self.getSubType(valuesDict['model'])
+        if devTypeID != discoveredTypeID:
+            self.logger.error("Error: selected and actual Device types don't match ({} vs {})".format(devTypeID,             self.logger.error("    Delete and try again.")
+            valuesDict['devPoll'] = False
+            return valuesDict
+
+        try:
+            subType = self.getSubClass(devTypeID)
+            valuesDict = subType.selectTpDevice( valuesDict, typeId, devId)
+        except Exception as e:
+            self.logger.error("Error getting Device Info. Are you sure you picked the right device Type({})".format(devTypeID))
+            self.logger.error("    error was '{}'".format(str(e)))
+            valuesDict['devPoll'] = False
 
         return valuesDict
 

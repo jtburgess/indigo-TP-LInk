@@ -35,7 +35,7 @@ class tplink_dimmer():
     # Update the model display column
     # description is the Notes Field. Jay requested to only set this on initilaiztion
     # where is a better place to do this, so it only happens when a device is FIRST set up?
-    if len(dev.description) == 0:
+    if len(dev.description) == 0 and 'description' in dev.pluginProps:
       dev.description = dev.pluginProps['description']
     return
 
@@ -100,14 +100,16 @@ class tplink_dimmer():
     return statesDict
 
   def selectTpDevice(self, valuesDict, typeId, devId):
+    address = valuesDict['address']
     # This sub-method gets called in the device configuration process, once address resolution is successful
-    self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, valuesDict['address']))
+    self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
 
-    valuesDict['mac']  = self.tpLink_self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['mic_mac']
+    sys_info = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']
+    valuesDict['mac']  = sys_info['mic_mac']
 
-    valuesDict['isColor'] = (self.tpLink_self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['is_color'] == 1)
-    valuesDict['isDimmable'] = (self.tpLink_self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['is_dimmable'] == 1)
-    valuesDict['description'] = self.tpLink_self.deviceSearchResults[valuesDict['address']]['system']['get_sysinfo']['description']
+    valuesDict['isColor'] = (sys_info['is_color'] == 1)
+    valuesDict['isDimmable'] = (sys_info['is_dimmable'] == 1)
+    valuesDict['description'] = sys_info['description']
     valuesDict['energyCapable'] = False
 
     dev = indigo.devices[devId]
