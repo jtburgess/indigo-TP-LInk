@@ -13,6 +13,7 @@ relayModels = {
     "HS105", # original plug "mini"
     "HS107", # 2-outlet plug
     "HS110", # plug with energy monitor
+    "HS200", # one way non-dimming wall switch
     "HS300", # 6-outlet power strip
     "KP100", # plug "slim edition"
     "KP200", # 2-outlet wall outlet

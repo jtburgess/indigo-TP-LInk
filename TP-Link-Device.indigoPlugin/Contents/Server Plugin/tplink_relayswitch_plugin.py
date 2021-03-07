@@ -8,7 +8,6 @@ import indigo
 
 # outside the class because it may be needed to determine the class
 relayswitchModels = {
-    "HS200", # one way non-dimming wall switch
     "HS210", # three way non-dimming wall switch
     "HS220"  # dimmer wall switch
 }
