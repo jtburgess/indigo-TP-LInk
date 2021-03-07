@@ -56,7 +56,7 @@ In the future, I'll add an option to specify how long it should take to transiti
 ---
 ## Programmable Actions
 The default actions of __on/off/set brightness__ are always available.
-The actions below were added for the __RelaySwitch__ subtype, which has fade-timers in the device itself.  Two have been co-opted for the __Dimmer__ type, which has a fade time (aka rampTime) as an Indigo device setting.
+The actions below were added for the __RelaySwitch__ subtype, which has extra settings in the device itself.  Two have been co-opted for the __Dimmer__ type, which has a fade time (aka rampTime) as an Indigo device setting.
 ### Set_fade_on_time
 For a __RelaySwitch__, sets the time it takes to increase brightness, in milliseconds (msec).
 
@@ -69,22 +69,21 @@ For a __Dimmer__, it sets the rampTime, in msec. This timer is used for all oper
 It does the same thing as Set_fade_on_time.
 
 ### SetDoubleClickAction
-Sets the behaviour when you double-click the device in the main Indigo window to one of these:
+Sets the behaviour when you double-click the device to one of these:
 1. Instant on/off
 1. Gentle on/off
 1. Play Preset
 1. None (do nothing)
 
 ### SetLongPressAction
-Sets the behaviour when you "long-press" the device in the main Indigo window to one those same options -- I assume. I can't find this documented anywhere...
+Sets the behaviour when you "long-press" the device to one those same options -- I assume. I can't find this documented anywhere...
 
 ### Set_gentle_off_time
-Dets the time it takes to decrease brightness gently, in milliseconds (msec).
-(I don't have one of these smart wall switches so I don't know the difference between "fade" and "gentle")
+Sets the time it takes to decrease brightness gently, in milliseconds (msec).
+See the documentation for the device.
 
 ### Set_gentle_on_time
-Dets the time it takes to increase brightness gently, in milliseconds (msec).
-(I don't have one of these smart wall switches so I don't know the difference between "fade" and "gentle")
+Sets the time it takes to increase brightness gently, in milliseconds (msec).
 
 ---
 ## Command Line Testing
