@@ -396,7 +396,7 @@ class Plugin(indigo.PluginBase):
             return
 
         # force a poll if everything went well
-        if dev.pluginProps['devPoll']:
+        if dev.pluginProps['devPoll'] and dev.address in self.tpThreads:
             self.tpThreads[dev.address].interupt(state=True, action='state')
         return
 
@@ -409,6 +409,8 @@ class Plugin(indigo.PluginBase):
             if address in self.tpThreads:
               self.tpThreads[address].interupt(dev=dev, action='status')
               self.logger.info("{}: Device reachable and states updated.".format(dev.name))
+              self.logger.info("    On state polling freq: {}".format(dev.pluginProps['onPoll']))
+              self.logger.info("    Off state polling freq: {}".format(dev.pluginProps['offPoll']))
             else:
               self.logger.info("{}: Device polling is disabled.".format(dev.name))
 
@@ -670,6 +672,10 @@ class Plugin(indigo.PluginBase):
     # Menu callbacks defined in Actions.xml
     # I haven't been able to figure out how to make these calls soecific to the device Type
     ########################################
+    def reEnableComms(self, pluginAction, dev):
+        self.logger.info("Device Communications (re-)enabled")
+        indigo.device.enable(dev.id, value=True)
+        return
 
     def SetDoubleClickAction(self, pluginAction, dev):
         subType = self.getSubClass (dev.deviceTypeId)
