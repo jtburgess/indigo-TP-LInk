@@ -83,19 +83,25 @@ class relayswitch_poll(pollingThread):
         # Check if we got an error back
         if 'error' in data:
           pollErrors += 1
-          if pollErrors == 2:
-            self.logger.error(u"2 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-          elif pollErrors == 5:
+          if pollErrors == 5:
             self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-          elif pollErrors == 8:
+            self.pollFreq += 1
+          elif pollErrors == 10:
             self.logger.error(u"8 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-          elif pollErrors >= 10:
-            self.logger.error(u"Unable to poll device \"%s\": %s after 10 attempts. Polling for this device will now shut down." % (self.name, data['error']))
+            self.pollFreq += 1
+          elif pollErrors >= 15:
+            self.logger.error(u"Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, data['error']))
             indigo.device.enable(dev.id, value=False)
             return
 
         else:
-            pollErrors = 0
+            if pollErrors > 0:
+              pollErrors = 0
+              # reset pollFreq in case increaded due to errors
+              if self.onOffState:
+                self.pollFreq = self.onPoll
+              else:
+                self.pollFreq = self.offPoll
             # self.logger.threaddebug(u"%s: Got Here 0 with %s" % (self.name, data))
             devState = data['system']['get_sysinfo']['relay_state']
             devBright = data['system']['get_sysinfo']['brightness']
