@@ -6,6 +6,19 @@
 		<Name>Device Information</Name>
 		<CallbackMethod>getInfo</CallbackMethod>
 		<ConfigUI>
+			<Field id="getInfoLabel" type="label">
+				<Label>Get Info</Label>
+			</Field>
+		</ConfigUI>
+	</Action>
+
+	<Action id="reEnableComms" deviceFilter="indigo.device,self">
+		<Name>re-enable Communications</Name>
+		<CallbackMethod>reEnableComms</CallbackMethod>
+		<ConfigUI>
+			<Field id="setComm" type="label">
+				<Label>Enable Comms</Label>
+			</Field>
 		</ConfigUI>
 	</Action>
 
