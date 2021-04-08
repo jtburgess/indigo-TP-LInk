@@ -67,8 +67,8 @@ class relay_poll(pollingThread):
     lastState = 2
     lastStateMulti = {}
     firstRun = False
-    error_counter = 0
-    pollErrors = 0
+    self.exceptCount = 0
+    self.pollErrors = 0
 
     while True:
       try:
@@ -84,21 +84,21 @@ class relay_poll(pollingThread):
 
         # Check if we got an error back
         if 'error' in data:
-          pollErrors += 1
-          if pollErrors == 5:
+          self.pollErrors += 1
+          if self.pollErrors == 5:
             self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
             self.pollFreq += 1
-          elif pollErrors == 10:
+          elif self.pollErrors == 10:
             self.logger.error(u"8 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
             self.pollFreq += 1
-          elif pollErrors >= 15:
+          elif self.pollErrors >= 15:
             self.logger.error(u"Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, data['error']))
             indigo.device.enable(dev.id, value=False)
             return
 
         else:
-          if pollErrors > 0:
-            pollErrors = 0
+          if self.pollErrors > 0:
+            self.pollErrors = 0
             # reset pollFreq in case increaded due to errors
             if self.onOffState:
               self.pollFreq = self.onPoll
@@ -293,7 +293,7 @@ class relay_poll(pollingThread):
         pTime = 0.5
         cTime = float(self.pollFreq)
 
-        error_counter = 0
+        self.exceptCount = 0
         while cTime > 0:
           # self.logger.threaddebug(u"%s: Looping Timer = %s", self.name, cTime)
           if self.changed or not self._is_running:
@@ -313,12 +313,12 @@ class relay_poll(pollingThread):
         self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name))
 
       except Exception as e:
-        if error_counter == 10:
+        if self.exceptCount == 10:
           self.logger.error("Unable to update %s: after 10 attempts. Polling for this device will now shut down. (%s)" % (self.name, str(e)))
           indigo.device.enable(dev.id, value=False)
           return
         else:
-          error_counter += 1
+          self.exceptCount += 1
           self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
 
 
