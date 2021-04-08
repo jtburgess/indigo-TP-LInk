@@ -407,14 +407,18 @@ class Plugin(indigo.PluginBase):
 
         try:
             if address in self.tpThreads:
-              self.tpThreads[address].interupt(dev=dev, action='status')
-              self.logger.info("{}: Device reachable and states updated.".format(dev.name))
-              self.logger.info("    On state polling freq: {}".format(dev.pluginProps['onPoll']))
-              self.logger.info("    Off state polling freq: {}".format(dev.pluginProps['offPoll']))
+              if dev.enabled == False:
+                self.logger.info("{}: Device communication is disabled.".format(dev.name))
+              elif self.tpThreads[address].interupt(dev=dev, action='status'):
+                self.logger.info("{}: Device polling and states updated.".format(dev.name))
+                self.logger.info("    On state polling freq: {}".format(dev.pluginProps['onPoll']))
+                self.logger.info("    Off state polling freq: {}".format(dev.pluginProps['offPoll']))
+              # else error message logged in tpThreads.interrupt
             else:
               self.logger.info("{}: Device polling is disabled.".format(dev.name))
 
             self.logger.info("    IP address: {}".format(dev.address))
+            self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
             if dev.displayStateId == "onOffState":
               curState =  'on' if dev.states['onOffState'] else 'off'
             elif "brightnessLevel" in dev.states:
