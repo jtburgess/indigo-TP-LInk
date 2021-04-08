@@ -23,6 +23,8 @@ class pollingThread(Thread):
 		self.name = dev.name
 		self.lastState = 1
 		self.localOnOff = False
+		self.pollErrors = 0
+		self.exceptCount = 0
 		self.pluginPrefs = pluginPrefs
 		self.logOnOff = logOnOff
 
@@ -30,6 +32,15 @@ class pollingThread(Thread):
 		self.logger.debug(u"called for %s with action=%s, state=%s" % (self.dev.name, action, state))
 
 		# self.logger.threaddebug(u"%s: Before, poll freq is %s" % (dev.name, self.pollFreq))
+		if action == 'status':
+			if self.pollErrors > 0:
+				self.logger.error ("{}: Device has {} poll Errors.".format(dev.name, self.pollErrors))
+				return False
+			if self.exceptCount > 0:
+				self.logger.error ("{}: Device has {} poll Exceptions.".format(dev.name, self.exceptCount))
+				return False
+			return True
+
 		if self.dev.deviceTypeId =='tplinkSmartPlug':
 			if action == 'state' and state:
 				if self.multiPlug:
@@ -45,8 +56,6 @@ class pollingThread(Thread):
 				outletNum = dev.pluginProps['outletNum']
 				self.outlets[outletNum] = dev
 				self.dev = dev
-			elif action == 'status':
-				self.dev = dev
 			else:
 				self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
@@ -56,8 +65,6 @@ class pollingThread(Thread):
 			elif action == 'state' and not state:
 				self.pollFreq = self.dev.pluginProps['offPoll']
 			elif action == 'dev':
-				self.dev = dev
-			elif action == 'status':
 				self.dev = dev
 			else:
 				self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
