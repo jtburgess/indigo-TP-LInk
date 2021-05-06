@@ -11,8 +11,8 @@ class tplink_relayswitch_protocol(tplink_protocol):
   # Predefined Smart Light Switch Commands
   def commands(self):
     relayswitch_cmds = {
-      'on'        : '{"system":{"set_relay_state":{"state":1}}}',
-      'off'       : '{"system":{"set_relay_state":{"state":0}}}',
+      'on'        : '{"system":{"set_relay_state":{"state":1}},"smartlife.iot.dimmer": {"set_brightness": {"brightness": 100}}}',
+      'off'       : '{"system":{"set_relay_state":{"state":0}},"smartlife.iot.dimmer": {"set_brightness": {"brightness": 0}}}',
       'cloudinfo' : '{"cnCloud":{"get_info":{}}}',
       'countdown' : '{"count_down":{"get_rules":{}}}',
       'antitheft' : '{"anti_theft":{"get_rules":{}}}',
