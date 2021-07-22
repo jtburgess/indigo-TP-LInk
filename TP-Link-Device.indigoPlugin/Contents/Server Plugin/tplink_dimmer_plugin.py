@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 ####################
 import indigo
+from tplink_dimmer_protocol import tplink_dimmer_protocol
 
 # dimmer (aka light bulb, light switch) device-specific functions needed by the plugin
 # almost all functions are stubbed; some may not be used
@@ -12,6 +13,7 @@ dimmerModels = {
     "KL110", # dimmable bulb
     "KL120", # tunable-white bulb
     "KL130", # multicolor bulb
+    "KL430", # multicolor bulb
 }
 
 class tplink_dimmer():
@@ -43,7 +45,7 @@ class tplink_dimmer():
     return
 
   def initializeDev(self, valuesDict, data):
-    self.logger.debug(u" called with: %s.", (valuesDict))
+    self.logger.debug(u" called with: %s." % (valuesDict, ) )
     valuesDict['mac'] = data['system']['get_sysinfo']['mic_mac']
     valuesDict['SupportsColor'] = valuesDict['isColor'] = (data['system']['get_sysinfo']['is_color'] == 1)
     valuesDict['isDimmable'] = (data['system']['get_sysinfo']['is_dimmable'] == 1)
@@ -78,13 +80,20 @@ class tplink_dimmer():
     if logOnOff:
       if action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
         # because "cmd" is manipulated to be json, above
-        self.logger.info(u"%s brightness set to %s", dev.name, brightnessLevel)
+        self.logger.info(u"%s brightness set to %s" % (dev.name, brightnessLevel) )
       else:
-        self.logger.info(u"%s set to %s", dev.name, cmd)
+        self.logger.info(u"%s set to %s" % (dev.name, cmd) )
     #self.tpThreads[dev.address].interupt(dev=dev, action='status')
     return
 
   def getInfo(self, pluginAction, dev):
+    props = dev.pluginProps
+    if 'colorTemp' in props:
+      self.logger.info("        Color Temp: {}".format(props['colorTemp']))
+    self.logger.info("    Supports Color: {}".format(props['isColor']))
+    if props['isColor']:
+      self.logger.info("               Hue: {}".format(props['Hue']))
+      self.logger.info("        Saturation: {}".format(props['Saturation']))
     return
 
   def actionControlUniversal(self, action, dev):
@@ -170,3 +179,59 @@ class tplink_dimmer():
       dev.replacePluginPropsOnServer(newProps)
       indigo.server.log("set_fade_off_time: set the Ramp Time to {} ".format(rampTime))
       return(None)
+
+  ##### for color bulbs only - set the color using HSV
+  # int hue: hue in degrees
+  # int saturation: saturation in percentage [0,100]
+  # int value: brightness in percentage [0, 100]
+  def set_HSV(self, pluginAction, dev):
+    hue  = int(pluginAction.props.get(u"Hue"))
+    sat  = int(pluginAction.props.get(u"Sat"))
+    val  = int(pluginAction.props.get(u"Val"))
+
+    errors = 0
+    if hue < 0 or hue > 360:
+      indigo.server.log("set_HSV Error: hue={}; must be between 0 and 360".format(hue))
+      errors += 1
+    if sat < 0 or sat > 100:
+      indigo.server.log("set_HSV Error: saturation={}; must be between 0 and 100".format(sat))
+      errors += 1
+    if val < 0 or val > 100:
+      indigo.server.log("set_HSV Error: value={}; must be between 0 and 100".format(val))
+      errors += 1
+    if not ('isColor' in dev.pluginProps and dev.pluginProps['isColor'] != 0):
+      indigo.server.log("set_HSV Error: device {} does not support color".format(dev.name))
+      errors += 1
+    if errors > 0:
+      return(None)
+
+    tplink_dev_states = tplink_dimmer_protocol(dev.address, 9999)
+    result = tplink_dev_states.send('set_HSV', str(hue), str(sat), str(val))
+
+    # update HSV in device state
+    newProps = dev.pluginProps
+    newProps['Hue'] = hue
+    newProps['Saturation'] = sat
+    newProps['brightnessLevel'] = val
+    dev.replacePluginPropsOnServer(newProps)
+
+  # int value: value in percentage [0, 100]
+  def set_ColorTemp(self, pluginAction, dev):
+    temp  = int(pluginAction.props.get(u"Temp"))
+
+    # what is valid range to check for??
+    errors = 0
+    if temp < 0 or temp > 9999:
+      indigo.server.log("set_ColorTemp Error: Temp={}; must be between 0 and 9999".format(temp))
+      errors += 1
+    if errors > 0:
+      return(None)
+
+    tplink_dev_states = tplink_dimmer_protocol(dev.address, 9999)
+    result = tplink_dev_states.send('set_ColorTemp', str(temp))
+    # indigo.server.log("setColorTemp result: {}".format(result))
+
+    # update HSV in device state
+    newProps = dev.pluginProps
+    newProps['colorTemp'] = temp
+    dev.replacePluginPropsOnServer(newProps)

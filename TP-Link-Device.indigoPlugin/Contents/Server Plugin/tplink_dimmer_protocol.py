@@ -26,8 +26,15 @@ class tplink_dimmer_protocol(tplink_protocol):
       # set brightness level
       'setBright' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state": {"ignore_default":1,"transition_period":YYY,"brightness":XXX,"color_temp":0,"on_off":1}}}',
 
-      # generic command, use it to change hue?
-      'transition_light_state' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":YYY,"mode":"normal","hue":120,"on_off":1,"saturation":65,"color_temp":0,"brightness":10}}}',
+      # set HSV - requires 3 parameters: Hue, Sat, (brightness) Value as arg1, 2, 3 <=> XXX, YYY, ZZZ
+      'set_HSV' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"mode":"normal","hue":XXX,"saturation":YYY,"brightness":ZZZ,"color_temp":0}}}',
+      # set color temp has one parameter
+      'set_ColorTemp' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"mode":"normal","color_temp":XXX}}}',
+
+      'getParam'  : '{"smartlife.iot.dimmer": {"get_dimmer_parameters": {}}}',
+
+      # generic command, customized above...
+      'transition_light_state' : '{"smartlife.iot.smartbulb.lightingservice":{"transition_light_state":{"ignore_default":1,"transition_period":YYY,"mode":"normal","on_off":1,"hue":120,"saturation":65,"color_temp":0,"brightness":10}}}',
     }
 
     dimmer_cmds.update( super(tplink_dimmer_protocol, self).commands() )

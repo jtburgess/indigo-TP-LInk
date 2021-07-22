@@ -40,7 +40,7 @@ class dimmer_poll(pollingThread):
 #  def stop(self):
 
   def run(self):
-    self.logger.debug(u"called for: %s." % (self.dev))
+    self.logger.debug(u"called for: %s." % (self.dev, ))
     dev = self.dev
     devType = dev.deviceTypeId
     devAddr = dev.address
@@ -57,10 +57,10 @@ class dimmer_poll(pollingThread):
 
     while True:
       try:
-        self.logger.threaddebug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
+        self.logger.threaddebug(u"%s: Starting polling loop with interval %s\n" % (self.name, self.pollFreq) )
         try:
-          result = tplink_dev_states.send('info')
-          self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
+          result = tplink_dev_states.send('info',"","")
+          self.logger.threaddebug("%s connection 1 received (%s)" % (self.name, result))
           data = json.loads(result)
         except Exception as e:
           self.logger.error("%s connection failed with (%s)" % (self.name, str(e)))
@@ -68,7 +68,7 @@ class dimmer_poll(pollingThread):
         self.logger.threaddebug(u"%s: finished state data collection with %s" % (self.name, data))
 
         # Check if we got an error back
-        if 'error' in data:
+        if 'error' in data or 'error' in data1:
           self.pollErrors += 1
           if self.pollErrors == 5:
             self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
@@ -115,32 +115,39 @@ class dimmer_poll(pollingThread):
 
             alias = data['system']['get_sysinfo']['alias']
             rssi = data['system']['get_sysinfo']['rssi']
+            bright = data['system']['get_sysinfo']['brightness']
+
+            data1 = data1['smartlife.iot.dimmer']['get_dimmer_parameters']
             state_update_list = [
                 {'key':'onOffState', 'value':state, 'uiValue':logState},
+                {'key':'brightnessLevel', 'value':bright},
                 {'key':'rssi',  'value':rssi},
                 {'key':'alias', 'value':alias},
               ]
             dev.updateStatesOnServer(state_update_list)
             self.logger.debug(u"{}, updated state on server: onOff={}, alias={}".format(self.name, state, alias))
 
-            self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s", self.name, logState, self.localOnOff, self.logOnOff)
+            self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s" % (self.name, logState, self.localOnOff, self.logOnOff) )
 
             if not self.localOnOff:
               if self.logOnOff:
                 self.logger.info(u"{} {} set to {}".format(self.name, foundMsg, logState))
 
             if state:
-              # only get brightness from the device if the bulb is on (or dimmed)
+              # only get HSV parameters from the device if the bulb is on (or dimmed)
               # the data returned by 'info' has several different formats...
-              ### ToDo - what other properties SHOULD be saved??
               if "dft_on_state" in  data['system']['get_sysinfo']['light_state']:
                 brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
+                hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
+                sat        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['saturation']
+                temp       = data['system']['get_sysinfo']['light_state']["dft_on_state"]['color_temp']
                 fromObject = 'dft_on_state'
-                # hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
               elif "brightness" in  data['system']['get_sysinfo']['light_state']:
                 brightness = data['system']['get_sysinfo']['light_state']['brightness']
+                hue        = data['system']['get_sysinfo']['light_state']['hue']
+                sat        = data['system']['get_sysinfo']['light_state']['saturation']
+                temp       = data['system']['get_sysinfo']['light_state']['color_temp']
                 fromObject = 'light_state'
-                # hue        = data['system']['get_sysinfo']['light_state']['hue']
               else:
                 self.logger.debug(u"{}, brightness not in light_state data: {}".format(self.name, data['system']['get_sysinfo']['light_state']))
                 brightness = None
@@ -148,35 +155,41 @@ class dimmer_poll(pollingThread):
               if brightness is not None:
                 state_update_list = [
                     {'key':'brightnessLevel', 'value':brightness},
-                    # {'key':'hue',   'value':hue}
+                    {'key':'Hue',        'value':hue},
+                    {'key':'Saturation', 'value':sat},
+                    {'key':'colorTemp',  'value':temp},
                   ]
                 dev.updateStatesOnServer(state_update_list)
-                self.logger.debug(u"{}, updated state on server: brightnessLevel={} from {}".format(self.name, brightness, fromObject))
+                self.logger.debug(u"{}, updated state on server: Dimmer States={} from {}".format(self.name, state_update_list, fromObject))
 
             else:
                 # if the bulb is off, just set to 0
                 state_update_list = [
                     {'key':'brightnessLevel', 'value':0},
-                    {'key':'hue',   'value':0}
+                    # leave other parameters alone
                   ]
                 dev.updateStatesOnServer(state_update_list)
 
             self.interupt(state=state, action='state')
             self.localOnOff = False
 
-            self.logger.threaddebug(u"Polling %s %s set to %s", (self.name, foundMsg, logState))
+            self.logger.threaddebug(u"Polling %s %s set to %s" % ((self.name, foundMsg, logState)) )
 
           elif devState and "dft_on_state" in data['system']['get_sysinfo']['light_state']:
             # if the device is on, update the brighness - maybe we didn't get it last time
             brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
             hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
+            sat        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['saturation']
+            temp       = data['system']['get_sysinfo']['light_state']["dft_on_state"]['color_temp']
 
             state_update_list = [
                 {'key':'brightnessLevel', 'value':brightness},
-                {'key':'hue',   'value':hue}
+                {'key':'Hue',        'value':hue},
+                {'key':'Saturation', 'value':sat},
+                {'key':'colorTemp',  'value':temp},
               ]
             dev.updateStatesOnServer(state_update_list)
-            self.logger.debug(u"{}, no state change; update state on server: brightnessLevel={}, hue={}".format(self.name, brightness, hue))
+            self.logger.debug(u"{}, no state change; update state on server: Dimmer States={}".format(self.name, state_update_list))
 
           self.logger.debug(u"%s: finished state update %s" % (self.name, data))
 
@@ -187,7 +200,7 @@ class dimmer_poll(pollingThread):
 
         self.exceptCount = 0
         while cTime > 0:
-          # self.logger.threaddebug(u"%s: Looping Timer = %s", self.name, cTime)
+          # self.logger.threaddebug(u"%s: Looping Timer = %s" % (self.name, cTime) )
           if self.changed or not self._is_running:
             # self.logger.threaddebug(u"Device change for %s" % (self.name))
             self.changed = False
@@ -198,7 +211,7 @@ class dimmer_poll(pollingThread):
             cTime = cTime - pTime
             # self.logger.threaddebug(u"Timer = %6.4f" % (cTime))
 
-          # self.logger.threaddebug(u"Timer loop finished for %s", self.name)
+          # self.logger.threaddebug(u"Timer loop finished for %s" % (self.name) )
         if not self._is_running:
           break
 
