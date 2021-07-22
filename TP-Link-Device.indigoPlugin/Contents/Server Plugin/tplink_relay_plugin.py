@@ -222,3 +222,11 @@ class tplink_relay():
   def set_fade_off_time(self, pluginAction, dev):
       indigo.server.log("set_fade_off_time only applies to device type RelaySwitch ")
       return(None)
+
+  def set_HSV(self, pluginAction, dev):
+      indigo.server.log("set_HSV only applies to colored dimmer bulbs ")
+      return(None)
+
+  def set_ColorTemp(self, pluginAction, dev):
+      indigo.server.log("set_ColorTemp only applies to dimmer bulbs ")
+      return(None)

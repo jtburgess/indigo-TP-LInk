@@ -72,7 +72,7 @@ class relay_poll(pollingThread):
 
     while True:
       try:
-        self.logger.threaddebug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
+        self.logger.threaddebug(u"%s: Starting polling loop with interval %s\n" % (self.name, self.pollFreq) )
         try:
           result = tplink_dev_states.send('info')
           self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
@@ -122,7 +122,7 @@ class relay_poll(pollingThread):
                 self.logger.threaddebug(u"%s: Outlet=%s and id=%s id=%s" % (outletName, outlet, element['id'], element['id'][-2:]))
                 if outlet == outletNum: #element['id'][-2:] == outlet:
                   self.logger.threaddebug(u"%s: YES %s" % (outletName, outletNum))
-                  # self.logger.threaddebug(u"%s: indigo device onOffState is %s, actual is %s", outletName, lastStateMulti[outletNum], devState)
+                  # self.logger.threaddebug(u"%s: indigo device onOffState is %s, actual is %s" % (outletName, lastStateMulti[outletNum], devState) )
                   if not outletNum in lastStateMulti:
                     lastStateMulti[outletNum] = 2
                     foundMsg = 'found'
@@ -149,9 +149,9 @@ class relay_poll(pollingThread):
 
                     if not self.localOnOff:
                       if self.logOnOff:
-                        self.logger.info(u"%s -%s %s set to %s", self.name, outletName, foundMsg, logState)
+                        self.logger.info(u"%s -%s %s set to %s" % (self.name, outletName, foundMsg, logState) )
 
-                    self.logger.threaddebug(u"Polling found %s set to %s", self.name, logState)
+                    self.logger.threaddebug(u"Polling found %s set to %s" % (self.name, logState) )
 
             # Before we go, check to see if we need to update the polling interval
             if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
@@ -197,7 +197,7 @@ class relay_poll(pollingThread):
                 ]
               dev.updateStatesOnServer(state_update_list)
 
-              self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s", self.name, logState, self.localOnOff, self.logOnOff)
+              self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s" % (self.name, logState, self.localOnOff, self.logOnOff) )
 
               if not self.localOnOff:
                 if self.logOnOff:
@@ -206,15 +206,15 @@ class relay_poll(pollingThread):
               self.interupt(state=state, action='state')
               self.localOnOff = False
 
-              self.logger.threaddebug(u"Polling found %s set to %s", self.name, logState)
-              self.logger.threaddebug(u"%s, updated state on server to %s (%s, %s)", self.name, state, rssi, alias)
+              self.logger.threaddebug(u"Polling found %s set to %s" % (self.name, logState) )
+              self.logger.threaddebug(u"%s, updated state on server to %s (%s, %s)" % (self.name, state, rssi, alias) )
 
           self.logger.debug(u"%s: finished state update %s" % (self.name, data))
 
           # Now we start looking for energy data... if the plug is capable
           if energyCapable:
             if self.multiPlug:
-              self.logger.threaddebug(u"Starting energy query for devices at %s", devAddr)
+              self.logger.threaddebug(u"Starting energy query for devices at %s" % (devAddr) )
               deviceId = self.deviceId
 
               for element in elements:
@@ -224,7 +224,7 @@ class relay_poll(pollingThread):
                   indigoDevice = self.outlets[childId]
                   # totAccuUsage = float(indigoDevice.pluginProps['totAccuUsage'])
 
-                  self.logger.threaddebug(u"Found entry for outlet %s devId is %s", childId, indigoDevice.id)
+                  self.logger.threaddebug(u"Found entry for outlet %s devId is %s" % (childId, indigoDevice.id) )
 
                   state = element['state']
                   self.logger.threaddebug(u"Ready to check energy for outlet %s, state %s" % (childId, state))
@@ -252,7 +252,7 @@ class relay_poll(pollingThread):
                     indigoDevice.updateStatesOnServer(state_update_list)
 
                   else:
-                    self.logger.debug("Outlet %s:%s was off. No data collected", self.name, childId)
+                    self.logger.debug("Outlet %s:%s was off. No data collected" % (self.name, childId) )
                     state_update_list = [
                         {'key':'curWatts', 'value':0},
                         {'key':'curVolts', 'value':0},
@@ -295,7 +295,7 @@ class relay_poll(pollingThread):
 
         self.exceptCount = 0
         while cTime > 0:
-          # self.logger.threaddebug(u"%s: Looping Timer = %s", self.name, cTime)
+          # self.logger.threaddebug(u"%s: Looping Timer = %s" % (self.name, cTime) )
           if self.changed or not self._is_running:
             # self.logger.threaddebug(u"Device change for %s" % (self.name))
             self.changed = False
@@ -306,7 +306,7 @@ class relay_poll(pollingThread):
             cTime = cTime - pTime
             # self.logger.threaddebug(u"Timer = %6.4f" % (cTime))
 
-          # self.logger.threaddebug(u"Timer loop finished for %s", self.name)
+          # self.logger.threaddebug(u"Timer loop finished for %s" % (self.name) )
         if not self._is_running:
           break
 
