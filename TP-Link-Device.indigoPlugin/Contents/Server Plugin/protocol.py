@@ -75,7 +75,8 @@ class tplink_protocol(object):
 
   # Send command and receive reply
   # some commands require a parameter. These are encoded as XXX and YYY in the command definition
-  def send(self, request, arg1=None, arg2=None):
+  # set HSV has three parameters
+  def send(self, request, arg1=None, arg2=None, arg3=None):
     if request in self.commands():
       cmd = self.commands()[request]
     else:
@@ -93,6 +94,10 @@ class tplink_protocol(object):
         # self.debugLog(u"send: YYY replaced with {}, cmd='{}'".format(arg2, cmd))
       else:
         return json.dumps({ 'error':  "TP-Link  command '{}' requires YYY value".format(request) })
+
+    # extra args for set_HSV
+    if arg3 is not None:
+      cmd=cmd.replace("ZZZ", arg3)
 
     # if both deviceID and childID are set, { context... } is prepended to the command
     if self.deviceID is not None and self.childID is not None:

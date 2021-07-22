@@ -79,7 +79,7 @@ class pollingThread(Thread):
 
 	def stop(self):
 		# We should probably tell someone
-		self.logger.info(u"Polling stopped for %s@%s.", self.name, self.dev.address)
+		self.logger.info(u"Polling stopped for %s@%s." % (self.name, self.dev.address) )
 
 		self._is_running = False
 

@@ -228,7 +228,7 @@ class Plugin(indigo.PluginBase):
     # Starting and stopping devices
     ######################
     def deviceStartComm(self, dev):
-        self.logger.debug(u"called for: %s@%s.", dev.name, dev.address)
+        self.logger.debug(u"called for: %s@%s." % (dev.name, dev.address) )
         # Called for each device on startup
         # Commit any state changes
         dev.stateListOrDisplayStateIdChanged()
@@ -246,40 +246,40 @@ class Plugin(indigo.PluginBase):
         else:
             devPoll = dev.pluginProps['devPoll']
 
-        # self.logger.debug("deviceStartComn starting %s" % (name), type="TP-Link", isError=False)
+        # self.logger.debug("deviceStartComn starting %s" % (name), type="TP-Link" % (isError=False) )
         if name in self.tpThreads:
             self.logger.debug("deviceStartComm error: Thread exists for %s , %s- %s" % (name, address, self.tpThreads[dev.name]))
             # self.tpThreads[address].interupt(None)
         elif not devPoll:
-            self.logger.info("Polling thread is disabled for %s, %s.", name, address)
+            self.logger.info("Polling thread is disabled for %s, %s." % (name, address) )
         elif devPoll:
             # We start one thread per device ip address
             if address not in self.tpThreads:
                 # Create a polling thread
                 self.process = self.getPollClass(dev)
                 self.tpThreads[address] = self.process
-                self.logger.debug("Polling thread started for device %s, %s", name, address)
+                self.logger.debug("Polling thread started for device %s, %s" % (name, address) )
                 # ... and save a copy of the device that created this thread
                 self.tpDevices[address] = dev
             elif address in self.tpThreads:
-                self.logger.debug(u"deviceStartComm IN thread update %s, %s", name, address)
+                self.logger.debug(u"deviceStartComm IN thread update %s, %s" % (name, address) )
                 deviceID  = dev.pluginProps['deviceId']
                 if not deviceID:
-                    self.logger.error("%s: Oops.No deviceId for %s", name, address)
+                    self.logger.error("%s: Oops.No deviceId for %s" % (name, address) )
                 else:
-                    self.logger.debug("%s: Already had deviceId  %s", name, address)
+                    self.logger.debug("%s: Already had deviceId  %s" % (name, address) )
 
-                # self.logger.info(u"deviceStartComm related to device %s, %s", deviceId, "foio")
+                # self.logger.info(u"deviceStartComm related to device %s, %s" % (deviceId, "foio") )
                 # Since a thread already exists, this is probably a multiPlug
                 self.tpThreads[address].interupt(dev=dev, action='dev')
             else:
                 # something is horribly wrong
-                self.logger.error(u"deviceStartComm error in thread creation %s, %s", name, address)
+                self.logger.error(u"deviceStartComm error in thread creation %s, %s" % (name, address) )
 
         # Since we got this far, we might as well tell someone
         dev.replaceOnServer()
         if devPoll:
-          self.logger.info(u"Polling started for %s@%s.", dev.name, dev.address)
+          self.logger.info(u"Polling started for %s@%s." % (dev.name, dev.address) )
         return
 
     def deviceStopComm(self, dev):
@@ -298,7 +298,7 @@ class Plugin(indigo.PluginBase):
     ########################################
     ########################################
     def initializeDev(self, valuesDict):
-        self.logger.debug(u" called with: %s.", (valuesDict))
+        self.logger.debug(u" called with: %s." % ((valuesDict)) )
 
         devAddr = valuesDict['address']
         devName = "new device at " + devAddr
@@ -426,8 +426,15 @@ class Plugin(indigo.PluginBase):
             else:
               curState = self.displayStateId
             self.logger.info("    current state: {}".format(curState))
+
+            # see if the particular device has anything to add...
+            self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
+            self.logger.info("    TPlink subclass: {}".format(dev.deviceTypeId))
+            subType = self.getSubClass(dev.deviceTypeId)
+            subType.getInfo(pluginAction, dev)
+
         except Exception as e:
-            self.logger.error("%s: Device not reachable and states could not be updated. %s", dev.name, str(e))
+            self.logger.error("%s: Device not reachable and states could not be updated. %s" % (dev.name, str(e)) )
 
         return
 
@@ -624,7 +631,7 @@ class Plugin(indigo.PluginBase):
             return(valuesDict, errorsDict)
 
         props = dev.pluginProps
-        self.logger.threaddebug("pluginPropsr=%s", props)
+        self.logger.threaddebug("pluginPropsr=%s" % (props) )
 
         valuesDict['address']       = props['address']
         valuesDict['alias']         = dev.states['alias']
@@ -640,7 +647,7 @@ class Plugin(indigo.PluginBase):
 
         subType = self.getSubClass(dev.deviceTypeId)
         valuesDict = subType.displayButtonPressed(dev, valuesDict)
-        self.logger.threaddebug("Device info = %s", valuesDict)
+        self.logger.threaddebug("Device info = %s" % (valuesDict) )
 
         return(valuesDict)
 
@@ -669,7 +676,7 @@ class Plugin(indigo.PluginBase):
             rpt_fmt.format("Off state polling freq:", valuesDict['offPoll']) + \
             subType.printToLogPressed( valuesDict, rpt_fmt)
 
-        self.logger.info("%s", report)
+        self.logger.info("%s" % (report, ) )
         return
 
     ########################################
@@ -677,31 +684,38 @@ class Plugin(indigo.PluginBase):
     # I haven't been able to figure out how to make these calls soecific to the device Type
     ########################################
     def reEnableComms(self, pluginAction, dev):
-        self.logger.info("Device Communications (re-)enabled")
-        indigo.device.enable(dev.id, value=True)
-        return
+      self.logger.info("Device Communications (re-)enabled")
+      indigo.device.enable(dev.id, value=True)
+      return
 
     def SetDoubleClickAction(self, pluginAction, dev):
-        subType = self.getSubClass (dev.deviceTypeId)
-        return subType.SetDoubleClickAction(pluginAction, dev)
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.SetDoubleClickAction(pluginAction, dev)
 
     def SetLongPressAction(self, pluginAction, dev):
-        subType = self.getSubClass (dev.deviceTypeId)
-        return subType.SetLongPressAction(pluginAction, dev)
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.SetLongPressAction(pluginAction, dev)
 
     def set_gentle_off_time(self, pluginAction, dev):
-        subType = self.getSubClass (dev.deviceTypeId)
-        return subType.set_gentle_off_time(pluginAction, dev)
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.set_gentle_off_time(pluginAction, dev)
 
     def set_gentle_on_time(self, pluginAction, dev):
-        subType = self.getSubClass (dev.deviceTypeId)
-        return subType.set_gentle_on_time(pluginAction, dev)
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.set_gentle_on_time(pluginAction, dev)
 
     def set_fade_on_time(self, pluginAction, dev):
-        subType = self.getSubClass (dev.deviceTypeId)
-        return subType.set_fade_on_time(pluginAction, dev)
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.set_fade_on_time(pluginAction, dev)
 
     def set_fade_off_time(self, pluginAction, dev):
-        subType = self.getSubClass (dev.deviceTypeId)
-        return subType.set_fade_off_time(pluginAction, dev)
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.set_fade_off_time(pluginAction, dev)
 
+    def set_HSV(self, pluginAction, dev):
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.set_HSV(pluginAction, dev)
+
+    def set_ColorTemp(self, pluginAction, dev):
+      subType = self.getSubClass (dev.deviceTypeId)
+      return subType.set_ColorTemp(pluginAction, dev)
