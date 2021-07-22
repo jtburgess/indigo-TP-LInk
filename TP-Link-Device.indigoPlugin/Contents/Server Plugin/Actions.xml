@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- only one special action info == status
+<!-- only one common action: info == status
 -->
 <Actions>
 	<Action id="info" deviceFilter="self">
@@ -119,4 +119,43 @@
 			</Field>
 		</ConfigUI>
 	</Action>
+
+<!-- Set Hue, Saturation, Value for color bulbs -->
+	<Action id="set_HSV" deviceFilter="indigo.device,self">
+		<Name>Set Color Parameters (HSV)</Name>
+		<CallbackMethod>set_HSV</CallbackMethod>
+		<ConfigUI>
+			<Field id="labelHue" type="label">
+				<Label>Hue:</Label>
+			</Field>
+			<Field id="Hue" type="textfield">
+			</Field>
+
+			<Field id="labelSat" type="label">
+				<Label>Saturation:</Label>
+			</Field>
+			<Field id="Sat" type="textfield">
+			</Field>
+
+			<Field id="labelValyue" type="label">
+				<Label>Brightness Value:</Label>
+			</Field>
+			<Field id="Val" type="textfield">
+			</Field>
+		</ConfigUI>
+	</Action>
+
+<!-- Set ColorTemp for some  bulbs -->
+	<Action id="set_ColorTemo" deviceFilter="indigo.device,self">
+		<Name>Set Temperature(K)</Name>
+		<CallbackMethod>set_ColorTemp</CallbackMethod>
+		<ConfigUI>
+			<Field id="label" type="label">
+				<Label>Temperature(K):</Label>
+			</Field>
+			<Field id="Temp" type="textfield">
+			</Field>
+		</ConfigUI>
+	</Action>
+
 </Actions>
