@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 ####################
 import indigo
+from tplink_relayswitch_protocol import tplink_relayswitch_protocol
 
 # relay (aka smart plug, power strip) device-specific functions needed by the plugin
 # almost all functions are stubbed; some may not be used
@@ -42,7 +43,7 @@ class tplink_relayswitch():
     return
 
   def initializeDev(self, valuesDict, data):
-    self.logger.debug(u" called with: %s.", (valuesDict))
+    self.logger.debug(u" called with: %s." % (valuesDict, ) )
     valuesDict['mac'] = data['system']['get_sysinfo']['mac']
     return valuesDict
 
@@ -56,18 +57,18 @@ class tplink_relayswitch():
         dev.updateStateOnServer(key="onOffState", value=0)
         dev.updateStateOnServer(key="brightnessLevel", value=0)
         if logOnOff:
-            self.logger.info(u"%s set to %s", dev.name, cmd)
+            self.logger.info(u"%s set to %s" % (dev.name, cmd) )
     elif cmd == "on":
         state = True
         if logOnOff:
-            self.logger.info(u"%s set to %s", dev.name, cmd)
-            self.logger.info(u"%s brightness set to %s", dev.name, str(bright))
+            self.logger.info(u"%s set to %s" % (dev.name, cmd) )
+            self.logger.info(u"%s brightness set to %s" % (dev.name, str(bright)) )
         dev.updateStateOnServer(key="onOffState", value=state)
         dev.updateStateOnServer(key="brightnessLevel", value=bright)
     elif cmd=="setBright":
         dev.updateStateOnServer(key="brightnessLevel", value=bright)
         if logOnOff:
-            self.logger.info(u"%s brightness set to %s", dev.name, str(bright))
+            self.logger.info(u"%s brightness set to %s" % (dev.name, str(bright)) )
 #    self.tpThreads[dev.address].interupt(dev=dev, action='status')
     return
 
@@ -126,11 +127,7 @@ class tplink_relayswitch():
   # So far, These actions are specific to the RelaySwitch type
   ########################################
   def SetDoubleClickAction(self, pluginAction, dev):
-
-      devType = dev.deviceTypeId
-      devAddr = dev.address
-      devPort = 9999
-      tplink_dev_states = tplink_relayswitch_protocol(devAddr, devPort)
+      tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
       thechoice=int(pluginAction.props.get(u"dbMode"))-1
       thepreset=int(pluginAction.props.get(u"dbPreset"))-1
@@ -142,10 +139,7 @@ class tplink_relayswitch():
       return(result)
 
   def SetLongPressAction(self, pluginAction, dev):
-      devType = dev.deviceTypeId
-      devAddr = dev.address
-      devPort = 9999
-      tplink_dev_states = tplink_relayswitch_protocol(devAddr, devPort)
+      tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
       thechoice=int(pluginAction.props.get(u"lpMode"))-1
       thepreset=int(pluginAction.props.get(u"lpPreset"))-1
@@ -157,10 +151,7 @@ class tplink_relayswitch():
       return(result)
 
   def set_gentle_off_time(self, pluginAction, dev):
-      devType = dev.deviceTypeId
-      devAddr = dev.address
-      devPort = 9999
-      tplink_dev_states = tplink_relayswitch_protocol(devAddr, devPort)
+      tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
       thechoice=pluginAction.props.get(u"setGOT")
       result = tplink_dev_states.send('setGentleoff',str(thechoice),"")
@@ -168,10 +159,7 @@ class tplink_relayswitch():
       return(result)
 
   def set_gentle_on_time(self, pluginAction, dev):
-      devType = dev.deviceTypeId
-      devAddr = dev.address
-      devPort = 9999
-      tplink_dev_states = tplink_relayswitch_protocol(devAddr, devPort)
+      tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
       thechoice=pluginAction.props.get(u"setGOnT")
       result = tplink_dev_states.send('setGentleon',thechoice,"")
@@ -180,10 +168,7 @@ class tplink_relayswitch():
       return(result)
 
   def set_fade_on_time(self, pluginAction, dev):
-      devType = dev.deviceTypeId
-      devAddr = dev.address
-      devPort = 9999
-      tplink_dev_states = tplink_relayswitch_protocol(devAddr, devPort)
+      tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
       thechoice=str(pluginAction.props.get(u"setFOnT"))
 
@@ -192,10 +177,7 @@ class tplink_relayswitch():
       return(result)
 
   def set_fade_off_time(self, pluginAction, dev):
-      devType = dev.deviceTypeId
-      devAddr = dev.address
-      devPort = 9999
-      tplink_dev_states = tplink_relayswitch_protocol(devAddr, devPort)
+      tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
       thechoice=pluginAction.props.get(u"setFOT")
 
@@ -203,3 +185,11 @@ class tplink_relayswitch():
 
       indigo.server.log("Set Fade Off Time " + dev.name + " to " +thechoice)
       return(result)
+
+  def set_HSV(self, pluginAction, dev):
+      indigo.server.log("set_HSV only applies to colored dimmer bulbs ")
+      return(None)
+
+  def set_ColorTemp(self, pluginAction, dev):
+      indigo.server.log("set_ColorTemp only applies to dimmer bulbs ")
+      return(None)

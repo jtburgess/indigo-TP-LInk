@@ -18,11 +18,10 @@ class relayswitch_poll(pollingThread):
   ####################################################################
   def __init__(self, logger, dev, logOnOff, pluginPrefs):
     super(relayswitch_poll, self).__init__(logger, dev, logOnOff, pluginPrefs)
-    self.logger.debug(u"called for: %s." % (dev.name))
+    self.logger.debug(u"called for: %s." % (dev.name, ))
 
     self.onPoll = int(dev.pluginProps['onPoll'])
     self.offPoll = int(dev.pluginProps['offPoll'])
-
     self.onOffState = dev.states['onOffState']
     if self.onOffState:
       self.pollFreq = self.onPoll
@@ -34,13 +33,13 @@ class relayswitch_poll(pollingThread):
     self._is_running = True
     self.start()
 
-# use super()
+# use super() for these
 #  def interupt(self, state=None, dev=None, action=None):
 #  def start(self)
 #  def stop(self):
 
   def run(self):
-    self.logger.debug(u"called for: %s." % (self.dev))
+    self.logger.debug(u"called for: %s." % (self.dev, ))
     dev = self.dev
     devType = dev.deviceTypeId
     devAddr = dev.address
@@ -56,21 +55,21 @@ class relayswitch_poll(pollingThread):
 
     while True:
       try:
-        self.logger.threaddebug(u"%s: Starting polling loop with interval %s\n", self.name, self.pollFreq)
+        self.logger.threaddebug(u"%s: Starting polling loop with interval %s\n" % (self.name, self.pollFreq) )
         try:
           result = tplink_dev_states.send('info',"","")
-          self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
+          self.logger.threaddebug("%s connection 1 received (%s)" % (self.name, result))
           data = json.loads(result)
         except Exception as e:
           self.logger.error("%s connection failed with (%s)" % (self.name, str(e)))
 
         try:
           result = tplink_dev_states.send('getParam',"","")
-          self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
+          self.logger.threaddebug("%s connection 2 received (%s)" % (self.name, result))
           data1 = json.loads(result)
           result = tplink_dev_states.send('getBehave',"","")
-          self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
-          data2 = json.loads(result)['smartlife.iot.dimmer']['get_default_behavior']
+          self.logger.threaddebug("%s connection 3 received (%s)" % (self.name, result))
+          data2 = json.loads(result)
         except Exception as e:
           self.logger.error("{} error getting RelaySwitch data. Is this the right device type?".format(self.name))
           self.logger.error("    error was '{}'".format(str(e)))
@@ -81,13 +80,13 @@ class relayswitch_poll(pollingThread):
         self.logger.threaddebug(u"%s: finished state data collection with %s" % (self.name, data))
 
         # Check if we got an error back
-        if 'error' in data:
+        if 'error' in data or 'error' in data1 or 'error' in data2:
           self.pollErrors += 1
           if self.pollErrors == 5:
             self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
             self.pollFreq += 1
           elif self.pollErrors == 10:
-            self.logger.error(u"8 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
+            self.logger.error(u"10 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
             self.pollFreq += 1
           elif self.pollErrors >= 15:
             self.logger.error(u"Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, data['error']))
@@ -104,8 +103,8 @@ class relayswitch_poll(pollingThread):
                 self.pollFreq = self.offPoll
             # self.logger.threaddebug(u"%s: Got Here 0 with %s" % (self.name, data))
             devState = data['system']['get_sysinfo']['relay_state']
-            devBright = data['system']['get_sysinfo']['brightness']
-            self.logger.threaddebug(u"%s: switch state= %s, lastState=%s, brightness=%s" % (self.name, devState, lastState, str(devBright)))
+            bright = data['system']['get_sysinfo']['brightness']
+            self.logger.threaddebug(u"%s: switch state= %s, lastState=%s, brightness=%s" % (self.name, devState, lastState, str(bright)))
             if not firstRun:  # set the logOnOff msg to reflect a first pass in the poll
                 firstRun = True
                 foundMsg = 'found'
@@ -125,22 +124,29 @@ class relayswitch_poll(pollingThread):
 
             self.logger.threaddebug(u"%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
 #            indigo.server.log(u"%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
+            try:
+              alias = data['system']['get_sysinfo']['alias']
+              rssi = data['system']['get_sysinfo']['rssi']
+              data1 = data1['smartlife.iot.dimmer']['get_dimmer_parameters']
+              fadeOnTime = ['fadeOnTime']
+              fadeOffTime = data1['fadeOffTime']
+              minThreshold = data1['minThreshold']
+              gentleOnTime = data1['gentleOnTime']
+              gentleOffTime = data1['gentleOffTime']
+              rampRate = data1['rampRate']
+              data2 = data2['smartlife.iot.dimmer']['get_default_behavior']
+              hardOn=data2['hard_on']['mode']
+              softOn=data2['soft_on']['mode']
+              longPress=data2['long_press']['mode']
+              doubleClick=data2['double_click']['mode']
+            except:
+              self.logger.error("{} error parsing RelaySwitch data. Is this the right device type?".format(self.name))
+              self.logger.error("    error was '{}'".format(str(e)))
+              self.logger.error("    Polling for this device will now shut down.")
+              indigo.device.enable(dev.id, value=False)
+              return
 
-            alias = data['system']['get_sysinfo']['alias']
-            rssi = data['system']['get_sysinfo']['rssi']
-            fadeOnTime = data1['smartlife.iot.dimmer']['get_dimmer_parameters']['fadeOnTime']
-            fadeOffTime = data1['smartlife.iot.dimmer']['get_dimmer_parameters']['fadeOffTime']
-            minThreshold = data1['smartlife.iot.dimmer']['get_dimmer_parameters']['minThreshold']
-            gentleOnTime = data1['smartlife.iot.dimmer']['get_dimmer_parameters']['gentleOnTime']
-            gentleOffTime = data1['smartlife.iot.dimmer']['get_dimmer_parameters']['gentleOffTime']
-            rampRate = data1['smartlife.iot.dimmer']['get_dimmer_parameters']['rampRate']
-            hardOn=data2['hard_on']['mode']
-            softOn=data2['soft_on']['mode']
-            longPress=data2['long_press']['mode']
-            doubleClick=data2['double_click']['mode']
-
- #             indigo,server.log("update state:"+str(state))
-            bright=devBright
+#           indigo,server.log("update state:"+str(state))
             if state==False:
                   bright=0
 
@@ -161,7 +167,7 @@ class relayswitch_poll(pollingThread):
                 ]
             dev.updateStatesOnServer(state_update_list)
 
-            self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s", self.name, logState, self.localOnOff, self.logOnOff)
+            self.logger.threaddebug(u"%s is now %s: localOnOff=%s, logOnOff=%s" % (self.name, logState, self.localOnOff, self.logOnOff) )
 
             if not self.localOnOff:
                 if self.logOnOff:
@@ -170,8 +176,8 @@ class relayswitch_poll(pollingThread):
 #              self.interupt(state=state, action='state')
                     self.localOnOff = False
 
-            self.logger.threaddebug(u"Polling found %s set to %s", self.name, logState)
-            self.logger.threaddebug(u"%s, updated state on server to %s (%s, %s)", self.name, state, rssi, alias)
+            self.logger.threaddebug(u"Polling found %s set to %s" % (self.name, logState) )
+            self.logger.threaddebug(u"%s, updated state on server to %s (%s, %s)" % (self.name, state, rssi, alias) )
 
         self.logger.debug(u"%s: finished state update %s" % (self.name, data))
 
@@ -182,20 +188,20 @@ class relayswitch_poll(pollingThread):
 
         self.exceptCount = 0
         while cTime > 0:
-          # self.logger.threaddebug(u"%s: Looping Timer = %s", self.name, cTime)
+          # self.logger.threaddebug(u"%s: Looping Timer = %s" % (self.name, cTime) )
           if self.changed or not self._is_running:
-            # self.logger.threaddebug(u"Device change for %s" % (self.name))
+            # self.logger.threaddebug(u"Device change for %s" % (self.name, ))
             self.changed = False
             cTime = 0
           else:
-            # self.logger.threaddebug(u"starting mini sleep for %6.4f" % (pTime))
+            # self.logger.threaddebug(u"starting mini sleep for %6.4f" % (pTime, ))
             sleep(pTime)
             cTime = cTime - pTime
-            # self.logger.threaddebug(u"Timer = %6.4f" % (cTime))
+            # self.logger.threaddebug(u"Timer = %6.4f" % (cTime, ))
 
-          # self.logger.threaddebug(u"Timer loop finished for %s", self.name)
+          # self.logger.threaddebug(u"Timer loop finished for %s" % (self.name, ))
 
-        self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name))
+        self.logger.debug(u"%s: Back in the loop - timer ended" % (self.name, ))
 
       except Exception as e:
         if self.exceptCount == 10:
