@@ -127,7 +127,7 @@ class tplink_protocol(object):
     except socket.timeout:
       return json.dumps({'error': 'TP-Link connection timeout'})
     except Exception as e:
-      return json.dumps({'error': {"python error" : str(e), "cmd" : cmd}})
+      return json.dumps({'error': "python error '{}' from command {}".format(str(e), cmd)})
 
     finally:
       try:

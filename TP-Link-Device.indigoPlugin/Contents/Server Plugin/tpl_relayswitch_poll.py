@@ -82,14 +82,22 @@ class relayswitch_poll(pollingThread):
         # Check if we got an error back
         if 'error' in data or 'error' in data1 or 'error' in data2:
           self.pollErrors += 1
+          # put the error in one place no matter which command failed
+          if 'error' in data:
+            error = data['error']
+          elif 'error' in data1:
+            error = data1['error']
+          elif 'error' in data2:
+            error = data2['error']
+
           if self.pollErrors == 5:
-            self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
+            self.logger.error(u"5 consecutive polling error for device \"%s\": %s" % (self.name, error))
             self.pollFreq += 1
           elif self.pollErrors == 10:
-            self.logger.error(u"10 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
+            self.logger.error(u"10 consecutive polling error for device \"%s\": %s" % (self.name, error))
             self.pollFreq += 1
           elif self.pollErrors >= 15:
-            self.logger.error(u"Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, data['error']))
+            self.logger.error(u"Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, error))
             indigo.device.enable(dev.id, value=False)
             return
 
@@ -128,7 +136,7 @@ class relayswitch_poll(pollingThread):
               alias = data['system']['get_sysinfo']['alias']
               rssi = data['system']['get_sysinfo']['rssi']
               data1 = data1['smartlife.iot.dimmer']['get_dimmer_parameters']
-              fadeOnTime = ['fadeOnTime']
+              fadeOnTime = data1['fadeOnTime']
               fadeOffTime = data1['fadeOffTime']
               minThreshold = data1['minThreshold']
               gentleOnTime = data1['gentleOnTime']
