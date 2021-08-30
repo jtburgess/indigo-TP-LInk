@@ -86,6 +86,18 @@ See the documentation for the device.
 Sets the time it takes to increase brightness gently, in milliseconds (msec).
 
 ---
+*New Color Actions in 0.9.8*. 
+These apply only to Dimmer devices.
+### set_HSV
+Sets the Hue Saturation and Value (brightness).
+Only applies to devices that have the 'isColor' property.
+
+### set_ColorTemp
+Sets the white color temp in degrees-Kelvin.
+I don't know what the allowable range is, so it lets you use any number between 0 and 9999.
+Let me know if *you know* the allowed values, so I can update my code to properly validate.
+
+---
 ## Command Line Testing
 A command line tool for manually querying TP-Link smart devices, **tplink_test.py** is included with the Plugin. You'll find it in the top-level directory of the plugin. In a terminal window,
 
