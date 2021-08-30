@@ -146,7 +146,7 @@
 	</Action>
 
 <!-- Set ColorTemp for some  bulbs -->
-	<Action id="set_ColorTemo" deviceFilter="indigo.device,self">
+	<Action id="set_ColorTemp" deviceFilter="indigo.device,self">
 		<Name>Set Temperature(K)</Name>
 		<CallbackMethod>set_ColorTemp</CallbackMethod>
 		<ConfigUI>
