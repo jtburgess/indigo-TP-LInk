@@ -1,10 +1,9 @@
 # Indigo TP-Link
 
 ## Overview
---------
 
-This plugin is for TP-link Devices: plugs, power strips, wall switches, and smart light bulbs. The intent is
-to support all devices controlled by the _kasa_ app.  Note that there are many WiFi-controlled smart devices from many manufacturers.
+This Indigo plugin is for TP-link Devices: plugs, power strips, wall switches, and smart light bulbs. The intent is
+to support all devices controlled by the __kasa__ app.  Note that there are many WiFi-controlled smart devices from many manufacturers.
 There is no standard protocol for them. If your device doesn't work with _kasa_, it won't work with this plug-in.
 
 Also, TP-link frequently puts out new devices with new features and variants on the protocol. The original version of this plugin only supported plugs; then multi-plug devices were added, and now dimmable smart bulbs and light switches.
@@ -30,7 +29,7 @@ Next, whether you selected the device from the menu, or entered its IP Address m
 
 ### Common Device Settings (Polling)
 All device types support status polling, through these configuration options:
-* Enable or disable polling of the device. Polling is required if you want Indigo to track changes made locally at the device, or through Alexa, or via the _kasa_ app. Polling is also required if you want to access energy data from a device with energy reporting capability.
+* Enable or disable polling of the device. Polling is required if you want Indigo to track changes made locally at the device, or through Alexa, or via the __kasa__ app. Polling is also required if you want to access energy data from a device with energy reporting capability.
 * You can also set the polling frequency. There are two settings, the frequency when the device is off, and when it is on.  For energy reporting plugs, you will probably want a faster polling time when the plug is on. Otherwise you can set both settings to the same interval. For dual-plugs and plug strips, the polling frequency is controlled by the plugin's Config settings. Note that polling more often than every 5 seconds may affect your computer's performance.
 
 ### Smart Plug (aka Relay) Config details
@@ -45,7 +44,7 @@ Click __Save__ and then simply click __on__ or __off__ on your device. _Toggle_ 
 ### Smart Relay Dimmer Switch (aka RelaySwitch) Config Details
 This device type is for wall switches with dimming capabiulity. They are sort of a cross between a Relay and a Dimmer, but since the protocol is unique, they represent a different sub-type.  They also have some advanced features (see Actions, bwlow).
 
-There are no __RelaySwitch__-specific configuration settings.
+There are no __RelaySwitch__ -specific configuration settings.
 
 ### Smart Bulb (aka Dimmer) Config Details
 Smart bulbs typically have model names beginning with 'KL'. You'll want to select **TP-Link Smart (dimming) bulb** as you initially configure the device.
@@ -60,12 +59,12 @@ The actions below were added for the __RelaySwitch__ subtype, which has extra se
 ### Set_fade_on_time
 For a __RelaySwitch__, sets the time it takes to increase brightness, in milliseconds (msec).
 
-For a __Dimmer__, it sets the rampTime, in msec. This timer is used for all operations (__on/off/set brightness__). It it an alternative to setting the rampTime in the Device config, but take effect immediately, so it can be used in a complex multi-step Action to do interesting things.
+For a __Dimmer__ , it sets the rampTime, in msec. This timer is used for all operations (__on/off/set brightness__). It it an alternative to setting the rampTime in the Device config, but take effect immediately, so it can be used in a complex multi-step Action to do interesting things.
 
 ### Set_fade_off_time
 For a __RelaySwitch__, sets the time it takes to decrease brightness, in msec.
 
-For a __Dimmer__, it sets the rampTime, in msec. This timer is used for all operations (__on/off/set brightness__).
+For a __Dimmer__, it sets the rampTime, in msec. This timer is used for all operations ( __on/off/set brightness__ ).
 It does the same thing as Set_fade_on_time.
 
 ### SetDoubleClickAction
