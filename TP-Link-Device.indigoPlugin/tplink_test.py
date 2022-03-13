@@ -42,17 +42,17 @@ def check_server(address):
     s.connect((address, port))
     # print "Connected to %s on port %s" % (address, port)
     return address
-  except socket.error, e:
-    print "Connection to %s on port %s failed: %s" % (address, port, e)
+  except socket.error as e:
+    print("Connection to %s on port %s failed: %s" % (address, port, e))
     # parser.error("Invalid hostname.")
   finally:
     s.close()
 
 class logger():
   def debug(s):
-    print "DEBUG:" + s
+    print("DEBUG:" + s)
   def info(s):
-    print "INFO :" + s
+    print("INFO :" + s)
 
 ################################################################################
 def main():
@@ -94,7 +94,7 @@ def main():
   # this allows you to use device-type specific commands
   if args.relay is True:
       my_target = tplink_relay_protocol(args.target, 9999, args.deviceID, args.childID, logger=logger)
-      print "using Relay protocol"
+      print("using Relay protocol")
       choices = my_target.commands()
   elif args.bulb is True:
       my_target = tplink_dimmer_protocol(args.target, 9999, logger=logger)
@@ -108,13 +108,13 @@ def main():
         arg2 = args.rampTime
       else:
         arg2 = 1000 # default to 1 second
-      print "Dimmer: brightness={}, rampTime={}".format(arg1, arg2)
+      print("Dimmer: brightness={}, rampTime={}".format(arg1, arg2))
   elif args.switch is True:
       my_target = tplink_relayswitch_protocol(args.target, 9999, logger=logger)
-      print "using RelaySwitch protocol"
+      print("using RelaySwitch protocol")
       choices = my_target.commands()
   elif args.command != 'discover':
-      print "unknown device type: {}".format(args.switch)
+      print("unknown device type: {}".format(args.switch))
       sys.exit(1)
 
   if args.command == 'discover':
@@ -122,7 +122,7 @@ def main():
       # my_target = tplink_protocol(args.target, 9999)
       response =  my_target.discover()
   elif args.target is None : # or (args.relay is None and args.bulb is None):
-      print "Error: target host (%s) is required" % (args.target)
+      print("Error: target host (%s) is required" % (args.target))
       sys.exit(1)
   else:
       received = None
@@ -134,18 +134,18 @@ def main():
       elif args.json:
         received = my_target.send(args.json)
       else:
-        print "Error: -c, -C or -j is required"
+        print("Error: -c, -C or -j is required")
         sys.exit(1)
 
       try:
         response = json.loads( received )
-      except ValueError, e:
-          print ("Value error: %s on %s" % (e, received) )
+      except ValueError as e:
+          print ()"Value error: %s on %s" % (e, received) )
 #       except TypeError, e:
 #           print ("Type error: %s on %s" % (e, received) )
 
-      print "Received: "
-      print json.dumps(response, sort_keys=True, indent=2, separators=(',', ': '))
+      print("Received: ")
+      print(json.dumps(response, sort_keys=True, indent=2, separators=(',', ': ')))
       sys.exit(0)
 
 ###### main for testing #####
