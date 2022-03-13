@@ -25,7 +25,7 @@ class tplink_dimmer():
     return
 
   def validateDeviceConfigUi(self, valuesDict, typeId, devId):
-    self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
+    self.logger.debug("called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
     dev = indigo.devices[devId]
     dev.pluginProps['rampTime'] = valuesDict['rampTime']
     return valuesDict
@@ -45,7 +45,7 @@ class tplink_dimmer():
     return
 
   def initializeDev(self, valuesDict, data):
-    self.logger.debug(u" called with: %s." % (valuesDict, ) )
+    self.logger.debug(" called with: %s." % (valuesDict, ) )
     valuesDict['mac'] = data['system']['get_sysinfo']['mic_mac']
     valuesDict['SupportsColor'] = valuesDict['isColor'] = (data['system']['get_sysinfo']['is_color'] == 1)
     valuesDict['isDimmable'] = (data['system']['get_sysinfo']['is_dimmable'] == 1)
@@ -54,7 +54,7 @@ class tplink_dimmer():
 
   def actionControlDevice (self, action, dev, cmd, logOnOff=True, bright=None):
     """ called on send Success to update state, etc. """
-    self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
+    self.logger.debug('sent "{}" {}'.format(dev.name, cmd))
 
     # tell the Indigo Server to update states
     uiState = cmd
@@ -80,9 +80,9 @@ class tplink_dimmer():
     if logOnOff:
       if action.deviceAction == indigo.kDimmerRelayAction.SetBrightness:
         # because "cmd" is manipulated to be json, above
-        self.logger.info(u"%s brightness set to %s" % (dev.name, brightnessLevel) )
+        self.logger.info("%s brightness set to %s" % (dev.name, brightnessLevel) )
       else:
-        self.logger.info(u"%s set to %s" % (dev.name, cmd) )
+        self.logger.info("%s set to %s" % (dev.name, cmd) )
     #self.tpThreads[dev.address].interupt(dev=dev, action='status')
     return
 
@@ -100,10 +100,10 @@ class tplink_dimmer():
     return
 
   def getDeviceStateList(self, dev, statesDict):
-    self.logger.debug(u" called for: %s." % statesDict)
+    self.logger.debug(" called for: %s." % statesDict)
 
     # brightness level is pre-defined. No need to add it here
-    hue = self.tpLink_self.getDeviceStateDictForNumberType(u"hue", u"hue", u"hue")
+    hue = self.tpLink_self.getDeviceStateDictForNumberType("hue", "hue", "hue")
     statesDict.append(hue)
 
     return statesDict
@@ -111,7 +111,7 @@ class tplink_dimmer():
   def selectTpDevice(self, valuesDict, typeId, devId):
     address = valuesDict['address']
     # This sub-method gets called in the device configuration process, once address resolution is successful
-    self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
+    self.logger.debug("called for: %s, %s, %s." % (typeId, devId, address))
 
     sys_info = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']
     valuesDict['mac']  = sys_info['mic_mac']
@@ -165,7 +165,7 @@ class tplink_dimmer():
       return(None)
 
   def set_fade_on_time(self, pluginAction, dev):
-      rampTime = str(pluginAction.props.get(u"setFOnT"))
+      rampTime = str(pluginAction.props.get("setFOnT"))
       newProps = dev.pluginProps
       newProps['rampTime'] = rampTime
       dev.replacePluginPropsOnServer(newProps)
@@ -173,7 +173,7 @@ class tplink_dimmer():
       return(None)
 
   def set_fade_off_time(self, pluginAction, dev):
-      rampTime = str(pluginAction.props.get(u"setFOT"))
+      rampTime = str(pluginAction.props.get("setFOT"))
       newProps = dev.pluginProps
       newProps['rampTime'] = rampTime
       dev.replacePluginPropsOnServer(newProps)
@@ -185,9 +185,9 @@ class tplink_dimmer():
   # int saturation: saturation in percentage [0,100]
   # int value: brightness in percentage [0, 100]
   def set_HSV(self, pluginAction, dev):
-    hue  = int(pluginAction.props.get(u"Hue"))
-    sat  = int(pluginAction.props.get(u"Sat"))
-    val  = int(pluginAction.props.get(u"Val"))
+    hue  = int(pluginAction.props.get("Hue"))
+    sat  = int(pluginAction.props.get("Sat"))
+    val  = int(pluginAction.props.get("Val"))
 
     errors = 0
     if hue < 0 or hue > 360:
@@ -217,7 +217,7 @@ class tplink_dimmer():
 
   # int value: value in percentage [0, 100]
   def set_ColorTemp(self, pluginAction, dev):
-    temp  = int(pluginAction.props.get(u"Temp"))
+    temp  = int(pluginAction.props.get("Temp"))
 
     # what is valid range to check for??
     errors = 0

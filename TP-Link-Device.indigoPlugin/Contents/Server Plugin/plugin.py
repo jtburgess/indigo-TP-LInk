@@ -8,7 +8,7 @@ import json
 import logging
 from os import path
 import pdb
-from Queue import Queue
+from queue import Queue
 import socket
 from plugin_base import IndigoLogHandler
 
@@ -94,7 +94,7 @@ class Plugin(indigo.PluginBase):
 
         self.loglevel = pluginPrefs.get("logLevel", "info")
         self.my_debug_handler.setLogLevel(self.loglevel)
-        self.logger.info(u"Log level set to {}".format(self.loglevel))
+        self.logger.info("Log level set to {}".format(self.loglevel))
         self.logOnOff = pluginPrefs.get('logOnOff', False)
         self.tpThreads = {}
         self.tpDevices = {}
@@ -163,13 +163,13 @@ class Plugin(indigo.PluginBase):
         else:
           deviceId = None
           childId = None
-        self.logger.debug(u"called with tplink_relay addr: {}, deviceID {}, chlldID {}".format(addr, deviceId, childId))
+        self.logger.debug("called with tplink_relay addr: {}, deviceID {}, chlldID {}".format(addr, deviceId, childId))
         return tplink_relay_protocol(addr, port, deviceId, childId, logger=self.logger)
       elif dev.deviceTypeId == 'tplinkSmartSwitch':
-        self.logger.debug(u"called with tplink_relayswitch addr: {}".format(addr))
+        self.logger.debug("called with tplink_relayswitch addr: {}".format(addr))
         return tplink_relayswitch_protocol(addr, port, None, None, logger=self.logger)
       elif dev.deviceTypeId == 'tplinkSmartBulb':
-        self.logger.debug(u"called with tplink_dimmer addr: {}".format(addr))
+        self.logger.debug("called with tplink_dimmer addr: {}".format(addr))
         if 'rampTime' in dev.pluginProps:
           arg2 = dev.pluginProps['rampTime']
         else:
@@ -182,19 +182,19 @@ class Plugin(indigo.PluginBase):
 
     ########################################
     def startup(self):
-        self.logger.debug(u"startup called")
+        self.logger.debug("startup called")
         return
 
     def shutdown(self):
-        self.logger.debug(u"shutdown called")
+        self.logger.debug("shutdown called")
         return
 
     ########################################
     # Validation handlers
     ######################
     def validateDeviceConfigUi(self, valuesDict, typeId, devId):
-        self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
-        self.logger.threaddebug(u"for devId={} valuesDict={}.".format(devId, valuesDict))
+        self.logger.debug("called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
+        self.logger.threaddebug("for devId={} valuesDict={}.".format(devId, valuesDict))
         errorsDict = indigo.Dict()
 
         # If we have been asked to re-initialize this device...
@@ -214,8 +214,8 @@ class Plugin(indigo.PluginBase):
     ######################
     def validatePrefsConfigUi(self, valuesDict):
         """set the log level dynamically"""
-        self.logger.debug(u"Current log level:{} received log level={}".format(self.loglevel, valuesDict['logLevel']))
-        self.logger.threaddebug(u"Current:{} received valuesDict={}".format(self.loglevel, valuesDict))
+        self.logger.debug("Current log level:{} received log level={}".format(self.loglevel, valuesDict['logLevel']))
+        self.logger.threaddebug("Current:{} received valuesDict={}".format(self.loglevel, valuesDict))
         self.loglevel = valuesDict['logLevel']
         self.pluginPrefs["logLevel"] = self.loglevel
         self.my_debug_handler.setLogLevel(self.loglevel)
@@ -228,7 +228,7 @@ class Plugin(indigo.PluginBase):
     # Starting and stopping devices
     ######################
     def deviceStartComm(self, dev):
-        self.logger.debug(u"called for: %s@%s." % (dev.name, dev.address) )
+        self.logger.debug("called for: %s@%s." % (dev.name, dev.address) )
         # Called for each device on startup
         # Commit any state changes
         dev.stateListOrDisplayStateIdChanged()
@@ -262,7 +262,7 @@ class Plugin(indigo.PluginBase):
                 # ... and save a copy of the device that created this thread
                 self.tpDevices[address] = dev
             elif address in self.tpThreads:
-                self.logger.debug(u"deviceStartComm IN thread update %s, %s" % (name, address) )
+                self.logger.debug("deviceStartComm IN thread update %s, %s" % (name, address) )
                 deviceID  = dev.pluginProps['deviceId']
                 if not deviceID:
                     self.logger.error("%s: Oops.No deviceId for %s" % (name, address) )
@@ -274,12 +274,12 @@ class Plugin(indigo.PluginBase):
                 self.tpThreads[address].interupt(dev=dev, action='dev')
             else:
                 # something is horribly wrong
-                self.logger.error(u"deviceStartComm error in thread creation %s, %s" % (name, address) )
+                self.logger.error("deviceStartComm error in thread creation %s, %s" % (name, address) )
 
         # Since we got this far, we might as well tell someone
         dev.replaceOnServer()
         if devPoll:
-          self.logger.info(u"Polling started for %s@%s." % (dev.name, dev.address) )
+          self.logger.info("Polling started for %s@%s." % (dev.name, dev.address) )
         return
 
     def deviceStopComm(self, dev):
@@ -288,7 +288,7 @@ class Plugin(indigo.PluginBase):
         name      = dev.name
         address   = dev.address
 
-        self.logger.debug(u"deviceStopComn entered %s, %s" % (name, address))
+        self.logger.debug("deviceStopComn entered %s, %s" % (name, address))
         if address in self.tpThreads:  # We don't want to waste time if a polling thread was never started
             self.logger.debug("deviceStopComn ending %s, %s" % (name, address))
             self.tpThreads[address].stop()
@@ -298,7 +298,7 @@ class Plugin(indigo.PluginBase):
     ########################################
     ########################################
     def initializeDev(self, valuesDict):
-        self.logger.debug(u" called with: %s." % ((valuesDict)) )
+        self.logger.debug(" called with: %s." % ((valuesDict)) )
 
         devAddr = valuesDict['address']
         devName = "new device at " + devAddr
@@ -311,10 +311,10 @@ class Plugin(indigo.PluginBase):
         result = tplink_dev.send('info')
         # self.deviceSearchResults[devAddr] = result
 
-        self.logger.debug(u"%s: InitializeDev 3 got %s" % (devName, result))
+        self.logger.debug("%s: InitializeDev 3 got %s" % (devName, result))
         data = json.loads(result)
         self.deviceSearchResults[devAddr] = data
-        self.logger.debug(u"%s: InitializeDev 4 got %s" % (devName, data))
+        self.logger.debug("%s: InitializeDev 4 got %s" % (devName, data))
         valuesDict['deviceId'] = data['system']['get_sysinfo']['deviceId']
         valuesDict['model'] = data['system']['get_sysinfo']['model']
 
@@ -330,7 +330,7 @@ class Plugin(indigo.PluginBase):
     ######################
     ### (deprecated) def actionControlDimmerRelay(self, action, dev):
     def actionControlDevice (self, action, dev):
-        self.logger.debug(u"called with: {} for {}.".format(action.deviceAction, dev.name))
+        self.logger.debug("called with: {} for {}.".format(action.deviceAction, dev.name))
 
         arg1 = action.actionValue
         arg2 = None
@@ -392,7 +392,7 @@ class Plugin(indigo.PluginBase):
 
         else:
             # Else log failure but do NOT update state on Indigo Server.
-            self.logger.error(u'send "{}" "{}"" failed with result "{}"'.format(dev.name, cmd, result))
+            self.logger.error('send "{}" "{}"" failed with result "{}"'.format(dev.name, cmd, result))
             return
 
         # force a poll if everything went well
@@ -402,7 +402,7 @@ class Plugin(indigo.PluginBase):
 
     # The 'status' callback
     def getInfo(self, pluginAction, dev):
-        self.logger.debug(u"Called for: %s." % (dev.name))
+        self.logger.debug("Called for: %s." % (dev.name))
         address = dev.address
 
         try:
@@ -444,7 +444,7 @@ class Plugin(indigo.PluginBase):
 
     # Energy and Status callback
     def actionControlUniversal(self, action, dev):
-        self.logger.debug(u"Action: %s for device: %s." % (action.deviceAction, dev.name))
+        self.logger.debug("Action: %s for device: %s." % (action.deviceAction, dev.name))
 
         if action.deviceAction == indigo.kUniversalAction.RequestStatus:
             self.getInfo("", dev)
@@ -459,12 +459,12 @@ class Plugin(indigo.PluginBase):
     ######################
     def getDeviceStateList(self, dev):
         """Dynamically create/update the states list for each device"""
-        self.logger.debug(u" called for: '%s'." % (dev.name))
-        self.logger.threaddebug(u"called for dev: %s." % (dev))
+        self.logger.debug(" called for: '%s'." % (dev.name))
+        self.logger.threaddebug("called for dev: %s." % (dev))
 
         statesDict = indigo.PluginBase.getDeviceStateList(self, dev)
-        rssi  = self.getDeviceStateDictForNumberType(u"rssi", u"rssi", u"rssi")
-        alias = self.getDeviceStateDictForStringType(u"alias", u"alias", u"alias")
+        rssi  = self.getDeviceStateDictForNumberType("rssi", "rssi", "rssi")
+        alias = self.getDeviceStateDictForStringType("alias", "alias", "alias")
         statesDict.append(rssi)
         statesDict.append(alias)
 
@@ -477,8 +477,8 @@ class Plugin(indigo.PluginBase):
                  or not, so you can see if you picked the wrong deviceType)
             a callback in Devices.xml to return a list
         """
-        self.logger.debug(u"called for: %s, %s, %s." % (filter, typeId, targetId))
-        self.logger.threaddebug(u"called for: %s, %s, %s, %s." % (filter, typeId, targetId, valuesDict))
+        self.logger.debug("called for: %s, %s, %s." % (filter, typeId, targetId))
+        self.logger.threaddebug("called for: %s, %s, %s, %s." % (filter, typeId, targetId, valuesDict))
 
         deviceArray = []
         if indigo.devices[targetId].configured:
@@ -491,13 +491,13 @@ class Plugin(indigo.PluginBase):
                 self.logger.error("Discovery connection failed with (%s)" % (str(e)))
                 return deviceArray
 
-            self.logger.debug(u"received %s" % (self.deviceSearchResults))
+            self.logger.debug("received %s" % (self.deviceSearchResults))
 
             # This is discovery; part of which is determining which type it is.
             for address in self.deviceSearchResults:
                 model = self.deviceSearchResults[address]['system']['get_sysinfo']['model'] #[:5]
                 devSubType = self.getSubType(model)
-                self.logger.debug(u"getSubType for model %s returned %s" % (model, devSubType))
+                self.logger.debug("getSubType for model %s returned %s" % (model, devSubType))
                 menuText = model + " @ " + address + "("+devSubType+")"
                 menuEntry = (address, menuText)
                 deviceArray.append(menuEntry)
@@ -511,8 +511,8 @@ class Plugin(indigo.PluginBase):
             (See Devices.xml)
             The first if/elif/else blocks sort all that out
         """
-        self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, valuesDict['address']))
-        self.logger.threaddebug(u"called for: %s, %s." % (devId, valuesDict))
+        self.logger.debug("called for: %s, %s, %s." % (typeId, devId, valuesDict['address']))
+        self.logger.threaddebug("called for: %s, %s." % (devId, valuesDict))
 
         # most of this is the same for all sub types
         if valuesDict['addressSelect'] != 'manual':
@@ -568,19 +568,19 @@ class Plugin(indigo.PluginBase):
 
     def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
         ### specific to the Relay type; dont bother subclassing (see Devices.xml)
-        self.logger.debug(u"called for: %s, %s, %s." % (filter, typeId, targetId))
-        self.logger.threaddebug(u"called for: %s, %s, %s, %s." % (filter, typeId, targetId, valuesDict))
+        self.logger.debug("called for: %s, %s, %s." % (filter, typeId, targetId))
+        self.logger.threaddebug("called for: %s, %s, %s, %s." % (filter, typeId, targetId, valuesDict))
 
         outletArray = []
 
         if 'newDev' in valuesDict and 'address' in valuesDict:
             address = valuesDict['address']
             if address in self.deviceSearchResults:
-                self.logger.debug(u"1 in dictoutlets avail %s" % (valuesDict['outletsAvailable']))
+                self.logger.debug("1 in dictoutlets avail %s" % (valuesDict['outletsAvailable']))
                 # if valuesDict['addressSelect'] == 'manual':
-                self.logger.debug(u"2 in dictoutlets avail %s" % (valuesDict['outletsAvailable']))
+                self.logger.debug("2 in dictoutlets avail %s" % (valuesDict['outletsAvailable']))
                 if 'child_num' in self.deviceSearchResults[address]['system']['get_sysinfo']:
-                    self.logger.debug(u"3 in dictoutlets avail %s" % (valuesDict['outletsAvailable']))
+                    self.logger.debug("3 in dictoutlets avail %s" % (valuesDict['outletsAvailable']))
                     maxOutlet = int(self.deviceSearchResults[address]['system']['get_sysinfo']['child_num'])+1
                     address = valuesDict['address']
 
@@ -589,22 +589,22 @@ class Plugin(indigo.PluginBase):
                         menuEntry = (str(internalOutlet).zfill(2), outlet)
                         outletArray.append(menuEntry)
                 else:
-                    self.logger.debug(u"not in dict outlets avail %s" % (valuesDict['outletsAvailable']))
+                    self.logger.debug("not in dict outlets avail %s" % (valuesDict['outletsAvailable']))
                     for outlet in range(0, int(valuesDict['outletsAvailable'])):
-                        self.logger.debug(u"loop %s" % (outlet))
+                        self.logger.debug("loop %s" % (outlet))
                         internalOutlet = int(outlet)
                         menuEntry = (str(internalOutlet).zfill(2), outlet+1)
                         outletArray.append(menuEntry)
 
             elif valuesDict['outletsAvailable'] > 0:
-                self.logger.debug(u"outlets avail: %s" % (valuesDict['outletsAvailable']))
+                self.logger.debug("outlets avail: %s" % (valuesDict['outletsAvailable']))
                 for outlet in range(0, int(valuesDict['outletsAvailable'])):
-                    self.logger.debug(u"loop %s" % (outlet))
+                    self.logger.debug("loop %s" % (outlet))
                     internalOutlet = int(outlet)
                     menuEntry = (str(internalOutlet).zfill(2), outlet+1)
                     outletArray.append(menuEntry)
 
-        self.logger.debug(u"returned: OA=%s" % (outletArray))
+        self.logger.debug("returned: OA=%s" % (outletArray))
         return outletArray
 
     ########################################

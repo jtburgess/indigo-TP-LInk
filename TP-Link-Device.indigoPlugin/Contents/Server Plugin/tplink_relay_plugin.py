@@ -32,11 +32,11 @@ class tplink_relay():
 
   def validateDeviceConfigUi(self, valuesDict, typeId, devId):
     """ initialize first, then validate """
-    self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
+    self.logger.debug("called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
 
     if 'childId' not in valuesDict or not valuesDict['childId'] or valuesDict['childId'] == None or valuesDict['childId'] == "":
         valuesDict['childId']   = str(valuesDict['deviceId']) + valuesDict['outletNum']
-    self.logger.threaddebug(u"left with typeId=%s, devId=%s, and valuesDict=%s.", typeId, devId, valuesDict)
+    self.logger.threaddebug("left with typeId=%s, devId=%s, and valuesDict=%s.", typeId, devId, valuesDict)
 
     if 'energyCapable' not in valuesDict or not valuesDict['energyCapable']:
         valuesDict['SupportsEnergyMeter'] = False
@@ -57,17 +57,17 @@ class tplink_relay():
     return
 
   def initializeDev(self, valuesDict, data):
-    self.logger.debug(u" called with: %s.", (valuesDict))
+    self.logger.debug(" called with: %s.", (valuesDict))
 
     valuesDict['mac'] = data['system']['get_sysinfo']['mac']
 
     if 'child_num' in data['system']['get_sysinfo']:
-        self.logger.debug(u"%s has child_id", valuesDict['address'])
+        self.logger.debug("%s has child_id", valuesDict['address'])
         valuesDict['childId'] = str(valuesDict['deviceId']) + valuesDict['outletNum']
         valuesDict['multiPlug'] = True
         valuesDict['outletsAvailable'] = data['system']['get_sysinfo']['child_num']
     else:
-        self.logger.debug(u"%s does not have child_id", valuesDict['address'])
+        self.logger.debug("%s does not have child_id", valuesDict['address'])
         valuesDict['childId'] = str(valuesDict['deviceId'])
         valuesDict['multiPlug'] = False
         valuesDict['outletsAvailable'] = 1
@@ -80,7 +80,7 @@ class tplink_relay():
 
   def actionControlDevice (self, action, dev, cmd, logOnOff=True, bright=None):
     """ called on send Success to update state, etc. """
-    self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
+    self.logger.debug('sent "{}" {}'.format(dev.name, cmd))
 
     # tell the Indigo Server to update the state.
     if cmd == "off":
@@ -90,7 +90,7 @@ class tplink_relay():
     dev.updateStateOnServer(key="onOffState", value=state)
 
     if logOnOff:
-      self.logger.info(u"%s set to %s", dev.name, cmd)
+      self.logger.info("%s set to %s", dev.name, cmd)
     #self.tpThreads[dev.address].interupt(dev=dev, action='status')
     return
 
@@ -122,17 +122,17 @@ class tplink_relay():
     return
 
   def getDeviceStateList(self, dev, statesDict):
-    self.logger.debug(u" called for: %s." % (statesDict, ))
+    self.logger.debug(" called for: %s." % (statesDict, ))
 
     # if we actually have a device here and the device does energy reporting
     if 'energyCapable' in dev.pluginProps and dev.pluginProps['energyCapable']:
         # Add the energy reporting states
 
         #accuWattHrs = self.getDeviceStateDictForNumberType(u"accuWattHrs", u"accuWattHrs", u"accuWattHrs")
-        curWatts = self.tpLink_self.getDeviceStateDictForNumberType(u"curWatts", u"curWatts", u"curWatts")
-        totWattHrs = self.tpLink_self.getDeviceStateDictForNumberType(u"totWattHrs", u"totWattHrs", u"totWattHrs")
-        curVolts = self.tpLink_self.getDeviceStateDictForNumberType(u"curVolts", u"curVolts", u"curVolts")
-        curAmps = self.tpLink_self.getDeviceStateDictForNumberType(u"curAmps", u"curAmps", u"curAmps")
+        curWatts = self.tpLink_self.getDeviceStateDictForNumberType("curWatts", "curWatts", "curWatts")
+        totWattHrs = self.tpLink_self.getDeviceStateDictForNumberType("totWattHrs", "totWattHrs", "totWattHrs")
+        curVolts = self.tpLink_self.getDeviceStateDictForNumberType("curVolts", "curVolts", "curVolts")
+        curAmps = self.tpLink_self.getDeviceStateDictForNumberType("curAmps", "curAmps", "curAmps")
 
         #statesDict.append(accuWattHrs)
         statesDict.append(curWatts)
@@ -145,7 +145,7 @@ class tplink_relay():
     # This sub-method gets called in the device configuration process, once address resolution is successful
     address = valuesDict['address']
 
-    self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
+    self.logger.debug("called for: %s, %s, %s." % (typeId, devId, address))
 
     sys_info = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']
     if valuesDict['addressSelect'] != 'manual':
@@ -153,12 +153,12 @@ class tplink_relay():
         valuesDict['mac']       = sys_info['mac']
 
     if 'child_num' in sys_info:
-        self.logger.debug(u"%s has child_id", address)
+        self.logger.debug("%s has child_id", address)
         valuesDict['multiPlug'] = True
         valuesDict['outletsAvailable'] = sys_info['child_num']
         valuesDict['outletNum'] = valuesDict['outletsAvailable']
     else:
-        self.logger.debug(u"%s does not have child_id", address)
+        self.logger.debug("%s does not have child_id", address)
         valuesDict['multiPlug'] = False
         valuesDict['outletsAvailable'] = 1
         valuesDict['outletNum'] = "00"

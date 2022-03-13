@@ -24,7 +24,7 @@ class tplink_relayswitch():
 
   def validateDeviceConfigUi(self, valuesDict, typeId, devId):
     """ seems redundant with initializeDev ??? """
-    self.logger.debug(u"called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
+    self.logger.debug("called with typeId={}, devId={}, and address={}.".format(typeId, devId, valuesDict['address']))
     #I don't believe this is necessary
 
     return valuesDict
@@ -43,13 +43,13 @@ class tplink_relayswitch():
     return
 
   def initializeDev(self, valuesDict, data):
-    self.logger.debug(u" called with: %s." % (valuesDict, ) )
+    self.logger.debug(" called with: %s." % (valuesDict, ) )
     valuesDict['mac'] = data['system']['get_sysinfo']['mac']
     return valuesDict
 
   def actionControlDevice (self, action, dev, cmd, logOnOff=True, bright=100):
     """ called on send Success to update state, etc. """
-    self.logger.debug(u'sent "{}" {}'.format(dev.name, cmd))
+    self.logger.debug('sent "{}" {}'.format(dev.name, cmd))
 
     # tell the Indigo Server to update the state.
     if cmd == "off":
@@ -57,18 +57,18 @@ class tplink_relayswitch():
         dev.updateStateOnServer(key="onOffState", value=0)
         dev.updateStateOnServer(key="brightnessLevel", value=0)
         if logOnOff:
-            self.logger.info(u"%s set to %s" % (dev.name, cmd) )
+            self.logger.info("%s set to %s" % (dev.name, cmd) )
     elif cmd == "on":
         state = True
         if logOnOff:
-            self.logger.info(u"%s set to %s" % (dev.name, cmd) )
-            self.logger.info(u"%s brightness set to %s" % (dev.name, str(bright)) )
+            self.logger.info("%s set to %s" % (dev.name, cmd) )
+            self.logger.info("%s brightness set to %s" % (dev.name, str(bright)) )
         dev.updateStateOnServer(key="onOffState", value=state)
         dev.updateStateOnServer(key="brightnessLevel", value=bright)
     elif cmd=="setBright":
         dev.updateStateOnServer(key="brightnessLevel", value=bright)
         if logOnOff:
-            self.logger.info(u"%s brightness set to %s" % (dev.name, str(bright)) )
+            self.logger.info("%s brightness set to %s" % (dev.name, str(bright)) )
 #    self.tpThreads[dev.address].interupt(dev=dev, action='status')
     return
 
@@ -82,17 +82,17 @@ class tplink_relayswitch():
     return
 
   def getDeviceStateList(self, dev, statesDict):
-    self.logger.debug(u" called for: %s." % (statesDict, ))
-    fadeOnTime  = self.tpLink_self.getDeviceStateDictForNumberType(u"fadeOnTime", u"fadeOnTime", u"fadeOnTime")
-    fadeOffTime  = self.tpLink_self.getDeviceStateDictForNumberType(u"fadeOffTime", u"fadeOffTime", u"fadeOffTime")
-    minThreshold  = self.tpLink_self.getDeviceStateDictForNumberType(u"minThreshold", u"minThreshold", u"minThreshold")
-    gentleOnTime  = self.tpLink_self.getDeviceStateDictForNumberType(u"gentleOnTime", u"gentleOnTime", u"gentleOnTime")
-    gentleOffTime  = self.tpLink_self.getDeviceStateDictForNumberType(u"gentleOffTime", u"gentleOffTime", u"gentleOffTime")
-    rampRate  = self.tpLink_self.getDeviceStateDictForNumberType(u"rampRate", u"rampRate", u"rampRate")
-    hardOn  = self.tpLink_self.getDeviceStateDictForNumberType(u"hardOn", u"hardOn", u"hardOn")
-    softOn  = self.tpLink_self.getDeviceStateDictForNumberType(u"softOn", u"softOn", u"softOn")
-    longPress  = self.tpLink_self.getDeviceStateDictForNumberType(u"longPress", u"longPress", u"longPress")
-    doubleClick  = self.tpLink_self.getDeviceStateDictForNumberType(u"doubleClick", u"doubleClick", u"doubleClick")
+    self.logger.debug(" called for: %s." % (statesDict, ))
+    fadeOnTime  = self.tpLink_self.getDeviceStateDictForNumberType("fadeOnTime", "fadeOnTime", "fadeOnTime")
+    fadeOffTime  = self.tpLink_self.getDeviceStateDictForNumberType("fadeOffTime", "fadeOffTime", "fadeOffTime")
+    minThreshold  = self.tpLink_self.getDeviceStateDictForNumberType("minThreshold", "minThreshold", "minThreshold")
+    gentleOnTime  = self.tpLink_self.getDeviceStateDictForNumberType("gentleOnTime", "gentleOnTime", "gentleOnTime")
+    gentleOffTime  = self.tpLink_self.getDeviceStateDictForNumberType("gentleOffTime", "gentleOffTime", "gentleOffTime")
+    rampRate  = self.tpLink_self.getDeviceStateDictForNumberType("rampRate", "rampRate", "rampRate")
+    hardOn  = self.tpLink_self.getDeviceStateDictForNumberType("hardOn", "hardOn", "hardOn")
+    softOn  = self.tpLink_self.getDeviceStateDictForNumberType("softOn", "softOn", "softOn")
+    longPress  = self.tpLink_self.getDeviceStateDictForNumberType("longPress", "longPress", "longPress")
+    doubleClick  = self.tpLink_self.getDeviceStateDictForNumberType("doubleClick", "doubleClick", "doubleClick")
     statesDict.append(fadeOnTime)
     statesDict.append(fadeOffTime)
     statesDict.append(minThreshold)
@@ -110,7 +110,7 @@ class tplink_relayswitch():
   def selectTpDevice(self, valuesDict, typeId, devId):
     address = valuesDict['address']
 
-    self.logger.debug(u"called for: %s, %s, %s." % (typeId, devId, address))
+    self.logger.debug("called for: %s, %s, %s." % (typeId, devId, address))
 
     sys_info = self.tpLink_self.deviceSearchResults[address]['system']['get_sysinfo']
     valuesDict['childId']   = None
@@ -129,8 +129,8 @@ class tplink_relayswitch():
   def SetDoubleClickAction(self, pluginAction, dev):
       tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
-      thechoice=int(pluginAction.props.get(u"dbMode"))-1
-      thepreset=int(pluginAction.props.get(u"dbPreset"))-1
+      thechoice=int(pluginAction.props.get("dbMode"))-1
+      thepreset=int(pluginAction.props.get("dbPreset"))-1
       arg1=['instant_on_off', 'gentle_on_off', 'customize_preset', 'none']
       arg2=["1","2","3","4"]
       result = tplink_dev_states.send('setDouble',arg1[thechoice],arg2[thepreset])
@@ -141,8 +141,8 @@ class tplink_relayswitch():
   def SetLongPressAction(self, pluginAction, dev):
       tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
-      thechoice=int(pluginAction.props.get(u"lpMode"))-1
-      thepreset=int(pluginAction.props.get(u"lpPreset"))-1
+      thechoice=int(pluginAction.props.get("lpMode"))-1
+      thepreset=int(pluginAction.props.get("lpPreset"))-1
       arg1=['instant_on_off', 'gentle_on_off', 'customize_preset', 'none']
       arg2=["1","2","3","4"]
       result = tplink_dev_states.send('setLpress',arg1[thechoice],arg2[thepreset])
@@ -153,7 +153,7 @@ class tplink_relayswitch():
   def set_gentle_off_time(self, pluginAction, dev):
       tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
-      thechoice=pluginAction.props.get(u"setGOT")
+      thechoice=pluginAction.props.get("setGOT")
       result = tplink_dev_states.send('setGentleoff',str(thechoice),"")
       indigo.server.log("Set Gentle Off Time " + dev.name + " to " +thechoice)
       return(result)
@@ -161,7 +161,7 @@ class tplink_relayswitch():
   def set_gentle_on_time(self, pluginAction, dev):
       tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
-      thechoice=pluginAction.props.get(u"setGOnT")
+      thechoice=pluginAction.props.get("setGOnT")
       result = tplink_dev_states.send('setGentleon',thechoice,"")
 
       indigo.server.log("Set Gentle On Time " + dev.name + " to " +thechoice)
@@ -170,7 +170,7 @@ class tplink_relayswitch():
   def set_fade_on_time(self, pluginAction, dev):
       tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
-      thechoice=str(pluginAction.props.get(u"setFOnT"))
+      thechoice=str(pluginAction.props.get("setFOnT"))
 
       result = tplink_dev_states.send('setFadeOn',thechoice,"")
       indigo.server.log("Set Fade On Time " + dev.name + " to " +thechoice)
@@ -179,7 +179,7 @@ class tplink_relayswitch():
   def set_fade_off_time(self, pluginAction, dev):
       tplink_dev_states = tplink_relayswitch_protocol(dev.address, 9999)
 
-      thechoice=pluginAction.props.get(u"setFOT")
+      thechoice=pluginAction.props.get("setFOT")
 
       result = tplink_dev_states.send('setFadeOff',thechoice,"")
 

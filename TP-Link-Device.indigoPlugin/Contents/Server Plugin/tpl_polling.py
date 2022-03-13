@@ -18,7 +18,7 @@ class pollingThread(Thread):
 	def __init__(self, logger, dev, logOnOff, pluginPrefs):
 		Thread.__init__(self)
 		self.logger = logger
-		self.logger.debug(u"called for: %s." % (dev.name))
+		self.logger.debug("called for: %s." % (dev.name))
 		self.dev = dev
 		self.name = dev.name
 		self.lastState = 1
@@ -29,7 +29,7 @@ class pollingThread(Thread):
 		self.logOnOff = logOnOff
 
 	def interupt(self, state=None, dev=None, action=None):
-		self.logger.debug(u"called for %s with action=%s, state=%s" % (self.dev.name, action, state))
+		self.logger.debug("called for %s with action=%s, state=%s" % (self.dev.name, action, state))
 
 		# self.logger.threaddebug(u"%s: Before, poll freq is %s" % (dev.name, self.pollFreq))
 		if action == 'status':
@@ -57,7 +57,7 @@ class pollingThread(Thread):
 				self.outlets[outletNum] = dev
 				self.dev = dev
 			else:
-				self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
+				self.logger.error("called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
 		else: # if self.dev.deviceTypeId =='tplinkSmartSwitch' or self.dev.deviceTypeId =='tplinkSmartBulb'
 			if action == 'state' and state:
@@ -67,7 +67,7 @@ class pollingThread(Thread):
 			elif action == 'dev':
 				self.dev = dev
 			else:
-				self.logger.error(u"called for %s with action=%s, state=%s" % (self.dev.id, action, state))
+				self.logger.error("called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
 
 		if action == 'state':
@@ -79,7 +79,7 @@ class pollingThread(Thread):
 
 	def stop(self):
 		# We should probably tell someone
-		self.logger.info(u"Polling stopped for %s@%s." % (self.name, self.dev.address) )
+		self.logger.info("Polling stopped for %s@%s." % (self.name, self.dev.address) )
 
 		self._is_running = False
 
