@@ -173,7 +173,7 @@ class tplink_protocol(object):
         data, addr = sock.recvfrom(4096)
         ip, port = addr
         info = json.loads(decrypt(data))
-        # print("%s\n%s\n" % (ip, info))
+        # print ("%s\n%s\n" % (ip, info))
         if not ip in foundDevs:
           foundDevs[ip] = info
     except:
@@ -197,6 +197,6 @@ class tplink_protocol(object):
   # logging -- to terminal if called from command line, or use self.logger() if initialized with a logger
   def debugLog(self, stringToPrint):
     if self.isatty:
-      print(stringToPrint)
+      print (stringToPrint)
     elif self.logger is not None:
       self.logger.debug(stringToPrint)
