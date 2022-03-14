@@ -8,7 +8,13 @@ import json
 import logging
 from os import path
 import pdb
-from queue import Queue
+try:
+  # python 3
+  from queue import Queue
+except:
+  # python 2
+  from Queue import Queue
+
 import socket
 from plugin_base import IndigoLogHandler
 
