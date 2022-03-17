@@ -23,25 +23,43 @@ import struct
 import sys
 
 
-
 # Encryption and Decryption of TP-Link Smart Home Protocol
 # XOR Autokey Cipher with starting key = 171
-def encrypt(string):
+
+def encrypt(data):
   key = 171
-  result = struct.pack('>I', len(string))
-  for i in string:
-    a = key ^ ord(i)
-    key = a
-    result += chr(a)
+  # encrypted data starts with 4-byte length
+  result = struct.pack('>I', len(data))
+  if sys.version_info.major == 3:
+    #in python 3, struct() returns bytes
+    #result = result.decode("utf-8")
+    for i in data:
+      a = key ^ ord(i)
+      key = a
+      result += bytes([a])
+  else:
+    for i in data:
+      a = key ^ ord(i)
+      key = a
+      result += chr(a)
+
   return result
 
-def decrypt(string):
+def decrypt(data):
   key = 171
-  result = ""
-  for i in string:
-    a = key ^ ord(i)
-    key = ord(i)
-    result += chr(a)
+  if sys.version_info.major == 3:
+    result = b""
+    for i in data:
+      a = key ^ i
+      key = i
+      result += bytes([a])
+  else:
+    result = ""
+    for i in data:
+      a = key ^ ord(i)
+      key = ord(i)
+      result += chr(a)
+
   return result
 
 ################################################################################
