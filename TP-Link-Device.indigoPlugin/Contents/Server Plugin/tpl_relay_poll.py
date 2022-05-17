@@ -13,6 +13,15 @@ from time import sleep
 from tplink_relay_protocol import tplink_relay_protocol
 from tpl_polling import pollingThread
 
+# e.g. data['emeter']['get_realtime']['power_mw']
+# OR   data['emeter']['get_realtime']['power']
+def eitherOr (base, opt1, opt2):
+  if base contains opt1:
+    return base[opt1]
+  else:
+    return base[opt2]
+
+
 ################################################################################
 class relay_poll(pollingThread):
   ####################################################################
@@ -234,11 +243,10 @@ class relay_poll(pollingThread):
                     result = tplink_dev_energy.send('energy')
                     data = json.loads(result)
                     self.logger.threaddebug("%s: data=%s" % (self.name, data))
-                    curWatts = data['emeter']['get_realtime']['power_mw']/1000
-                    curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
-                    curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-                    # totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
-                    totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100), 1)
+                    curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power'')/1000
+                    curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')/1000
+                    curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')/1000
+                    totWattHrs = round( float( (eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))/100), 1)
 
 
                     state_update_list = [
@@ -271,11 +279,10 @@ class relay_poll(pollingThread):
               self.logger.debug("Received result: |%s|" % (result))
 
               # totAccuUsage = float(dev.pluginProps['totAccuUsage'])
-              curWatts = data['emeter']['get_realtime']['power_mw']/1000
-              curVolts = data['emeter']['get_realtime']['voltage_mv']/1000
-              curAmps  = data['emeter']['get_realtime']['current_ma']/1000
-              totWattHrs = round(float(data['emeter']['get_realtime']['total_wh'])/100, 1)
-              # totWattHrs = round( float( (data['emeter']['get_realtime']['total_wh'])/100) - totAccuUsage, 1)
+              curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power')/1000
+              curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')/1000
+              curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')/1000
+              totWattHrs = round(float(eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))/100, 1)
 
               state_update_list = [
                   {'key':'curWatts', 'value':curWatts},
