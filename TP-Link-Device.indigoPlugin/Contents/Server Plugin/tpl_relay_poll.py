@@ -243,7 +243,7 @@ class relay_poll(pollingThread):
                     result = tplink_dev_energy.send('energy')
                     data = json.loads(result)
                     self.logger.threaddebug("%s: data=%s" % (self.name, data))
-                    curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power'')/1000
+                    curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power')/1000
                     curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')/1000
                     curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')/1000
                     totWattHrs = round( float( (eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))/100), 1)
