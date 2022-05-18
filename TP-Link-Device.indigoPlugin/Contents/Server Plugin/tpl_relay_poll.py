@@ -246,10 +246,10 @@ class relay_poll(pollingThread):
                     result = tplink_dev_energy.send('energy')
                     data = json.loads(result)
                     self.logger.threaddebug("%s: data=%s" % (self.name, data))
-                    curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power')/1000
-                    curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')/1000
-                    curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')/1000
-                    totWattHrs = round( float( (eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))/100), 1)
+                    curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power')
+                    curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')
+                    curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')
+                    totWattHrs = round( float( (eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))), 1)
 
 
                     state_update_list = [
@@ -282,10 +282,10 @@ class relay_poll(pollingThread):
               self.logger.debug("Received result: |%s|" % (result))
 
               # totAccuUsage = float(dev.pluginProps['totAccuUsage'])
-              curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power')/1000
-              curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')/1000
-              curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')/1000
-              totWattHrs = round(float(eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))/100, 1)
+              curWatts = eitherOr (data['emeter']['get_realtime'], 'power_mw', 'power')
+              curVolts = eitherOr (data['emeter']['get_realtime'], 'voltage_mv', 'voltage')
+              curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')
+              totWattHrs = round(float(eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total')), 1)
 
               state_update_list = [
                   {'key':'curWatts', 'value':curWatts},
