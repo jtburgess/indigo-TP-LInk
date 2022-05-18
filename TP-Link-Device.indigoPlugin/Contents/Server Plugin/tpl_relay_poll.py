@@ -16,10 +16,13 @@ from tpl_polling import pollingThread
 # e.g. data['emeter']['get_realtime']['power_mw']
 # OR   data['emeter']['get_realtime']['power']
 def eitherOr (base, opt1, opt2):
-  if base contains opt1:
+  if opt1 in base :
     return base[opt1]
-  else:
+  elif opt2 in base:
     return base[opt2]
+  else:
+    self.logger.error ("Neither {} nor {} found in {}, using 0".format(opt1, opt2, base))
+    return 0
 
 
 ################################################################################
