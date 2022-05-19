@@ -16,13 +16,20 @@ from tpl_polling import pollingThread
 # e.g. data['emeter']['get_realtime']['power_mw']
 # OR   data['emeter']['get_realtime']['power']
 def eitherOr (base, opt1, opt2):
+  opt = ''
   if opt1 in base :
-    return base[opt1]
+    opt = opt1
   elif opt2 in base:
-    return base[opt2]
+    opt = opt2
   else:
     self.logger.error ("Neither {} nor {} found in {}, using 0".format(opt1, opt2, base))
     return 0
+
+  if "_m" in opt or "_wh" in opt:
+    # measured in "milli" (watts, amps, volts) or watt-hours (want KWh))
+    return base[opt] / 1000
+  else:
+    return base[opt]
 
 
 ################################################################################
