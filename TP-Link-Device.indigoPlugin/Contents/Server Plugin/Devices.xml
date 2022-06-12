@@ -1,166 +1,194 @@
 <?xml version="1.0"?>
 
 <Devices>
-		<Device type="relay" id="tplinkSmartPlug">
-			<Name>TP-Link Smart plug (all versions)</Name>
-			<ConfigUI>
-				<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
-					<Label>TP-Link Smart Plug:</Label>
-					<List class='self' method='getTpDevice' />
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Enter the IP Address:</Label>
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="actionButton" 
-					type="button" 
-					tooltip="Click to continue" 
-					visibleBindingId="displayManAddressButton" 
-					visibleBindingValue="true">
-					<!-- <Label>Visible button's label:</Label> -->
-					<Title>Continue</Title>
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id="outletNum" type="menu" hidden="false" defaultValue="00" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<List class='self' method='selectTpOutlet' dynamicReload="true" />
-					<Label>Outlet number</Label>
-				</Field>
-				<Field id="outletsAvailable" type="textfield" defaultValue="1" hidden="true" />
+  <Device type="relay" id="tplinkSmartPlug">
+    <Name>TP-Link Smart plug (all versions)</Name>
+    <ConfigUI>
+      <Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+        <Label>TP-Link Smart Plug:</Label>
+        <List class='self' method='getTpDevice' />
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enter the IP Address:</Label>
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id="actionButton" 
+        type="button" 
+        tooltip="Click to continue" 
+        visibleBindingId="displayManAddressButton" 
+        visibleBindingValue="true">
+        <!-- <Label>Visible button's label:</Label> -->
+        <Title>Continue</Title>
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id="outletNum" type="menu" hidden="false" defaultValue="00" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <List class='self' method='selectTpOutlet' dynamicReload="true" />
+        <Label>Outlet number</Label>
+      </Field>
+      <Field id="outletsAvailable" type="textfield" defaultValue="1" hidden="true" />
 
-				<Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Enable device polling:</Label>
-				</Field>
-				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Polling interval when device is Off</Label>
-				</Field>
-				<Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Polling interval when device is On</Label>
-				</Field>
+      <!-- device specific overrides -->
+      <Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable device polling:</Label>
+      </Field>
+      <Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is Off</Label>
+      </Field>
+      <Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is On</Label>
+      </Field>
+      <Field id="WarnInterval" type="textfield" defaultValue="5" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Number of missed polls between warnings</Label>
+      </Field>
+      <Field id="SlowDown" type="textfield" defaultValue="1" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Slow Polling by this number of seconds at each warning</Label>
+      </Field>
+      <Field id="StopPoll" type="textfield" defaultValue="20" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Shutdown the device after this many missed polls</Label>
+      </Field>
 
-				<Field id="multiPlug" type="checkbox" readonly="YES" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" >
-					<Label>Multiple outlets:</Label>
-				</Field>
-				<Field id="energyCapable" type="checkbox" readonly="YES" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" >
-					<Label>Energy reporting<datagrid></datagrid>:</Label>
-				</Field>
+      <Field id="multiPlug" type="checkbox" readonly="YES" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" >
+        <Label>Multiple outlets:</Label>
+      </Field>
+      <Field id="energyCapable" type="checkbox" readonly="YES" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" >
+        <Label>Energy reporting<datagrid></datagrid>:</Label>
+      </Field>
 
-				<Field id="totAccuUsage" type="textfield" defaultValue="0" hidden="true">
-					<Label>Store total accumulated energy</Label>
-				</Field>
-				<Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
-				<Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
+      <Field id="totAccuUsage" type="textfield" defaultValue="0" hidden="true">
+        <Label>Store total accumulated energy</Label>
+      </Field>
+      <Field type="checkbox" id="SupportsEnergyMeter" defaultValue="true" hidden="true" />
+      <Field type="checkbox" id="SupportsEnergyMeterCurPower" defaultValue="true" hidden="true" />
 
-				<Field id="simpleSeparator1" type="separator" />
-				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
-				</Field>
-				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
-					<Label>Check to re-read device parameters:</Label>
-				</Field>
-			</ConfigUI>
-		</Device>
+      <Field id="simpleSeparator1" type="separator" />
+      <Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
+      </Field>
+      <Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
+        <Label>Check to re-read device parameters:</Label>
+      </Field>
+    </ConfigUI>
+  </Device>
 
-		<Device type="dimmer" id="tplinkSmartSwitch">
-			<Name>TP-Link Smart Dimmer Switch</Name>
-			<ConfigUI>
-				<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
-					<Label>TP-Link Dimmer Switch:</Label>
-					<List class='self' method='getTpDevice' />
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Enter the IP Address:</Label>
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="actionButton" 
-					type="button" 
-					tooltip="Click to continue" 
-					visibleBindingId="displayManAddressButton" 
-					visibleBindingValue="true">
-					<!-- <Label>Visible button's label:</Label> -->
-					<Title>Continue</Title>
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
+  <Device type="dimmer" id="tplinkSmartSwitch">
+    <Name>TP-Link Smart Dimmer Switch</Name>
+    <ConfigUI>
+      <Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+        <Label>TP-Link Dimmer Switch:</Label>
+        <List class='self' method='getTpDevice' />
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enter the IP Address:</Label>
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id="actionButton" 
+        type="button" 
+        tooltip="Click to continue" 
+        visibleBindingId="displayManAddressButton" 
+        visibleBindingValue="true">
+        <!-- <Label>Visible button's label:</Label> -->
+        <Title>Continue</Title>
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
 
-				<Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Enable device polling:</Label>
-				</Field>
-				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Polling interval when device is Off</Label>
-				</Field>
-				<Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Polling interval when device is On</Label>
-				</Field>
+      <Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable device polling:</Label>
+      </Field>
+      <Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is Off</Label>
+      </Field>
+      <Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is On</Label>
+      </Field>
+      <Field id="WarnInterval" type="textfield" defaultValue="5" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Number of missed polls between warnings</Label>
+      </Field>
+      <Field id="SlowDown" type="textfield" defaultValue="1" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Slow Polling by this number of seconds at each warning</Label>
+      </Field>
+      <Field id="StopPoll" type="textfield" defaultValue="20" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Shutdown the device after this many missed polls</Label>
+      </Field>
 
-				<Field id="simpleSeparator1" type="separator" />
-				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
-				</Field>
-				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
-					<Label>Check to re-read device parameters:</Label>
-				</Field>
-			</ConfigUI>
-		</Device>
+      <Field id="simpleSeparator1" type="separator" />
+      <Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
+      </Field>
+      <Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">>
+        <Label>Check to re-read device parameters:</Label>
+      </Field>
+    </ConfigUI>
+  </Device>
 
-		<Device type="dimmer" id="tplinkSmartBulb">
-			<Name>TP-Link Smart (dimming) bulb</Name>
-			<ConfigUI>
-				<Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
-					<Label>TP-Link Smart Bulb:</Label>
-					<List class='self' method='getTpDevice' />
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Enter the IP Address:</Label>
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
-				<Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
-				<Field id="actionButton" 
-					type="button" 
-					tooltip="Click to continue" 
-					visibleBindingId="displayManAddressButton" 
-					visibleBindingValue="true">
-					<!-- <Label>Visible button's label:</Label> -->
-					<Title>Continue</Title>
-					<CallbackMethod>selectTpDevice</CallbackMethod>
-				</Field>
+  <Device type="dimmer" id="tplinkSmartBulb">
+    <Name>TP-Link Smart (dimming) bulb</Name>
+    <ConfigUI>
+      <Field id='displayOk' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id='displayManAddress' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id='displayManAddressButton' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id="addressSelect" type="menu" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="false" alwaysUseInDialogHeightCalc="true">
+        <Label>TP-Link Smart Bulb:</Label>
+        <List class='self' method='getTpDevice' />
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id="address" type="textfield" defaultValue="192.168.0.0" visibleBindingId="displayManAddress"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enter the IP Address:</Label>
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
+      <Field id='manualAddressResponse' type='checkbox' hidden="true" defaultValue="false" />
+      <Field id="actionButton" 
+        type="button" 
+        tooltip="Click to continue" 
+        visibleBindingId="displayManAddressButton" 
+        visibleBindingValue="true">
+        <!-- <Label>Visible button's label:</Label> -->
+        <Title>Continue</Title>
+        <CallbackMethod>selectTpDevice</CallbackMethod>
+      </Field>
 
-				<Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Enable device polling:</Label>
-				</Field>
-				<Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Polling interval when device is Off</Label>
-				</Field>
-				<Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-					<Label>Polling interval when device is On</Label>
-				</Field>
+      <Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Enable device polling:</Label>
+      </Field>
+      <Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is Off</Label>
+      </Field>
+      <Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is On</Label>
+      </Field>
+      <Field id="WarnInterval" type="textfield" defaultValue="5" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Number of missed polls between warnings</Label>
+      </Field>
+      <Field id="SlowDown" type="textfield" defaultValue="1" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Slow Polling by this number of seconds at each warning</Label>
+      </Field>
+      <Field id="StopPoll" type="textfield" defaultValue="20" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Shutdown the device after this many missed polls</Label>
+      </Field>
 
-				<Field id="isDimmable" type="checkbox" readonly="YES" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
-					<Label>Supports Dimming:</Label>
-				</Field>
-				<Field id="rampTime" type="textfield" visibleBindingId="isDimmable" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
-					<Label>dimmer ramp time (msec):</Label>
-				</Field>
-				<Field id="isColor" type="checkbox" readonly="YES" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
-					<Label>Supports colors:</Label>
-				</Field>
+      <Field id="isDimmable" type="checkbox" readonly="YES" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
+        <Label>Supports Dimming:</Label>
+      </Field>
+      <Field id="rampTime" type="textfield" visibleBindingId="isDimmable" visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
+        <Label>dimmer ramp time (msec):</Label>
+      </Field>
+      <Field id="isColor" type="checkbox" readonly="YES" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true" >
+        <Label>Supports colors:</Label>
+      </Field>
 
-				<Field id="simpleSeparator1" type="separator" />
-				<Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
-				</Field>
-				<Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">
-					<Label>Check to re-read device parameters:</Label>
-				</Field>
-			</ConfigUI>
-		</Device>
+      <Field id="simpleSeparator1" type="separator" />
+      <Field id="newDev" type="checkbox" hidden="true" defaultValue="true">
+      </Field>
+      <Field id="initialize" type="checkbox" defaultValue="false" visibleBindingId="newDev"  visibleBindingValue="false">
+        <Label>Check to re-read device parameters:</Label>
+      </Field>
+    </ConfigUI>
+  </Device>
 </Devices>

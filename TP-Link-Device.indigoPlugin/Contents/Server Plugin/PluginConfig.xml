@@ -3,6 +3,8 @@
     <Field id="logOnOff" type="checkbox" defaultValue="false">
         <Label>Log On and Off events</Label>
     </Field>
+    
+    <!--  all polling parameters may be overridden at the device level -->
     <Field id="devPoll" type="checkbox" defaultValue="true">
         <Label>Enable multi-plug device polling</Label>
     </Field>
@@ -12,6 +14,16 @@
     <Field id="offPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true">
         <Label>Polling interval when multi-plug device is Off</Label>
     </Field>
+      <Field id="WarnInterval" type="textfield" defaultValue="5" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Number of missed polls between warnings</Label>
+      </Field>
+      <Field id="SlowDown" type="textfield" defaultValue="1" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Slow Polling by this number of seconds at each warning</Label>
+      </Field>
+      <Field id="StopPoll" type="textfield" defaultValue="20" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Shutdown the device after this many missed polls</Label>
+      </Field>
+
     <Field id="simpleSeparator1" type="separator"/>
     <Field id="topLabel" type="label">
         <Label>If you are having problems with the plugin (or you are instructed by support), you can enable extra logging in the Event Log window by selecting log level trace or debug. Use with caution.</Label>

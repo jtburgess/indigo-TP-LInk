@@ -24,7 +24,7 @@ relayModels = {
 class tplink_relay():
 
   def __init__(self, logger, pluginPrefs, tpLink_self):
-    """ this independent class sometimes needs access to the tpLink device's stuff """
+    """ this independent class sometimes needs access to the tpLink plugin's stuff """
     self.logger = logger
     self.pluginPrefs = pluginPrefs
     self.tpLink_self = tpLink_self
@@ -95,6 +95,14 @@ class tplink_relay():
     return
 
   def getInfo(self, pluginAction, dev):
+    if 'multiPlug' in dev.pluginProps and dev.pluginProps['multiPlug']:
+      self.logger.info("Multiple Outlets: {}".format(dev.pluginProps['multiPlug']))
+      self.logger.info("   Outlet Number: {}".format(dev.pluginProps['outletNum']))
+    if 'energyCapable' in dev.pluginProps and dev.pluginProps['energyCapable']:
+      self.logger.info("Energy reporting: {}".format(dev.pluginProps['energyCapable']))
+      self.logger.info("   Current Watts: {}".format(self.tpLink_self.getDeviceStateDictForNumberType("curWatts", "curWatts", "curWatts")))
+      self.logger.info("   Current Volts: {}".format(self.tpLink_self.getDeviceStateDictForNumberType("curVolts", "curVolts", "curVolts")))
+      self.logger.info("   Current Amps : {}".format(self.tpLink_self.getDeviceStateDictForNumberType("curAmps", "curAmps", "curAmps")))
     return
 
   def actionControlUniversal(self, action, dev):
@@ -179,20 +187,6 @@ class tplink_relay():
   def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
     return outletArray
   """
-
-  def displayButtonPressed(self, dev, valuesDict):
-    props = dev.pluginProps
-    valuesDict['outletNum']     = int(props['outletNum'])+1
-    valuesDict['multiPlug']     = props['multiPlug']
-    valuesDict['energyCapable'] = props['energyCapable']
-    return(valuesDict)
-
-  def printToLogPressed(self, valuesDict, rpt_fmt):
-    return rpt_fmt.format("Outlet Number:", valuesDict['outletNum']) + \
-        rpt_fmt.format("Multiple Outlets:", valuesDict['multiPlug']) + \
-        rpt_fmt.format("Energy reporting:", valuesDict['energyCapable'])
-
-    return
 
   ########################################
   # Menu callbacks defined in Actions.xml

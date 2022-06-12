@@ -16,8 +16,8 @@ from tpl_polling import pollingThread
 ################################################################################
 class dimmer_poll(pollingThread):
   ####################################################################
-  def __init__(self, logger, dev, logOnOff, pluginPrefs):
-    super(dimmer_poll, self).__init__(logger, dev, logOnOff, pluginPrefs)
+  def __init__(self, tpLink_self, dev):
+    super(dimmer_poll, self).__init__(tpLink_self, dev)
     self.logger.debug("called for: %s." % (dev.name))
     self.multiPlug = False # needed for interrupt()
 
@@ -225,4 +225,3 @@ class dimmer_poll(pollingThread):
         else:
           self.exceptCount += 1
           self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
-

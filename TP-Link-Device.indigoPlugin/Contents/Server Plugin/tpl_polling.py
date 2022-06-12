@@ -15,9 +15,10 @@ from protocol import tplink_protocol
 ################################################################################
 class pollingThread(Thread):
 	####################################################################
-	def __init__(self, logger, dev, logOnOff, pluginPrefs):
+	def __init__(self, tpLink_self, dev):
 		Thread.__init__(self)
-		self.logger = logger
+		self.logger = tpLink_self.logger
+		self.tpLink_self = tpLink_self
 		self.logger.debug("called for: %s." % (dev.name))
 		self.dev = dev
 		self.name = dev.name
@@ -25,8 +26,8 @@ class pollingThread(Thread):
 		self.localOnOff = False
 		self.pollErrors = 0
 		self.exceptCount = 0
-		self.pluginPrefs = pluginPrefs
-		self.logOnOff = logOnOff
+		self.pluginPrefs = tpLink_self.pluginPrefs
+		self.logOnOff = tpLink_self.logOnOff
 
 	def interupt(self, state=None, dev=None, action=None):
 		self.logger.debug("called for %s with action=%s, state=%s" % (self.dev.name, action, state))

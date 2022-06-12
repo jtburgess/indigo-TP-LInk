@@ -51,6 +51,7 @@ def check_server(address):
     finally:
         s.close()
 
+
 ################################################################################
 class MyDebugHandler(IndigoLogHandler, object):
     ########################################
@@ -144,11 +145,11 @@ class Plugin(indigo.PluginBase):
     def getPollClass(self, dev):
       """ similarly, the polling function has device-type specific functionality """
       if dev.deviceTypeId == 'tplinkSmartPlug':
-        return relay_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
+        return relay_poll(self, dev)
       elif dev.deviceTypeId == 'tplinkSmartSwitch':
-        return relayswitch_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
+        return relayswitch_poll(self, dev)
       elif dev.deviceTypeId == 'tplinkSmartBulb':
-        return dimmer_poll(self.logger, dev, self.logOnOff, self.pluginPrefs)
+        return dimmer_poll(self, dev)
       else:
         self.logger.error("deviceTypeId '%s' is not recognised" % dev.deviceTypeId)
         # this will cause things to crash
@@ -194,6 +195,19 @@ class Plugin(indigo.PluginBase):
     def shutdown(self):
         self.logger.debug("shutdown called")
         return
+
+    # method to return a device parameter, or plugin default for that parameter, or a global default
+    def devOrPluginParm(self, dev, attribute, default):
+      result = None
+      if attribute in  dev.pluginProps:
+        result = dev.pluginProps[attribute]
+      elif attribute in  self.pluginPrefs:
+        result = self.pluginPrefs[attribute]
+      else:
+        result = default
+
+      self.logger.debug("for attribute {}, using {}".format(attribute, result))
+      return result
 
     ########################################
     # Validation handlers
@@ -245,12 +259,7 @@ class Plugin(indigo.PluginBase):
         subType = self.getSubClass(dev.deviceTypeId)
         subType.deviceStartComm(dev)
 
-        if 'multiPlug' in dev.pluginProps and dev.pluginProps['multiPlug']:
-            # a sub-type of tplinkSmartPlug
-            # why is this special??
-            devPoll = self.pluginPrefs['devPoll']
-        else:
-            devPoll = dev.pluginProps['devPoll']
+        devPoll = self.devOrPluginParm(dev, 'devPoll', False)
 
         # self.logger.debug("deviceStartComn starting %s" % (name), type="TP-Link" % (isError=False) )
         if name in self.tpThreads:
@@ -402,29 +411,42 @@ class Plugin(indigo.PluginBase):
             return
 
         # force a poll if everything went well
-        if dev.pluginProps['devPoll'] and dev.address in self.tpThreads:
+        if self.devOrPluginParm(dev, 'devPoll', False) and dev.address in self.tpThreads:
             self.tpThreads[dev.address].interupt(state=True, action='state')
         return
 
-    # The 'status' callback
+    # The 'status' callback, now takes on the old Device Info plugin Menu item functionality (sort of)
     def getInfo(self, pluginAction, dev):
-        self.logger.debug("Called for: %s." % (dev.name))
         address = dev.address
+
+        self.logger.info("Device Info for: {}".format(dev.name))
+        self.logger.info("    TPlink device type: {}".format(dev.deviceTypeId))
+        self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
+        self.logger.info("    IP address: {}".format(dev.address))
+        self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
+        self.logger.info("    Device ID: {}".format(dev.pluginProps['deviceId']))
+        self.logger.info("    alias : {}".format(dev.states['alias']))
+        self.logger.info("    description: {}".format(dev.description))
+
+        devPoll = self.devOrPluginParm(dev, 'devPoll', False)
+        self.logger.info("    Polling enabled: {}".format(devPoll))
+        if devPoll:
+          self.logger.info("      On state polling freq: {}".format(self.devOrPluginParm(dev, 'onPoll', 30)))
+          self.logger.info("      Off state polling freq: {}".format(self.devOrPluginParm(dev, 'offPoll', 30)))
+          self.logger.info("      Poll Warning interval: {}".format(self.devOrPluginParm(dev, 'WarnInterval', 5)))
+          self.logger.info("      SlowDown {} seconds at each warning".format(self.devOrPluginParm(dev, 'SlowDown', 1)))
+          self.logger.info("      Shutdown after {} errors".format(self.devOrPluginParm(dev, 'StopPoll', 20)))
 
         try:
             if address in self.tpThreads:
               if dev.enabled == False:
-                self.logger.info("{}: Device communication is disabled.".format(dev.name))
+                self.logger.info("    Device communication is disabled.")
               elif self.tpThreads[address].interupt(dev=dev, action='status'):
-                self.logger.info("{}: Device polling and states updated.".format(dev.name))
-                self.logger.info("    On state polling freq: {}".format(dev.pluginProps['onPoll']))
-                self.logger.info("    Off state polling freq: {}".format(dev.pluginProps['offPoll']))
+                self.logger.info("    Device polling and states updated.".format(dev.name))
               # else error message logged in tpThreads.interrupt
             else:
-              self.logger.info("{}: Device polling is disabled.".format(dev.name))
+              self.logger.info("   Device polling is disabled.")
 
-            self.logger.info("    IP address: {}".format(dev.address))
-            self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
             if dev.displayStateId == "onOffState":
               curState =  'on' if dev.states['onOffState'] else 'off'
             elif "brightnessLevel" in dev.states:
@@ -434,8 +456,6 @@ class Plugin(indigo.PluginBase):
             self.logger.info("    current state: {}".format(curState))
 
             # see if the particular device has anything to add...
-            self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
-            self.logger.info("    TPlink subclass: {}".format(dev.deviceTypeId))
             subType = self.getSubClass(dev.deviceTypeId)
             subType.getInfo(pluginAction, dev)
 
@@ -602,7 +622,7 @@ class Plugin(indigo.PluginBase):
                         menuEntry = (str(internalOutlet).zfill(2), outlet+1)
                         outletArray.append(menuEntry)
 
-            elif valuesDict['outletsAvailable'] > 0:
+            elif int(valuesDict['outletsAvailable']) > 0:
                 self.logger.debug("outlets avail: %s" % (valuesDict['outletsAvailable']))
                 for outlet in range(0, int(valuesDict['outletsAvailable'])):
                     self.logger.debug("loop %s" % (outlet))
@@ -617,73 +637,6 @@ class Plugin(indigo.PluginBase):
     # Menu callbacks defined in MenuItems.xml
     # I haven't been able to figure out how to make these calls soecific to the device Type
     ########################################
-
-    ########################################
-    # Device reporting
-    def displayButtonPressed(self, valuesDict, clg_func):
-        """ callback to prepare the data for the "display device information" configUI display
-             (See MenuItems.xml)
-        """
-        self.logger.debug("called for targetDevice {} from {}".format(valuesDict['targetDevice'], clg_func))
-        self.logger.threaddebug("called with valuesDict={}".format(valuesDict))
-
-        try:
-            devNumber = int(valuesDict['targetDevice'])
-            dev = indigo.devices[devNumber]
-        except:
-            errorsDict = indigo.Dict()
-            errorsDict['targetDevice'] = "You must select a device"
-            errorsDict["showAlertText"] = "You must select a device"
-            return(valuesDict, errorsDict)
-
-        props = dev.pluginProps
-        self.logger.threaddebug("pluginPropsr=%s" % (props) )
-
-        valuesDict['address']       = props['address']
-        valuesDict['alias']         = dev.states['alias']
-        valuesDict['deviceTypeId']  = dev.deviceTypeId
-        valuesDict['model']         = props['model']
-        valuesDict['description']   = dev.description
-        valuesDict['deviceId']      = props['deviceId']
-        valuesDict['mac']           = props['mac']
-        valuesDict['devPoll']       = props['devPoll']
-        valuesDict['offPoll']       = props['offPoll']
-        valuesDict['onPoll']        = props['onPoll']
-        valuesDict['displayOk']     = True
-
-        subType = self.getSubClass(dev.deviceTypeId)
-        valuesDict = subType.displayButtonPressed(dev, valuesDict)
-        self.logger.threaddebug("Device info = %s" % (valuesDict) )
-
-        return(valuesDict)
-
-    def printToLogPressed(self, valuesDict, clg_func):
-        """ callback to prepare the report for display in the log
-             (See MenuItems.xml)
-        """
-        self.logger.debug("called for dev {} from {}".format(valuesDict['targetDevice'], clg_func))
-        self.logger.threaddebug("Received {}".format(valuesDict))
-
-        devNumber = int(valuesDict['targetDevice'])
-        dev = indigo.devices[devNumber]
-        rpt_fmt = "            {0!s:25}{1!s}\n"
-        subType = self.getSubClass(dev.deviceTypeId)
-
-        report = "Tp-Link device report\n" + \
-            rpt_fmt.format("TP-link Device Type:", dev.deviceTypeId) + \
-            rpt_fmt.format("Indigo Device Name:", dev.name) + \
-            rpt_fmt.format("IP Address:", valuesDict['address']) + \
-            rpt_fmt.format("MAC Address:", valuesDict['mac']) + \
-            rpt_fmt.format("Device ID:", valuesDict['deviceId']) + \
-            rpt_fmt.format("Alias:", valuesDict['alias']) + \
-            rpt_fmt.format("Model:", valuesDict['model']) + \
-            rpt_fmt.format("Polling enabled:", valuesDict['devPoll']) + \
-            rpt_fmt.format("On state polling freq:", valuesDict['onPoll']) + \
-            rpt_fmt.format("Off state polling freq:", valuesDict['offPoll']) + \
-            subType.printToLogPressed( valuesDict, rpt_fmt)
-
-        self.logger.info("%s" % (report, ) )
-        return
 
     ########################################
     # Menu callbacks defined in Actions.xml

@@ -35,8 +35,8 @@ def eitherOr (base, opt1, opt2):
 ################################################################################
 class relay_poll(pollingThread):
   ####################################################################
-  def __init__(self, logger, dev, logOnOff, pluginPrefs):
-    super(relay_poll, self).__init__(logger, dev, logOnOff, pluginPrefs)
+  def __init__(self, tpLink_self, dev):
+    super(relay_poll, self).__init__(tpLink_self, dev)
     self.logger.debug("called for: %s." % (dev.name))
     self.lastMultiPlugOnCount = 0
 
@@ -47,13 +47,11 @@ class relay_poll(pollingThread):
     # Here we deal with multi plug devices. We will just store the entire device in a dictionary indexed by the outlet number
     self.multiPlug = dev.pluginProps['multiPlug']
     if self.multiPlug:
-      self.onPoll = int(self.pluginPrefs['onPoll'])
-      self.offPoll = int(self.pluginPrefs['offPoll'])
       self.outlets[outletNum] = self.dev
       self.logger.threaddebug("outlet dict =%s" % (self.outlets))
-    else:
-      self.onPoll = int(dev.pluginProps['onPoll'])
-      self.offPoll = int(dev.pluginProps['offPoll'])
+
+    self.onPoll = int( self.tpLink_self.devOrPluginParm(dev, 'onPoll', 30))
+    self.offPoll = int( self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30))
 
     self.onOffState = dev.states['onOffState']
     if self.onOffState:
@@ -104,20 +102,20 @@ class relay_poll(pollingThread):
         # Check if we got an error back
         if 'error' in data:
           self.pollErrors += 1
-          if self.pollErrors == 5:
-            self.logger.error("5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-            self.pollFreq += 1
-          elif self.pollErrors == 10:
-            self.logger.error("8 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-            self.pollFreq += 1
-          elif self.pollErrors >= 15:
-            self.logger.error("Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, data['error']))
+          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20):
+            self.logger.error("Unable to poll device \"{}\": {} after {} errors. Polling for this device will now shut down.".format(self.name, data['error'], self.pollErrors))
             indigo.device.enable(dev.id, value=False)
             return
 
+          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)) == 0:
+            self.pollFreq += self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)
+            self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
+
         else:
           if self.pollErrors > 0:
+            self.logger.info("Normal polling resuming for device {}".format(self.name))
             self.pollErrors = 0
+
             # reset pollFreq in case increaded due to errors
             if self.onOffState:
               self.pollFreq = self.onPoll
@@ -337,5 +335,3 @@ class relay_poll(pollingThread):
         else:
           self.exceptCount += 1
           self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
-
-
