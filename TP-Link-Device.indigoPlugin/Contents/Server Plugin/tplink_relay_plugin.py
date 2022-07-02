@@ -183,9 +183,19 @@ class tplink_relay():
     return valuesDict
 
   """
-  since this is specific to this subclass, there's no need to subclass
-  def selectTpOutlet(self, filter="", valuesDict=None, typeId="", targetId=0):
-    return outletArray
+  def displayButtonPressed(self, dev, valuesDict):
+    props = dev.pluginProps
+    valuesDict['outletNum']     = int(props['outletNum'])+1
+    valuesDict['multiPlug']     = props['multiPlug']
+    valuesDict['energyCapable'] = props['energyCapable']
+    return(valuesDict)
+
+  def printToLogPressed(self, valuesDict, rpt_fmt):
+    return rpt_fmt.format("Outlet Number:", valuesDict['outletNum']) + \
+        rpt_fmt.format("Multiple Outlets:", valuesDict['multiPlug']) + \
+        rpt_fmt.format("Energy reporting:", valuesDict['energyCapable'])
+
+    return
   """
 
   ########################################

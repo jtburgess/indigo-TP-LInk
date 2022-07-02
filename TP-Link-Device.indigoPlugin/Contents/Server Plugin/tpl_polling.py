@@ -44,15 +44,9 @@ class pollingThread(Thread):
 
 		if self.dev.deviceTypeId =='tplinkSmartPlug':
 			if action == 'state' and state:
-				if self.multiPlug:
-					self.pollFreq = self.pluginPrefs['onPoll']
-				else:
-					self.pollFreq = self.dev.pluginProps['onPoll']
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
 			elif action == 'state' and not state:
-				if self.multiPlug:
-					self.pollFreq = self.pluginPrefs['offPoll']
-				else:
-					self.pollFreq = self.dev.pluginProps['offPoll']
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
 			elif action == 'dev':
 				outletNum = dev.pluginProps['outletNum']
 				self.outlets[outletNum] = dev
@@ -62,9 +56,9 @@ class pollingThread(Thread):
 				return
 		else: # if self.dev.deviceTypeId =='tplinkSmartSwitch' or self.dev.deviceTypeId =='tplinkSmartBulb'
 			if action == 'state' and state:
-				self.pollFreq = self.dev.pluginProps['onPoll']
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
 			elif action == 'state' and not state:
-				self.pollFreq = self.dev.pluginProps['offPoll']
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
 			elif action == 'dev':
 				self.dev = dev
 			else:

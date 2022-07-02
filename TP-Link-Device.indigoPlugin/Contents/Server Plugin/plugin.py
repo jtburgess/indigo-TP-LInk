@@ -199,12 +199,12 @@ class Plugin(indigo.PluginBase):
     # method to return a device parameter, or plugin default for that parameter, or a global default
     def devOrPluginParm(self, dev, attribute, default):
       result = None
-      if attribute in  dev.pluginProps:
-        result = dev.pluginProps[attribute]
-      elif attribute in  self.pluginPrefs:
-        result = self.pluginPrefs[attribute]
+      if attribute in dev.pluginProps and dev.pluginProps[attribute] != '':
+        result = [dev.pluginProps[attribute], 'dev']
+      elif attribute in  self.pluginPrefs and self.pluginPrefs[attribute] != '':
+        result = [self.pluginPrefs[attribute], 'plugin']
       else:
-        result = default
+        result = [default, "default"]
 
       self.logger.debug("for attribute {}, using {}".format(attribute, result))
       return result
@@ -411,7 +411,7 @@ class Plugin(indigo.PluginBase):
             return
 
         # force a poll if everything went well
-        if self.devOrPluginParm(dev, 'devPoll', False) and dev.address in self.tpThreads:
+        if self.devOrPluginParm(dev, 'devPoll', False)[0] and dev.address in self.tpThreads:
             self.tpThreads[dev.address].interupt(state=True, action='state')
         return
 
@@ -431,7 +431,7 @@ class Plugin(indigo.PluginBase):
         devPoll = self.devOrPluginParm(dev, 'devPoll', False)
         self.logger.info("    Polling enabled: {}".format(devPoll))
         if devPoll:
-          self.logger.info("      On state polling freq: {}".format(self.devOrPluginParm(dev, 'onPoll', 30)))
+          self.logger.info("      On state polling freq: {}".format(self.devOrPluginParm(dev, 'onPoll', 10)))
           self.logger.info("      Off state polling freq: {}".format(self.devOrPluginParm(dev, 'offPoll', 30)))
           self.logger.info("      Poll Warning interval: {}".format(self.devOrPluginParm(dev, 'WarnInterval', 5)))
           self.logger.info("      SlowDown {} seconds at each warning".format(self.devOrPluginParm(dev, 'SlowDown', 1)))
@@ -582,6 +582,10 @@ class Plugin(indigo.PluginBase):
             valuesDict['devPoll'] = False
             return valuesDict
 
+        # device level overrides to polling parameters
+        if valuesDict['devPoll'] != '':
+          dev.pluginProps['devPoll'] = valuesDict['devPoll'] # for use by devOrPluginParm()
+
         try:
             subType = self.getSubClass(devTypeID)
             valuesDict = subType.selectTpDevice( valuesDict, typeId, devId)
@@ -637,6 +641,79 @@ class Plugin(indigo.PluginBase):
     # Menu callbacks defined in MenuItems.xml
     # I haven't been able to figure out how to make these calls soecific to the device Type
     ########################################
+
+    """
+    ########################################
+    # Device reporting
+    def displayButtonPressed(self, valuesDict, clg_func):
+        " " " callback to prepare the data for the "display device information" configUI display
+             (See MenuItems.xml)
+        " " "
+        self.logger.debug("called for targetDevice {} from {}".format(valuesDict['targetDevice'], clg_func))
+        self.logger.threaddebug("called with valuesDict={}".format(valuesDict))
+
+        try:
+            devNumber = int(valuesDict['targetDevice'])
+            dev = indigo.devices[devNumber]
+        except:
+            errorsDict = indigo.Dict()
+            errorsDict['targetDevice'] = "You must select a device"
+            errorsDict["showAlertText"] = "You must select a device"
+            return(valuesDict, errorsDict)
+
+        props = dev.pluginProps
+        self.logger.threaddebug("pluginPropsr=%s" % (props) )
+
+        valuesDict['address']       = props['address']
+        valuesDict['alias']         = dev.states['alias']
+        valuesDict['deviceTypeId']  = dev.deviceTypeId
+        valuesDict['model']         = props['model']
+        valuesDict['description']   = dev.description
+        valuesDict['deviceId']      = props['deviceId']
+        valuesDict['mac']           = props['mac']
+        valuesDict['devPoll']       = props['devPoll']
+        valuesDict['offPoll']       = props['offPoll']
+        valuesDict['onPoll']        = props['onPoll']
+        valuesDict['displayOk']     = True
+
+        subType = self.getSubClass(dev.deviceTypeId)
+        valuesDict = subType.displayButtonPressed(dev, valuesDict)
+        self.logger.threaddebug("Device info = %s" % (valuesDict) )
+
+        return(valuesDict)
+
+    def printToLogPressed(self, valuesDict, clg_func):
+        " " " callback to prepare the report for display in the log
+             (See MenuItems.xml)
+        " " "
+        self.logger.debug("called for dev {} from {}".format(valuesDict['targetDevice'], clg_func))
+        self.logger.threaddebug("Received {}".format(valuesDict))
+
+        devNumber = int(valuesDict['targetDevice'])
+        dev = indigo.devices[devNumber]
+        rpt_fmt = "            {0!s:25}{1!s}\n"
+        subType = self.getSubClass(dev.deviceTypeId)
+
+        report = "Tp-Link device report\n" + \
+            rpt_fmt.format("TP-link Device Type:", dev.deviceTypeId) + \
+            rpt_fmt.format("Indigo Device Name:", dev.name) + \
+            rpt_fmt.format("IP Address:", valuesDict['address']) + \
+            rpt_fmt.format("MAC Address:", valuesDict['mac']) + \
+            rpt_fmt.format("Device ID:", valuesDict['deviceId']) + \
+            rpt_fmt.format("Alias:", valuesDict['alias']) + \
+            rpt_fmt.format("Model:", valuesDict['model'])
+        devPoll = self.devOrPluginParm(dev, 'devPoll', False)
+        report += rpt_fmt.format("Polling enabled:", devPoll)
+        if devPoll[0]:
+          report +=
+            rpt_fmt.format("On state polling freq:", self.devOrPluginParm(dev, 'onPoll', 10)) + \
+            rpt_fmt.format("Off state polling freq:", self.devOrPluginParm(dev, 'offPoll', 30)) + \
+            rpt_fmt.format("Poll Warning interval:", self.devOrPluginParm(dev, 'WarnInterval', 5)) + \
+            subType.printToLogPressed( valuesDict, rpt_fmt)
+
+        self.logger.info("%s" % (report, ) )
+        return
+    """
 
     ########################################
     # Menu callbacks defined in Actions.xml

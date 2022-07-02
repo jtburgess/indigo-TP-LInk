@@ -36,20 +36,20 @@
       <Field id="devPoll" type="checkbox" defaultValue="true" visibleBindingId="displayOk"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
         <Label>Enable device polling:</Label>
       </Field>
-      <Field id="offPoll" type="textfield" defaultValue="30" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-        <Label>Polling interval when device is Off</Label>
+      <Field id="offPoll" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>*** Leave blank to use (plugin or global default) ***\nPolling interval when device is Off (30)</Label>
       </Field>
-      <Field id="onPoll" type="textfield" defaultValue="10" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
-        <Label>Polling interval when device is On</Label>
+      <Field id="onPoll" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true" alwaysUseInDialogHeightCalc="true">
+        <Label>Polling interval when device is On (10)</Label>
       </Field>
-      <Field id="WarnInterval" type="textfield" defaultValue="5" visibleBindingId="devPoll"  visibleBindingValue="true">
-          <Label>Number of missed polls between warnings</Label>
+      <Field id="WarnInterval" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Number of missed polls between warnings (5)</Label>
       </Field>
-      <Field id="SlowDown" type="textfield" defaultValue="1" visibleBindingId="devPoll"  visibleBindingValue="true">
-          <Label>Slow Polling by this number of seconds at each warning</Label>
+      <Field id="SlowDown" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Slow Polling by this number of seconds at each warning (1)</Label>
       </Field>
-      <Field id="StopPoll" type="textfield" defaultValue="20" visibleBindingId="devPoll"  visibleBindingValue="true">
-          <Label>Shutdown the device after this many missed polls</Label>
+      <Field id="StopPoll" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true">
+          <Label>Shutdown the device after this many missed polls (20)</Label>
       </Field>
 
       <Field id="multiPlug" type="checkbox" readonly="YES" alwaysUseInDialogHeightCalc="true" visibleBindingId="displayOk"  visibleBindingValue="true" enabledBindingId="displayOk" >

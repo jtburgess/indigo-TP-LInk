@@ -50,14 +50,15 @@ class relay_poll(pollingThread):
       self.outlets[outletNum] = self.dev
       self.logger.threaddebug("outlet dict =%s" % (self.outlets))
 
-    self.onPoll = int( self.tpLink_self.devOrPluginParm(dev, 'onPoll', 30))
-    self.offPoll = int( self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30))
+    self.onPoll = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
+    self.offPoll = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
 
     self.onOffState = dev.states['onOffState']
     if self.onOffState:
       self.pollFreq = self.onPoll
     else:
       self.pollFreq = self.offPoll
+    self.logger.debug("poll init at interval %s (on=%s, off=%s)" % (self.pollFreq, self.onPoll, self.offPoll))
     self.deviceId = dev.pluginProps['deviceId']
     self.changed = False
     # self.logger.threaddebug(u"Initializing: %s:%s" % (dev.name, self.offPoll))
@@ -102,13 +103,13 @@ class relay_poll(pollingThread):
         # Check if we got an error back
         if 'error' in data:
           self.pollErrors += 1
-          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20):
+          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]:
             self.logger.error("Unable to poll device \"{}\": {} after {} errors. Polling for this device will now shut down.".format(self.name, data['error'], self.pollErrors))
             indigo.device.enable(dev.id, value=False)
             return
 
-          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)) == 0:
-            self.pollFreq += self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)
+          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]) == 0:
+            self.pollFreq += self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0]
             self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
 
         else:
