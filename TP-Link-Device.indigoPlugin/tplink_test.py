@@ -64,7 +64,7 @@ def main():
   choices.update ( {"on": "on", "off": "off"}) # the implementaion is different but these are common commands
 
   parser = argparse.ArgumentParser(description="TP-Link Wi-Fi command line Client v" + str(version))
-  parser.add_argument("-t", "--target", required=False, help="Target hostname or IP address", type=check_server)
+  parser.add_argument("-t", "--target", required=True, help="Target hostname or IP address", type=check_server)
 
   group = parser.add_mutually_exclusive_group(required=True)
   group.add_argument("-c", "--command", help="Preset command to send. Generic choices are: "+", ".join(choices), choices=choices )
@@ -72,9 +72,9 @@ def main():
   group.add_argument("-j", "--json", metavar="<JSON string>", help="Full JSON string of command to send")
 
   TPtype = parser.add_mutually_exclusive_group(required=False)
-  TPtype.add_argument("-r", "--relay", action='store_true', required=False, help="tplinkSmartPlug type")
-  TPtype.add_argument("-b", "--bulb", action='store_true', required=False, help="tplinkSmartBulb type")
-  TPtype.add_argument("-s", "--switch", action='store_true', required=False, help="tplinkRelaySwitch type")
+  TPtype.add_argument("-r", "--relay", action='store_true', help="tplinkSmartPlug type")
+  TPtype.add_argument("-b", "--bulb", action='store_true', help="tplinkSmartBulb type")
+  TPtype.add_argument("-s", "--switch", action='store_true', help="tplinkRelaySwitch type")
 
   # options for plug strips (untested)
   parser.add_argument("-d", "--deviceID", required=False, help="device ID for testing powerstrip")
@@ -122,7 +122,7 @@ def main():
       # my_target = tplink_protocol(args.target, 9999)
       response =  my_target.discover()
   elif args.target is None : # or (args.relay is None and args.bulb is None):
-      print ("Error: target host (%s) is required" % (args.target))
+      print ("Error: valid target host IP (%s) is required" % (args.target))
       sys.exit(1)
   else:
       received = None
