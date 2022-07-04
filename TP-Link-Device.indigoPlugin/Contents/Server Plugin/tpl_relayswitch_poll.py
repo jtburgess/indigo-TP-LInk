@@ -20,13 +20,14 @@ class relayswitch_poll(pollingThread):
     super(relayswitch_poll, self).__init__(tpLink_self, dev)
     self.logger.debug("called for: %s." % (dev.name, ))
 
-    self.onPoll = int(dev.pluginProps['onPoll'])
-    self.offPoll = int(dev.pluginProps['offPoll'])
+    self.onPoll = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
+    self.offPoll = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
     self.onOffState = dev.states['onOffState']
     if self.onOffState:
       self.pollFreq = self.onPoll
     else:
       self.pollFreq = self.offPoll
+    self.logger.debug("poll init at interval %s (on=%s, off=%s)" % (self.pollFreq, self.onPoll, self.offPoll))
     self.deviceId = dev.pluginProps['deviceId']
     self.changed = False
     # self.logger.threaddebug(u"Initializing: %s:%s" % (dev.name, self.offPoll))
@@ -90,19 +91,19 @@ class relayswitch_poll(pollingThread):
           elif 'error' in data2:
             error = data2['error']
 
-          if self.pollErrors == 5:
-            self.logger.error("5 consecutive polling error for device \"%s\": %s" % (self.name, error))
-            self.pollFreq += 1
-          elif self.pollErrors == 10:
-            self.logger.error("10 consecutive polling error for device \"%s\": %s" % (self.name, error))
-            self.pollFreq += 1
-          elif self.pollErrors >= 15:
-            self.logger.error("Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, error))
+          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]:
+            self.logger.error("Unable to poll device \"{}\": {} after {} errors. Polling for this device will now shut down.".format(self.name, data['error'], self.pollErrors))
             indigo.device.enable(dev.id, value=False)
             return
 
+          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]) == 0:
+            self.pollFreq += int(self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0])
+            self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
+
         else:
+            # No error!; reset error count and set poll Freq based on on/off state
             if self.pollErrors > 0:
+              self.logger.info("Normal polling resuming for device {}".format(self.name))
               self.pollErrors = 0
               # reset pollFreq in case increaded due to errors
               if self.onOffState:
@@ -128,10 +129,9 @@ class relayswitch_poll(pollingThread):
                     state = False
                     logState = "Off"
                     # self.interupt(state=False, action='state')
-            lastState = devState
 
+            lastState = devState
             self.logger.threaddebug("%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
-#            indigo.server.log(u"%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
             try:
               alias = data['system']['get_sysinfo']['alias']
               rssi = data['system']['get_sysinfo']['rssi']
@@ -179,13 +179,12 @@ class relayswitch_poll(pollingThread):
 
             if not self.localOnOff:
                 if self.logOnOff:
-#                    self.logger.info(u"{} {} set to {}".format(self.name, foundMsg, logState))
-
-#              self.interupt(state=state, action='state')
-                    self.localOnOff = False
+                  self.logger.info("{} {} set to {}".format(self.name, foundMsg, logState))
+#                  self.interupt(state=state, action='state')
 
             self.logger.threaddebug("Polling found %s set to %s" % (self.name, logState) )
             self.logger.threaddebug("%s, updated state on server to %s (%s, %s)" % (self.name, state, rssi, alias) )
+            self.localOnOff = False
 
         self.logger.debug("%s: finished state update %s" % (self.name, data))
 
@@ -208,6 +207,8 @@ class relayswitch_poll(pollingThread):
             # self.logger.threaddebug(u"Timer = %6.4f" % (cTime, ))
 
           # self.logger.threaddebug(u"Timer loop finished for %s" % (self.name, ))
+        if not self._is_running:
+          break
 
         self.logger.debug("%s: Back in the loop - timer ended" % (self.name, ))
 

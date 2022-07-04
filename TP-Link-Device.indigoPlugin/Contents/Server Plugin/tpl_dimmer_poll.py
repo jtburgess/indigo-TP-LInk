@@ -21,13 +21,14 @@ class dimmer_poll(pollingThread):
     self.logger.debug("called for: %s." % (dev.name))
     self.multiPlug = False # needed for interrupt()
 
-    self.onPoll = int(dev.pluginProps['onPoll'])
-    self.offPoll = int(dev.pluginProps['offPoll'])
+    self.onPoll = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
+    self.offPoll = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
     self.onOffState = dev.states['onOffState']
     if self.onOffState:
       self.pollFreq = self.onPoll
     else:
       self.pollFreq = self.offPoll
+    self.logger.debug("poll init at interval %s (on=%s, off=%s)" % (self.pollFreq, self.onPoll, self.offPoll))
     self.deviceId = dev.pluginProps['deviceId']
     self.changed = False
     # self.logger.threaddebug(u"Initializing: %s:%s" % (dev.name, self.offPoll))
@@ -70,21 +71,21 @@ class dimmer_poll(pollingThread):
         # Check if we got an error back
         if 'error' in data or 'error' in data1:
           self.pollErrors += 1
-          if self.pollErrors == 5:
-            self.logger.error("5 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-            self.pollFreq += 1
-          elif self.pollErrors == 10:
-            self.logger.error("8 consecutive polling error for device \"%s\": %s" % (self.name, data['error']))
-            self.pollFreq += 1
-          elif self.pollErrors >= 15:
-            self.logger.error("Unable to poll device \"%s\": %s after 15 attempts. Polling for this device will now shut down." % (self.name, data['error']))
+          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]:
+            self.logger.error("Unable to poll device \"{}\": {} after {} errors. Polling for this device will now shut down.".format(self.name, data['error'], self.pollErrors))
             indigo.device.enable(dev.id, value=False)
             return
 
+          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]) == 0:
+            self.pollFreq += int(self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0])
+            self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
+
         else:
-          # First, we check the onOff state
+          # No error!; reset error count and set poll Freq based on on/off state
           if self.pollErrors > 0:
+            self.logger.info("Normal polling resuming for device {}".format(self.name))
             self.pollErrors = 0
+
             # reset pollFreq in case increaded due to errors
             if self.onOffState:
               self.pollFreq = self.onPoll
@@ -132,6 +133,7 @@ class dimmer_poll(pollingThread):
             if not self.localOnOff:
               if self.logOnOff:
                 self.logger.info("{} {} set to {}".format(self.name, foundMsg, logState))
+            self.localOnOff = False
 
             if state:
               # only get HSV parameters from the device if the bulb is on (or dimmed)
@@ -171,7 +173,6 @@ class dimmer_poll(pollingThread):
                 dev.updateStatesOnServer(state_update_list)
 
             self.interupt(state=state, action='state')
-            self.localOnOff = False
 
             self.logger.threaddebug("Polling %s %s set to %s" % ((self.name, foundMsg, logState)) )
 

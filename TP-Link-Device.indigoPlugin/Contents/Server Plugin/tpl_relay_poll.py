@@ -65,7 +65,7 @@ class relay_poll(pollingThread):
     self._is_running = True
     self.start()
 
-# use super()
+# use super() for these
 #  def interupt(self, state=None, dev=None, action=None):
 #  def start(self)
 #  def stop(self):
@@ -113,6 +113,7 @@ class relay_poll(pollingThread):
             self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
 
         else:
+          # No error!; reset error count and set poll Freq based on on/off state
           if self.pollErrors > 0:
             self.logger.info("Normal polling resuming for device {}".format(self.name))
             self.pollErrors = 0
@@ -170,6 +171,7 @@ class relay_poll(pollingThread):
                         self.logger.info("%s -%s %s set to %s" % (self.name, outletName, foundMsg, logState) )
 
                     self.logger.threaddebug("Polling found %s set to %s" % (self.name, logState) )
+                    self.localOnOff = False
 
             # Before we go, check to see if we need to update the polling interval
             if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
@@ -181,7 +183,6 @@ class relay_poll(pollingThread):
               self.logger.threaddebug("Changing polling interval to on for %s" % (self.dev.address))
               self.interupt(state=False, action='state')
             self.lastMultiPlugOnCount = multiPlugOnCount
-            self.localOnOff = False
 
           else:  # we have a single outlet device
             # self.logger.threaddebug(u"%s: Got Here 0 with %s" % (self.name, data))
