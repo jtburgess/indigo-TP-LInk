@@ -34,34 +34,28 @@ class pollingThread(Thread):
 
 		# self.logger.threaddebug(u"%s: Before, poll freq is %s" % (dev.name, self.pollFreq))
 		if action == 'status':
-			if self.pollErrors > 0:
-				self.logger.error ("{}: Device has {} poll Errors.".format(dev.name, self.pollErrors))
-				return False
-			if self.exceptCount > 0:
-				self.logger.error ("{}: Device has {} poll Exceptions.".format(dev.name, self.exceptCount))
+			if self.pollErrors > 0 or self.exceptCount > 0:
+				self.logger.error ("{}: Device has {} poll Errors, {} exceptions.".format(self.dev.name, self.pollErrors, self.exceptCount))
 				return False
 			return True
 
 		if self.dev.deviceTypeId =='tplinkSmartPlug':
 			if action == 'state' and state:
-				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(self.dev, 'onPoll', 10)[0])
 			elif action == 'state' and not state:
-				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(self.dev, 'offPoll', 30)[0])
 			elif action == 'dev':
-				outletNum = dev.pluginProps['outletNum']
+				outletNum = self.dev.pluginProps['outletNum']
 				self.outlets[outletNum] = dev
-				self.dev = dev
 			else:
 				self.logger.error("called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
 		else: # if self.dev.deviceTypeId =='tplinkSmartSwitch' or self.dev.deviceTypeId =='tplinkSmartBulb'
 			if action == 'state' and state:
-				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(self.dev, 'onPoll', 10)[0])
 			elif action == 'state' and not state:
-				self.pollFreq = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
-			elif action == 'dev':
-				self.dev = dev
-			else:
+				self.pollFreq = int(self.tpLink_self.devOrPluginParm(self.dev, 'offPoll', 30)[0])
+			elif action != 'dev':
 				self.logger.error("called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
 

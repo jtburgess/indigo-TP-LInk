@@ -109,7 +109,7 @@ class relay_poll(pollingThread):
             return
 
           if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]) == 0:
-            self.pollFreq += self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0]
+            self.pollFreq += int(self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0])
             self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
 
         else:
