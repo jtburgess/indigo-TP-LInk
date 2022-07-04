@@ -28,9 +28,12 @@ Because the plugin works off the device's IP address, you will want to make the 
 Next, whether you selected the device from the menu, or entered its IP Address manually, you will see a window with information and settings for the device.
 
 ### Common Device Settings (Polling)
-All device types support status polling, through these configuration options:
-* Enable or disable polling of the device. Polling is required if you want Indigo to track changes made locally at the device, or through Alexa, or via the __kasa__ app. Polling is also required if you want to access energy data from a device with energy reporting capability.
-* You can also set the polling frequency. There are two settings, the frequency when the device is off, and when it is on.  For energy reporting plugs, you will probably want a faster polling time when the plug is on. Otherwise you can set both settings to the same interval. For dual-plugs and plug strips, the polling frequency is controlled by the plugin's Config settings. Note that polling more often than every 5 seconds may affect your computer's performance.
+All device types support status polling, through five configuration options, each of which can be left as global default, or set at the plugin level, or overridden at any individual device. The global defaults are shown below in ().
+* _Enable / disable polling_ of the device. Polling is required if you want Indigo to track changes made locally at the device, or through Alexa, or via the __kasa__ app. Polling is also required if you want to access energy data from a device with energy reporting capability.
+* _polling interval_. There are two settings: the interval when the device is _off_ (30 sec), and when it is _on_ (10 sec).  For energy reporting plugs, you will probably want a faster polling time when the plug is on. Also, if a change in device status triggers other actions, you'll want it checked often.  Otherwise you can set both settings to the same interval. Note that polling more often than every 5 seconds may affect your computer's performance.
+* If a device stops reponding to polls (e.g. there is a network problem or the device is unplugged), you'll get a _warning message after every N (5) missed polls_.
+* After each such warning, the _polling is slowed by N_ (1 second). Setting to 0 keeps the polling the same, increasing this value can drastically slow the polling rate. When a successful poll is received the rate goes back to its original setting.
+* You can have _device communications shut down_ after N (20) missed polls. Sometimes this is inconvenient, so you can set this value to a very large number to more-or-less prevent it from happening.
 
 ### Smart Plug (aka Relay) Config details
 Here you can change the default device settings:
