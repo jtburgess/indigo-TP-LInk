@@ -1,5 +1,7 @@
 # Indigo TP-Link
 
+Version 0.9.9 is now Python 3 compatible, and has been tested with Indigo 2022.1
+
 ## Overview
 
 This Indigo plugin is for TP-link Devices: plugs, power strips, wall switches, and smart light bulbs. The intent is
