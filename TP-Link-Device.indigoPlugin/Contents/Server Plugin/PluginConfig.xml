@@ -8,7 +8,7 @@
     <Field id="devPoll" type="checkbox" defaultValue="true">
         <Label>Enable global device polling</Label>
     </Field>
-        <Field id="onPoll" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true">
+    <Field id="onPoll" type="textfield" defaultValue="" visibleBindingId="devPoll"  visibleBindingValue="true">
         <Label>*** Leave any of these blank to use (global default) ***
 Polling interval when multi-plug device is On (10)</Label>
     </Field>
