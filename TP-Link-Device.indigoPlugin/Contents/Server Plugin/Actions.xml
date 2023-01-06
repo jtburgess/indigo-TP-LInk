@@ -2,160 +2,160 @@
 <!-- only one common action: info == status
 -->
 <Actions>
-	<Action id="info" deviceFilter="self">
-		<Name>Device Information</Name>
-		<CallbackMethod>getInfo</CallbackMethod>
-		<ConfigUI>
-			<Field id="getInfoLabel" type="label">
-				<Label>Get Info</Label>
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="info" deviceFilter="self">
+    <Name>Device Information</Name>
+    <CallbackMethod>getInfo</CallbackMethod>
+    <ConfigUI>
+      <Field id="getInfoLabel" type="label">
+        <Label>Get Info</Label>
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="reEnableComms" deviceFilter="indigo.device,self">
-		<Name>re-enable Communications</Name>
-		<CallbackMethod>reEnableComms</CallbackMethod>
-		<ConfigUI>
-			<Field id="setComm" type="label">
-				<Label>Enable Comms</Label>
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="reEnableComms" deviceFilter="indigo.device,self">
+    <Name>re-enable Communications</Name>
+    <CallbackMethod>reEnableComms</CallbackMethod>
+    <ConfigUI>
+      <Field id="setComm" type="label">
+        <Label>Enable Comms</Label>
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="SetDoubleClickAction" deviceFilter="indigo.device,self">
-		<Name> Set Double Click Action </Name>
-		<CallbackMethod>SetDoubleClickAction</CallbackMethod>
-		<ConfigUI>
-			<Field type="menu" id="dbMode" defaultValue="1">
-				<Label> What should double-click do? </Label>
-				<List>
-					<Option value="1">Instant on/off</Option>
-					<Option value="2">Gentle on/off</Option>
-					<Option value="3">Play Preset</Option>
-					<Option value="4">None</Option>
-				</List>
-			</Field>
-			<Field type="menu" id="dbPreset" defaultValue="1">
-				<Label> Preferred preset? </Label>
-				<List>
-					<Option value="1">1</Option>
-					<Option value="2">2</Option>
-					<Option value="3">3</Option>
-					<Option value="4">4</Option>
-				</List>
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="SetDoubleClickAction" deviceFilter="indigo.device,self">
+    <Name> Set Double Click Action </Name>
+    <CallbackMethod>SetDoubleClickAction</CallbackMethod>
+    <ConfigUI>
+      <Field type="menu" id="dbMode" defaultValue="1">
+        <Label> What should double-click do? </Label>
+        <List>
+          <Option value="1">Instant on/off</Option>
+          <Option value="2">Gentle on/off</Option>
+          <Option value="3">Play Preset</Option>
+          <Option value="4">None</Option>
+        </List>
+      </Field>
+      <Field type="menu" id="dbPreset" defaultValue="1">
+        <Label> Preferred preset? </Label>
+        <List>
+          <Option value="1">1</Option>
+          <Option value="2">2</Option>
+          <Option value="3">3</Option>
+          <Option value="4">4</Option>
+        </List>
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="set_gentle_off_time" deviceFilter="indigo.device,self">
-		<Name>Set Gentle Off Time</Name>
-		<CallbackMethod>set_gentle_off_time</CallbackMethod>
-		<ConfigUI>
-			<Field id="setGOTlabel" type="label">
-				<Label>Time to go off:</Label>
-			</Field>
-			<Field id="setGOT" type="textfield">
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="set_gentle_off_time" deviceFilter="indigo.device,self">
+    <Name>Set Gentle Off Time</Name>
+    <CallbackMethod>set_gentle_off_time</CallbackMethod>
+    <ConfigUI>
+      <Field id="setGOTlabel" type="label">
+        <Label>Time to go off:</Label>
+      </Field>
+      <Field id="setGOT" type="textfield">
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="set_gentle_on_time" deviceFilter="indigo.device,self">
-		<Name>Set Gentle On Time</Name>
-		<CallbackMethod>set_gentle_on_time</CallbackMethod>
-		<ConfigUI>
-			<Field id="setGOnTlabel" type="label">
-				<Label>Time to go on:</Label>
-			</Field>
-			<Field id="setGOnT" type="textfield">
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="set_gentle_on_time" deviceFilter="indigo.device,self">
+    <Name>Set Gentle On Time</Name>
+    <CallbackMethod>set_gentle_on_time</CallbackMethod>
+    <ConfigUI>
+      <Field id="setGOnTlabel" type="label">
+        <Label>Time to go on:</Label>
+      </Field>
+      <Field id="setGOnT" type="textfield">
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="set_fade_on_time" deviceFilter="indigo.device,self">
-		<Name>Set Fade On Time</Name>
-		<CallbackMethod>set_fade_on_time</CallbackMethod>
-		<ConfigUI>
-			<Field id="setFOnTlabel" type="label">
-				<Label>Time to go on:</Label>
-			</Field>
-			<Field id="setFOnT" type="textfield">
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="set_fade_on_time" deviceFilter="indigo.device,self">
+    <Name>Set Fade On Time</Name>
+    <CallbackMethod>set_fade_on_time</CallbackMethod>
+    <ConfigUI>
+      <Field id="setFOnTlabel" type="label">
+        <Label>Time to go on:</Label>
+      </Field>
+      <Field id="setFOnT" type="textfield">
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="set_fade_off_time" deviceFilter="indigo.device,self">
-		<Name>Set Fade Off Time</Name>
-		<CallbackMethod>set_fade_off_time</CallbackMethod>
-		<ConfigUI>
-			<Field id="setFOTlabel" type="label">
-				<Label>Time to go on:</Label>
-			</Field>
-			<Field id="setFOT" type="textfield">
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="set_fade_off_time" deviceFilter="indigo.device,self">
+    <Name>Set Fade Off Time</Name>
+    <CallbackMethod>set_fade_off_time</CallbackMethod>
+    <ConfigUI>
+      <Field id="setFOTlabel" type="label">
+        <Label>Time to go on:</Label>
+      </Field>
+      <Field id="setFOT" type="textfield">
+      </Field>
+    </ConfigUI>
+  </Action>
 
-	<Action id="SetLongPressAction" deviceFilter="indigo.device,self">
-		<Name> Set Long Press Action </Name>
-		<CallbackMethod>SetLongPressAction</CallbackMethod>
-		<ConfigUI>
-			<Field type="menu" id="lpMode" defaultValue="1">
-				<Label> What should double-click do? </Label>
-				<List>
-					<Option value="1">Instant on/off</Option>
-					<Option value="2">Gentle on/off</Option>
-					<Option value="3">Play Preset</Option>
-					<Option value="4">None</Option>
-				</List>
-			</Field>
-			<Field type="menu" id="lpPreset" defaultValue="1">
-				<Label> Preferred preset? </Label>
-				<List>
-					<Option value="1">1</Option>
-					<Option value="2">2</Option>
-					<Option value="3">3</Option>
-					<Option value="4">4</Option>
-				</List>
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="SetLongPressAction" deviceFilter="indigo.device,self">
+    <Name> Set Long Press Action </Name>
+    <CallbackMethod>SetLongPressAction</CallbackMethod>
+    <ConfigUI>
+      <Field type="menu" id="lpMode" defaultValue="1">
+        <Label> What should double-click do? </Label>
+        <List>
+          <Option value="1">Instant on/off</Option>
+          <Option value="2">Gentle on/off</Option>
+          <Option value="3">Play Preset</Option>
+          <Option value="4">None</Option>
+        </List>
+      </Field>
+      <Field type="menu" id="lpPreset" defaultValue="1">
+        <Label> Preferred preset? </Label>
+        <List>
+          <Option value="1">1</Option>
+          <Option value="2">2</Option>
+          <Option value="3">3</Option>
+          <Option value="4">4</Option>
+        </List>
+      </Field>
+    </ConfigUI>
+  </Action>
 
 <!-- Set Hue, Saturation, Value for color bulbs -->
-	<Action id="set_HSV" deviceFilter="indigo.device,self">
-		<Name>Set Color Parameters (HSV)</Name>
-		<CallbackMethod>set_HSV</CallbackMethod>
-		<ConfigUI>
-			<Field id="labelHue" type="label">
-				<Label>Hue:</Label>
-			</Field>
-			<Field id="Hue" type="textfield">
-			</Field>
+  <Action id="set_HSV" deviceFilter="indigo.device,self">
+    <Name>Set Color Parameters (HSV)</Name>
+    <CallbackMethod>set_HSV</CallbackMethod>
+    <ConfigUI>
+      <Field id="labelHue" type="label">
+        <Label>Hue:</Label>
+      </Field>
+      <Field id="Hue" type="textfield">
+      </Field>
 
-			<Field id="labelSat" type="label">
-				<Label>Saturation:</Label>
-			</Field>
-			<Field id="Sat" type="textfield">
-			</Field>
+      <Field id="labelSat" type="label">
+        <Label>Saturation:</Label>
+      </Field>
+      <Field id="Sat" type="textfield">
+      </Field>
 
-			<Field id="labelValyue" type="label">
-				<Label>Brightness Value:</Label>
-			</Field>
-			<Field id="Val" type="textfield">
-			</Field>
-		</ConfigUI>
-	</Action>
+      <Field id="labelValyue" type="label">
+        <Label>Brightness Value:</Label>
+      </Field>
+      <Field id="Val" type="textfield">
+      </Field>
+    </ConfigUI>
+  </Action>
 
 <!-- Set ColorTemp for some  bulbs -->
-	<Action id="set_ColorTemp" deviceFilter="indigo.device,self">
-		<Name>Set Temperature(K)</Name>
-		<CallbackMethod>set_ColorTemp</CallbackMethod>
-		<ConfigUI>
-			<Field id="label" type="label">
-				<Label>Temperature(K):</Label>
-			</Field>
-			<Field id="Temp" type="textfield">
-			</Field>
-		</ConfigUI>
-	</Action>
+  <Action id="set_ColorTemp" deviceFilter="indigo.device,self">
+    <Name>Set Temperature(K)</Name>
+    <CallbackMethod>set_ColorTemp</CallbackMethod>
+    <ConfigUI>
+      <Field id="label" type="label">
+        <Label>Temperature(K):</Label>
+      </Field>
+      <Field id="Temp" type="textfield">
+      </Field>
+    </ConfigUI>
+  </Action>
 
 </Actions>
