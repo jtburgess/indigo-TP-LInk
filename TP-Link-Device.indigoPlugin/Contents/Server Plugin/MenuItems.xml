@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <MenuItems>
-	<!-- can this be made device Type specific?
-		so there are different menu items for Relays/Plugs and Dimmers/Lights
-	 -->
-	
+  <!-- can this be made device Type specific?
+    so there are different menu items for Relays/Plugs and Dimmers/Lights
+   -->
+  
 </MenuItems>
