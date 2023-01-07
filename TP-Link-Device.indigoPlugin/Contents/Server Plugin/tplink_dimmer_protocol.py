@@ -6,13 +6,11 @@ import sys
 from protocol import tplink_protocol
 
 class tplink_dimmer_protocol(tplink_protocol):
-
-  def __init__(self, address, port, deviceID = None, childID = None, logger = None, arg2=1000):
-    super(tplink_dimmer_protocol, self).__init__(address, port, deviceID=deviceID, childID=childID, logger=logger)
-
-    self.arg2 = arg2 # default, because dev[] is not available
-
   # all functions not defined here revert to the super(), i.e., base class
+
+  def setArg2(self, arg2):
+    self.arg2 = arg2 # default, because dev[] is not available
+    self.logger.debug ("arg2 set to {}".format(arg2))
 
   # Predefined Dimmer Commands
   #   XXX and YYY are replaced in send() to change color or Brightness or rampTime

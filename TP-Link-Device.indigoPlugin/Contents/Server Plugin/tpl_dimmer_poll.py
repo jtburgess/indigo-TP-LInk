@@ -49,19 +49,19 @@ class dimmer_poll(pollingThread):
 
     self.logger.threaddebug("Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
-    tplink_dev_states = tplink_dimmer_protocol(devAddr, devPort, self.deviceId)
+    tplink_dev_states = tplink_dimmer_protocol(devAddr, devPort, logger=self.tpLink_self.logger)
+    self.logger.threaddebug("protocol __init__ed")
     lastState = 2
-    lastStateMulti = {}
     firstRun = False
     self.exceptCount = 0
     self.pollErrors = 0
 
     while True:
       try:
-        self.logger.threaddebug("%s: Starting polling loop with interval %s\n" % (self.name, self.pollFreq) )
+        self.logger.threaddebug("%s: Starting polling loop with interval %s" % (self.name, self.pollFreq) )
         try:
           result = tplink_dev_states.send('info',"","")
-          self.logger.threaddebug("%s connection 1 received (%s)" % (self.name, result))
+          self.logger.threaddebug("%s connection received 1 msg" % (self.name))
           data = json.loads(result)
         except Exception as e:
           self.logger.error("%s connection failed with (%s)" % (self.name, str(e)))
@@ -69,21 +69,21 @@ class dimmer_poll(pollingThread):
         self.logger.threaddebug("%s: finished state data collection with %s" % (self.name, data))
 
         # Check if we got an error back
-        if 'error' in data or 'error' in data1:
+        if 'error' in data:
           self.pollErrors += 1
-          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]:
+          if self.pollErrors >= int(self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]):
             self.logger.error("Unable to poll device \"{}\": {} after {} errors. Polling for this device will now shut down.".format(self.name, data['error'], self.pollErrors))
             indigo.device.enable(dev.id, value=False)
             return
 
-          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]) == 0:
+          if (self.pollErrors % int(self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0])) == 0:
             self.pollFreq += int(self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0])
             self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
 
         else:
           # No error!; reset error count and set poll Freq based on on/off state
           if self.pollErrors > 0:
-            self.logger.info("Normal polling resuming for device {}".format(self.name))
+            self.logger.info(str("After {} timeouts - Normal polling resuming for device {} ".format(self.pollErrors), self.name))
             self.pollErrors = 0
 
             # reset pollFreq in case increaded due to errors
@@ -105,58 +105,61 @@ class dimmer_poll(pollingThread):
             if devState == 0:
               state = False
               logState = "Off"
+              bright = 0
               # self.interupt(state=True, action='state')
             else: # on or dimmed
               state = True
               logState = "On"
+              # check brightness level
+              if "brightness" in data['system']['get_sysinfo']['light_state']:
+                bright = data['system']['get_sysinfo']['light_state']['brightness']
+              elif "dft_on_state" in  data['system']['get_sysinfo']['light_state']:
+                self.logger.debug("NOTE: brightness found in dft_on_state from {}!".format(self.name))
+                bright = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
+              else:
+                self.logger.info("WARNING: brightness not found in data received from {}!".format(self.name))
+                bright = -1
+
               # self.interupt(state=False, action='state')
             lastState = devState
+            if not self.localOnOff:
+                if self.logOnOff:
+                  self.logger.info("{} {} set to {}, brightness {}".format(self.name, foundMsg, logState, bright))
 
-            self.logger.threaddebug("%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
+            self.logger.threaddebug("%s: state= %s, lastState=%s" % (self.name, devState, lastState))
 
-            alias = data['system']['get_sysinfo']['alias']
-            rssi = data['system']['get_sysinfo']['rssi']
-            bright = data['system']['get_sysinfo']['brightness']
-
-            data1 = data1['smartlife.iot.dimmer']['get_dimmer_parameters']
+            ### not used ### data1 = data1['smartlife.iot.dimmer']['get_dimmer_parameters']
             state_update_list = [
                 {'key':'onOffState', 'value':state, 'uiValue':logState},
                 {'key':'brightnessLevel', 'value':bright},
-                {'key':'rssi',  'value':rssi},
-                {'key':'alias', 'value':alias},
+                {'key':'rssi',  'value':data['system']['get_sysinfo']['rssi']},
+                {'key':'alias', 'value':data['system']['get_sysinfo']['alias']},
               ]
             dev.updateStatesOnServer(state_update_list)
-            self.logger.debug("{}, updated state on server: onOff={}, alias={}".format(self.name, state, alias))
+            self.logger.debug("{}, updated state on server: {}".format(self.name, state_update_list))
 
-            self.logger.threaddebug("%s is now %s: localOnOff=%s, logOnOff=%s" % (self.name, logState, self.localOnOff, self.logOnOff) )
-
-            if not self.localOnOff:
-              if self.logOnOff:
-                self.logger.info("{} {} set to {}".format(self.name, foundMsg, logState))
+#            self.interupt(state=state, action='state')
             self.localOnOff = False
 
-            if state:
+            if state and data['system']['get_sysinfo']['is_color'] == 1:
+              temp = None
               # only get HSV parameters from the device if the bulb is on (or dimmed)
               # the data returned by 'info' has several different formats...
-              if "dft_on_state" in  data['system']['get_sysinfo']['light_state']:
-                brightness = data['system']['get_sysinfo']['light_state']["dft_on_state"]['brightness']
-                hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
-                sat        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['saturation']
-                temp       = data['system']['get_sysinfo']['light_state']["dft_on_state"]['color_temp']
-                fromObject = 'dft_on_state'
-              elif "brightness" in  data['system']['get_sysinfo']['light_state']:
-                brightness = data['system']['get_sysinfo']['light_state']['brightness']
+              if "color_temp" in  data['system']['get_sysinfo']['light_state']:
                 hue        = data['system']['get_sysinfo']['light_state']['hue']
                 sat        = data['system']['get_sysinfo']['light_state']['saturation']
                 temp       = data['system']['get_sysinfo']['light_state']['color_temp']
                 fromObject = 'light_state'
+              elif "dft_on_state" in  data['system']['get_sysinfo']['light_state']:
+                hue        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['hue']
+                sat        = data['system']['get_sysinfo']['light_state']["dft_on_state"]['saturation']
+                temp       = data['system']['get_sysinfo']['light_state']["dft_on_state"]['color_temp']
+                fromObject = 'dft_on_state'
               else:
-                self.logger.debug("{}, brightness not in light_state data: {}".format(self.name, data['system']['get_sysinfo']['light_state']))
-                brightness = None
+                self.logger.debug("{}, color_temp not in colored dimmer light_state data: {}".format(self.name, data['system']['get_sysinfo']['light_state']))
 
-              if brightness is not None:
+              if temp is not None:
                 state_update_list = [
-                    {'key':'brightnessLevel', 'value':brightness},
                     {'key':'Hue',        'value':hue},
                     {'key':'Saturation', 'value':sat},
                     {'key':'colorTemp',  'value':temp},
@@ -171,8 +174,6 @@ class dimmer_poll(pollingThread):
                     # leave other parameters alone
                   ]
                 dev.updateStatesOnServer(state_update_list)
-
-            self.interupt(state=state, action='state')
 
             self.logger.threaddebug("Polling %s %s set to %s" % ((self.name, foundMsg, logState)) )
 
@@ -192,37 +193,43 @@ class dimmer_poll(pollingThread):
             dev.updateStatesOnServer(state_update_list)
             self.logger.debug("{}, no state change; update state on server: Dimmer States={}".format(self.name, state_update_list))
 
-          self.logger.debug("%s: finished state update %s" % (self.name, data))
+        self.logger.debug("%s: finished state update %s" % (self.name, data))
 
         indigo.debugger()
-        self.logger.threaddebug("%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
-        pTime = 0.5
+        self.logger.threaddebug("%s: In the loop - pause for %s; changed=%s, isRunning=%s" % (self.name, self.pollFreq, self.changed, self._is_running))
+        pTime = 1.0
         cTime = float(self.pollFreq)
 
         self.exceptCount = 0
         while cTime > 0:
           # self.logger.threaddebug(u"%s: Looping Timer = %s" % (self.name, cTime) )
           if self.changed or not self._is_running:
-            # self.logger.threaddebug(u"Device change for %s" % (self.name))
+            # self.logger.threaddebug("Device change for %s" % (self.name, ))
             self.changed = False
             cTime = 0
           else:
-            # self.logger.threaddebug(u"starting mini sleep for %6.4f" % (pTime))
+            # self.logger.threaddebug("starting mini sleep for %6.4f" % (pTime, ))
             sleep(pTime)
             cTime = cTime - pTime
-            # self.logger.threaddebug(u"Timer = %6.4f" % (cTime))
+            # self.logger.threaddebug("Timer = %6.4f" % (cTime, ))
 
-          # self.logger.threaddebug(u"Timer loop finished for %s" % (self.name) )
+          # self.logger.threaddebug("Timer loop finished for %s" % (self.name, ))
         if not self._is_running:
           break
 
-        self.logger.debug("%s: Back in the loop - timer ended" % (self.name))
+        self.logger.debug("%s: Back in the loop - timer ended" % (self.name, ))
 
       except Exception as e:
+        # report the exact type and location of the exception
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        self.logger.debug("Exception ({}) in {} line {}".format(str(e), fname, exc_tb.tb_lineno))
+
         if self.exceptCount == 10:
-          self.logger.error("Unable to update %s: after 10 attempts. Polling for this device will now shut down. (%s)" % (self.name, str(e)))
+          self.logger.error("Unable to update %s: after 10 attempts. Polling for this device will now shut down." % (self.name))
           indigo.device.enable(dev.id, value=False)
           return
         else:
           self.exceptCount += 1
-          self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
+          self.logger.error("Error attempting to update %s. Will try again in %s seconds" % (self.name, self.pollFreq))
+    # end while True

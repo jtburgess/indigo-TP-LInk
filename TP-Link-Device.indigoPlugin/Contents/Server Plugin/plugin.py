@@ -177,11 +177,14 @@ class Plugin(indigo.PluginBase):
         return tplink_relayswitch_protocol(addr, port, None, None, logger=self.logger)
       elif dev.deviceTypeId == 'tplinkSmartBulb':
         self.logger.debug("called with tplink_dimmer addr: {}".format(addr))
+
+        dimmer_proto = tplink_dimmer_protocol(addr, port, None, None, logger=self.logger)
         if 'rampTime' in dev.pluginProps:
-          arg2 = dev.pluginProps['rampTime']
+          dimmer_proto.setArg2 (dev.pluginProps['rampTime'])
         else:
-          arg2 = 1000 # default 1 second
-        return tplink_dimmer_protocol(addr, port, None, None, logger=self.logger, arg2=arg2)
+          dimmer_proto.setArg2 ( 1000 ) # default 1 second
+
+        return dimmer_proto
       else:
         self.logger.error("deviceTypeId '%s' is not recognised" % dev.deviceTypeId);
         # this will cause things to crash, later
@@ -206,7 +209,7 @@ class Plugin(indigo.PluginBase):
       else:
         result = [default, "default"]
 
-      self.logger.debug("for attribute {}, using {}".format(attribute, result))
+      self.logger.threaddebug("for attribute {}, using {}".format(attribute, result))
       return result
 
     ########################################
@@ -424,6 +427,7 @@ class Plugin(indigo.PluginBase):
         self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
         self.logger.info("    IP address: {}".format(dev.address))
         self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
+        self.logger.info("    WiFi Signal Strength: {}".format(dev.pluginProps['rssi']))
         self.logger.info("    Device ID: {}".format(dev.pluginProps['deviceId']))
         self.logger.info("    alias : {}".format(dev.states['alias']))
         self.logger.info("    description: {}".format(dev.description))
@@ -485,8 +489,8 @@ class Plugin(indigo.PluginBase):
     ######################
     def getDeviceStateList(self, dev):
         """Dynamically create/update the states list for each device"""
-        self.logger.debug(" called for: '%s'." % (dev.name))
-        self.logger.threaddebug("called for dev: %s." % (dev))
+        self.logger.debug("called for: '%s'." % (dev.name))
+        self.logger.threaddebug("   dev: %s." % (dev))
 
         statesDict = indigo.PluginBase.getDeviceStateList(self, dev)
         rssi  = self.getDeviceStateDictForNumberType("rssi", "rssi", "rssi")

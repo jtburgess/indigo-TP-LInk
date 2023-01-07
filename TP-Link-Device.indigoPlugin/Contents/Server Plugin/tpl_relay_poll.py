@@ -52,7 +52,6 @@ class relay_poll(pollingThread):
 
     self.onPoll = int(self.tpLink_self.devOrPluginParm(dev, 'onPoll', 10)[0])
     self.offPoll = int(self.tpLink_self.devOrPluginParm(dev, 'offPoll', 30)[0])
-
     self.onOffState = dev.states['onOffState']
     if self.onOffState:
       self.pollFreq = self.onPoll
@@ -71,7 +70,7 @@ class relay_poll(pollingThread):
 #  def stop(self):
 
   def run(self):
-    self.logger.debug("called for: %s." % (self.dev))
+    self.logger.debug("called for: %s." % (self.dev, ))
     dev = self.dev
     devType = dev.deviceTypeId
     energyCapable = dev.pluginProps['energyCapable']
@@ -89,8 +88,8 @@ class relay_poll(pollingThread):
     self.pollErrors = 0
 
     while True:
-      try:
-        self.logger.threaddebug("%s: Starting polling loop with interval %s\n" % (self.name, self.pollFreq) )
+      #TRY# try:
+        self.logger.threaddebug("%s: Starting polling loop with interval %s" % (self.name, self.pollFreq) )
         try:
           result = tplink_dev_states.send('info')
           self.logger.threaddebug("%s connection received (%s)" % (self.name, result))
@@ -103,19 +102,19 @@ class relay_poll(pollingThread):
         # Check if we got an error back
         if 'error' in data:
           self.pollErrors += 1
-          if self.pollErrors >= self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]:
+          if self.pollErrors >= int(self.tpLink_self.devOrPluginParm(dev, 'StopPoll', 20)[0]):
             self.logger.error("Unable to poll device \"{}\": {} after {} errors. Polling for this device will now shut down.".format(self.name, data['error'], self.pollErrors))
             indigo.device.enable(dev.id, value=False)
             return
 
-          if (self.pollErrors % self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]) == 0:
+          if (self.pollErrors % int(self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0])) == 0:
             self.pollFreq += int(self.tpLink_self.devOrPluginParm(dev, 'SlowDown', 1)[0])
             self.logger.error("{} consecutive polling errors for device {}: error {}. Polling internal now {}".format (self.pollErrors, self.name, data['error'], self.pollFreq))
 
         else:
           # No error!; reset error count and set poll Freq based on on/off state
           if self.pollErrors > 0:
-            self.logger.info("Normal polling resuming for device {}".format(self.name))
+            self.logger.info("After {} timeouts - Normal polling resuming for device {} ".format(self.pollErrors, self.name))
             self.pollErrors = 0
 
             # reset pollFreq in case increaded due to errors
@@ -171,7 +170,6 @@ class relay_poll(pollingThread):
                         self.logger.info("%s -%s %s set to %s" % (self.name, outletName, foundMsg, logState) )
 
                     self.logger.threaddebug("Polling found %s set to %s" % (self.name, logState) )
-                    self.localOnOff = False
 
             # Before we go, check to see if we need to update the polling interval
             if self.lastMultiPlugOnCount == 0 and multiPlugOnCount > 0:
@@ -183,6 +181,7 @@ class relay_poll(pollingThread):
               self.logger.threaddebug("Changing polling interval to on for %s" % (self.dev.address))
               self.interupt(state=False, action='state')
             self.lastMultiPlugOnCount = multiPlugOnCount
+            self.localOnOff = False
 
           else:  # we have a single outlet device
             # self.logger.threaddebug(u"%s: Got Here 0 with %s" % (self.name, data))
@@ -195,15 +194,18 @@ class relay_poll(pollingThread):
               foundMsg = 'remotely'
 
             if devState != lastState:
-              if devState:
-                state = True
-                logState = "On"
-                # self.interupt(state=True, action='state')
-              else:
+              if devState == 0:
                 state = False
                 logState = "Off"
                 # self.interupt(state=False, action='state')
+              else:
+                state = True
+                logState = "On"
+                # self.interupt(state=True, action='state')
               lastState = devState
+              if not self.localOnOff:
+                if self.logOnOff:
+                  self.logger.info("{} {} set to {}".format(self.name, foundMsg, logState))
 
               self.logger.threaddebug("%s: state= %s, lastState=%s : %s" % (self.name, devState, lastState, state))
 
@@ -218,9 +220,6 @@ class relay_poll(pollingThread):
 
               self.logger.threaddebug("%s is now %s: localOnOff=%s, logOnOff=%s" % (self.name, logState, self.localOnOff, self.logOnOff) )
 
-              if not self.localOnOff:
-                if self.logOnOff:
-                  self.logger.info("{} {} set to {}".format(self.name, foundMsg, logState))
 
               self.interupt(state=state, action='state')
               self.localOnOff = False
@@ -249,7 +248,7 @@ class relay_poll(pollingThread):
                   self.logger.threaddebug("Ready to check energy for outlet %s, state %s" % (childId, state))
                   if bool(state):
                     self.logger.threaddebug("Getting energy for %s %s %s %s state %s" % (devAddr, devPort, deviceId, childId, state))
-                    tplink_dev_energy = tplink_relay_protocol (devAddr, devPort, deviceId, childId)
+                    tplink_dev_energy = tplink_relay_protocol (devAddr, devPort, deviceID=deviceId, childID=childId)
                     result = tplink_dev_energy.send('energy')
                     data = json.loads(result)
                     self.logger.threaddebug("%s: data=%s" % (self.name, data))
@@ -283,7 +282,7 @@ class relay_poll(pollingThread):
                 self.logger.debug("Outlet %s: outlet=%s not configured. No energy usage collected" % (self.name, childId))
 
             else:    # we have a single outlet device
-              tplink_dev_energy = tplink_relay_protocol (devAddr, devPort, None, None)
+              tplink_dev_energy = tplink_relay_protocol (devAddr, devPort)
               result = tplink_dev_energy.send('energy')
               data = json.loads(result)
               self.logger.debug("Received result: |%s|" % (result))
@@ -307,7 +306,7 @@ class relay_poll(pollingThread):
               self.logger.threaddebug("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
         indigo.debugger()
         self.logger.threaddebug("%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
-        pTime = 0.5
+        pTime = 1.0
         cTime = float(self.pollFreq)
 
         self.exceptCount = 0
@@ -329,6 +328,7 @@ class relay_poll(pollingThread):
 
         self.logger.debug("%s: Back in the loop - timer ended" % (self.name))
 
+""" #TRY#
       except Exception as e:
         if self.exceptCount == 10:
           self.logger.error("Unable to update %s: after 10 attempts. Polling for this device will now shut down. (%s)" % (self.name, str(e)))
@@ -337,3 +337,4 @@ class relay_poll(pollingThread):
         else:
           self.exceptCount += 1
           self.logger.error("Error attempting to update %s: %s. Will try again in %s seconds" % (self.name, str(e), self.pollFreq))
+""" #TRY#

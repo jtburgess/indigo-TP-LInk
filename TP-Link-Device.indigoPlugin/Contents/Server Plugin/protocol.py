@@ -85,10 +85,12 @@ class tplink_protocol(object):
     except ValueError: # I/O operation on closed file (?)
       self.isatty = False
 
+    self.debugLog("addr={}, port={}, isatty={}".format(address, port, self.isatty))
     # both or neither deviceID and childID should be set
     if (deviceID is not None and childID is not None) or (deviceID is None and childID is None):
-      pass # both combinations are ok
+      return # both combinations are ok
     else:
+      self.debugLog("ERROR: both deviceID ({}) and childID ({}) must be set together".format(deviceID, childID))
       quit("ERROR: both deviceID and childID must be set together")
 
   # Send command and receive reply

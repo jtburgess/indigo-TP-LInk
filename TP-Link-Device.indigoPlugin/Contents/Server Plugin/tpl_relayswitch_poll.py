@@ -56,7 +56,7 @@ class relayswitch_poll(pollingThread):
 
     while True:
       try:
-        self.logger.threaddebug("%s: Starting polling loop with interval %s\n" % (self.name, self.pollFreq) )
+        self.logger.threaddebug("%s: Starting polling loop with interval %s" % (self.name, self.pollFreq) )
         try:
           result = tplink_dev_states.send('info',"","")
           self.logger.threaddebug("%s connection 1 received (%s)" % (self.name, result))
@@ -103,7 +103,9 @@ class relayswitch_poll(pollingThread):
         else:
             # No error!; reset error count and set poll Freq based on on/off state
             if self.pollErrors > 0:
-              self.logger.info("Normal polling resuming for device {}".format(self.name))
+              if self.pollErrors >  self.tpLink_self.devOrPluginParm(dev, 'WarnInterval', 5)[0]:
+                # only issue Resume, if a Warning was previously given
+                self.logger.info("Normal polling resuming for device {}".format(self.name))
               self.pollErrors = 0
               # reset pollFreq in case increaded due to errors
               if self.onOffState:
@@ -180,17 +182,19 @@ class relayswitch_poll(pollingThread):
             if not self.localOnOff:
                 if self.logOnOff:
                   self.logger.info("{} {} set to {}".format(self.name, foundMsg, logState))
-#                  self.interupt(state=state, action='state')
+#                 self.interupt(state=state, action='state')
+
+            self.interupt(state=state, action='state')
+            self.localOnOff = False
 
             self.logger.threaddebug("Polling found %s set to %s" % (self.name, logState) )
             self.logger.threaddebug("%s, updated state on server to %s (%s, %s)" % (self.name, state, rssi, alias) )
-            self.localOnOff = False
 
         self.logger.debug("%s: finished state update %s" % (self.name, data))
 
         indigo.debugger()
         self.logger.threaddebug("%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
-        pTime = 0.5
+        pTime = 1.0
         cTime = float(self.pollFreq)
 
         self.exceptCount = 0

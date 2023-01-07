@@ -47,6 +47,7 @@ class pollingThread(Thread):
 			elif action == 'dev':
 				outletNum = self.dev.pluginProps['outletNum']
 				self.outlets[outletNum] = dev
+				self.dev = dev
 			else:
 				self.logger.error("called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
@@ -55,7 +56,9 @@ class pollingThread(Thread):
 				self.pollFreq = int(self.tpLink_self.devOrPluginParm(self.dev, 'onPoll', 10)[0])
 			elif action == 'state' and not state:
 				self.pollFreq = int(self.tpLink_self.devOrPluginParm(self.dev, 'offPoll', 30)[0])
-			elif action != 'dev':
+			elif action == 'dev':
+				self.dev = dev
+			else:
 				self.logger.error("called for %s with action=%s, state=%s" % (self.dev.id, action, state))
 				return
 
