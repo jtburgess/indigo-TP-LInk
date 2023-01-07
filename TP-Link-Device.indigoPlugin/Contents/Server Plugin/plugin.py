@@ -209,6 +209,9 @@ class Plugin(indigo.PluginBase):
       else:
         result = [default, "default"]
 
+      if int(result[0]) > 1000000000:
+        self.logger.info("{} max exceeded (). using 1000000000".format(attribute, result[0]))
+        result[0] = '1000000000'
       self.logger.threaddebug("for attribute {}, using {}".format(attribute, result))
       return result
 
@@ -274,6 +277,8 @@ class Plugin(indigo.PluginBase):
             # We start one thread per device ip address
             if address not in self.tpThreads:
                 # Create a polling thread
+                if not 'deviceId' in dev.pluginProps:
+                    self.logger.error("%s: Oops. No deviceId for %s in deviceStartComm" % (name, address) )
                 self.process = self.getPollClass(dev)
                 self.tpThreads[address] = self.process
                 self.logger.debug("Polling thread started for device %s, %s" % (name, address) )
@@ -281,11 +286,6 @@ class Plugin(indigo.PluginBase):
                 self.tpDevices[address] = dev
             elif address in self.tpThreads:
                 self.logger.debug("deviceStartComm IN thread update %s, %s" % (name, address) )
-                deviceID  = dev.pluginProps['deviceId']
-                if not deviceID:
-                    self.logger.error("%s: Oops.No deviceId for %s" % (name, address) )
-                else:
-                    self.logger.debug("%s: Already had deviceId  %s" % (name, address) )
 
                 # self.logger.info(u"deviceStartComm related to device %s, %s" % (deviceId, "foio") )
                 # Since a thread already exists, this is probably a multiPlug
@@ -321,7 +321,7 @@ class Plugin(indigo.PluginBase):
         devAddr = valuesDict['address']
         devName = "new device at " + devAddr
         devPort = 9999
-        deviceId = None
+        deviceId = valuesDict['deviceId']
         childId = None
 
         # dont know the device type, so use generic protocol, and only generic commands
@@ -427,7 +427,7 @@ class Plugin(indigo.PluginBase):
         self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
         self.logger.info("    IP address: {}".format(dev.address))
         self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
-        self.logger.info("    WiFi Signal Strength: {}".format(dev.pluginProps['rssi']))
+        # (not always set) self.logger.info("    WiFi Signal Strength: {}".format(dev.pluginProps['rssi']))
         self.logger.info("    Device ID: {}".format(dev.pluginProps['deviceId']))
         self.logger.info("    alias : {}".format(dev.states['alias']))
         self.logger.info("    description: {}".format(dev.description))
@@ -588,7 +588,7 @@ class Plugin(indigo.PluginBase):
 
         # device level overrides to polling parameters
         if valuesDict['devPoll'] != '':
-          dev.pluginProps['devPoll'] = valuesDict['devPoll'] # for use by devOrPluginParm()
+          indigo.devices[devId].pluginProps['devPoll'] = valuesDict['devPoll'] # for use by devOrPluginParm()
 
         try:
             subType = self.getSubClass(devTypeID)

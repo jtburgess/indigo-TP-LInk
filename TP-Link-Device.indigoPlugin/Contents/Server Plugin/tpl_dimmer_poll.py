@@ -29,7 +29,6 @@ class dimmer_poll(pollingThread):
     else:
       self.pollFreq = self.offPoll
     self.logger.debug("poll init at interval %s (on=%s, off=%s)" % (self.pollFreq, self.onPoll, self.offPoll))
-    self.deviceId = dev.pluginProps['deviceId']
     self.changed = False
     # self.logger.threaddebug(u"Initializing: %s:%s" % (dev.name, self.offPoll))
     self._is_running = True
@@ -46,6 +45,7 @@ class dimmer_poll(pollingThread):
     devType = dev.deviceTypeId
     devAddr = dev.address
     devPort = 9999
+    self.deviceId = dev.pluginProps['deviceId']
 
     self.logger.threaddebug("Starting data refresh for %s :%s:%s: with %s" % (dev.name, devType, devAddr, self.offPoll))
 
