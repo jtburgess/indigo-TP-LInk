@@ -16,6 +16,7 @@ relayModels = {
     "HS200", # one way non-dimming wall switch
     "HS300", # 6-outlet power strip
     "KP100", # plug "slim edition"
+    "KP115", # slim plugwith energy monitoring - suggested by MEntOMANdo
     "KP200", # 2-outlet wall outlet
     "KP303", # 3-outlet power strip
     "KP400", # 2-outlet outdoor
