@@ -1,0 +1,53 @@
+This plugin attempts to support all TP-Link products that interact using the Kasa app.
+I'm not sure this is the optimal approach, but I've split their universe into sub-types:
+* tplinkSmartPlug - based on the Indigo "relay" device type
+* tplinkSmartBulb - based on the Indigo "dimmer" device type.
+* tplink_relayswitch_protocol -- wall switch with dimmer function (a cross between the first two, sort of
+)
+These subtypes have different behaviors, different attributes, and different JSON protocol structures
+
+Indigo thinks the "TP-Link Device" plugin is one entity, or Class in python.
+I've tried to keep most of the common login in 3 "base" classes:
+* plugin -- which is entry point for all Indigo calls
+* protocol -- which does the JSON communication with the devices
+* tpl_polling -- which polls devices for status
+ (i.e., so you know when somehing else changes the device state outside of Indigo, e.g. Alexa)
+ 
+Each of these has sub-classes for the different device types, but due to the fact that Indigo calls
+"plugin" the subclasses are upside-down (see below).
+I have had to "code" access the the sub-classes, but that's pretty obvious when you look at the code.
+The subclasses generallty have fuctions of the same name as in the base class, which usually have the same API, but not always!
+Here's some examples:
+
+class Plugin(indigo.PluginBase):
+  . . .
+  def initializeDev(self, valuesDict):
+    . . .
+    subType = self.getSubClass(self.getSubType(valuesDict['model']))
+    valuesDict =  subType.initializeDev(valuesDict, data)
+
+The other classes function more normally, i.e., pick a subclass and call it. Let python call the super / base class as necessary.
+    . . .
+    tplink_dev = self.getSubProtocol (dev)
+    result = tplink_dev.send(cmd)
+
+and
+    # Create a polling thread
+    self.process = self.getPollClass(dev)
+    self.tpThreads[address] = self.process
+ 
+ The most important thing in the plugin subclasses is the list of actual models claimed to be spported by that subclass.  I say claimed because I just got the list from the web site, it may not be complete,
+ and I do not _have_ most of those devices, so I cannot test them!
+ 
+ If anyone can think of a better or more Python-ish way to encapsulate this, have at it!
+ 
+ John Burgess
+ 
+ 
+ *ToDo:*
+√ test that I didn't break any of the existing multi-plug and energy collection features
+√ add "transition period" (aka rampTime) as a device configuration option for dimmable bulbs.
+* test with on/off only bulbs;
+* test with color bulbs, and figure out how Indigo deals with that attribute.
+* what other smartBulb properties could/should be saved? (to be accessed via "Display Device Information"
+* (maybe, needs thought) make device discovery ignore devices that are already discovered, or maybe that don't match the requested sub-type (but this would block "uknown" devices, and devices for the _other_ sub-type.)
