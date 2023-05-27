@@ -131,7 +131,8 @@ class tplink_relay():
         pluginProps['totAccuUsage'] = accuUsage
         dev.replacePluginPropsOnServer(pluginProps)
 
-        # and now reset the Indigo Device Detail display
+        # and now reset the Indigo Device Detail display values
+        dev.updateStateOnServer("curEnergyLevel", 0.0)
         dev.updateStateOnServer("accumEnergyTotal", 0.0)
     return
 
