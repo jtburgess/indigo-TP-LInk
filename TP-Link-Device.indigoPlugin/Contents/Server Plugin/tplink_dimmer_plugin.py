@@ -14,6 +14,7 @@ dimmerModels = {
     "KL120", # tunable-white bulb
     "KL130", # multicolor bulb
     "KL430", # multicolor bulb
+    "KL50(", # from Stan Krasnow
 }
 
 class tplink_dimmer():
