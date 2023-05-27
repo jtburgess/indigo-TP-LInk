@@ -122,6 +122,7 @@ class relay_poll(pollingThread):
               self.pollFreq = self.onPoll
             else:
               self.pollFreq = self.offPoll
+
           # check the onOff state of each plug
           if self.multiPlug:
             self.logger.threaddebug("%s: entered multiPlug state block" % (self.name))
@@ -274,7 +275,8 @@ class relay_poll(pollingThread):
                         {'key':'curWatts', 'value':0},
                         {'key':'curVolts', 'value':0},
                         {'key':'curAmps', 'value':0},
-                        {'key':"curEnergyLevel", 'value':0, 'uiValue':str(0) + " w"}
+                        {'key':"curEnergyLevel", 'value':0, 'uiValue':str(0) + " w"},
+                        {'key':"accumEnergyTotal", 'value':0, 'uiValue':str(0) + " w"}
                       ]
                     indigoDevice.updateStatesOnServer(state_update_list)
 
@@ -304,6 +306,7 @@ class relay_poll(pollingThread):
               dev.updateStatesOnServer(state_update_list)
 
               self.logger.threaddebug("Received results for %s @ %s secs: %s, %s, %s: change = %s" % (dev.name, self.pollFreq, curWatts, curVolts, curAmps, self.changed))
+
         indigo.debugger()
         self.logger.threaddebug("%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))
         pTime = 1.0
