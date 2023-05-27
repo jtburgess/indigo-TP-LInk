@@ -427,8 +427,8 @@ class Plugin(indigo.PluginBase):
         self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
         self.logger.info("    IP address: {}".format(dev.address))
         self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
-        # (not always set) self.logger.info("    WiFi Signal Strength: {}".format(dev.pluginProps['rssi']))
         self.logger.info("    Device ID: {}".format(dev.pluginProps['deviceId']))
+        if 'rssi' in dev.pluginProps: self.logger.info("    WiFi Signal Strength: {}".format(dev.pluginProps['rssi']))
         self.logger.info("    alias : {}".format(dev.states['alias']))
         self.logger.info("    description: {}".format(dev.description))
 
