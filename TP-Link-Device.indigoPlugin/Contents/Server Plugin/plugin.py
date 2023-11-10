@@ -265,11 +265,11 @@ class Plugin(indigo.PluginBase):
         subType = self.getSubClass(dev.deviceTypeId)
         subType.deviceStartComm(dev)
 
-        devPoll = self.devOrPluginParm(dev, 'devPoll', False)
+        devPoll = self.devOrPluginParm(dev, 'devPoll', False)[0]
 
         # self.logger.debug("deviceStartComn starting %s" % (name), type="TP-Link" % (isError=False) )
         if name in self.tpThreads:
-            self.logger.debug("deviceStartComm error: Thread exists for %s , %s- %s" % (name, address, self.tpThreads[dev.name]))
+            self.logger.debug("deviceStartComm error: Thread exists for %s , %s- %s" % (name, address, self.tpThreads[name]))
             # self.tpThreads[address].interupt(None)
         elif not devPoll:
             self.logger.info("Polling thread is disabled for %s, %s." % (name, address) )
@@ -297,7 +297,7 @@ class Plugin(indigo.PluginBase):
         # Since we got this far, we might as well tell someone
         dev.replaceOnServer()
         if devPoll:
-          self.logger.info("Polling started for %s@%s." % (dev.name, dev.address) )
+          self.logger.info("Polling started for %s@%s." % (name, address) )
         return
 
     def deviceStopComm(self, dev):
