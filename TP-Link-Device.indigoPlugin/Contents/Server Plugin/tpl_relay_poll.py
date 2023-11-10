@@ -258,7 +258,6 @@ class relay_poll(pollingThread):
                     curAmps  = eitherOr (data['emeter']['get_realtime'], 'current_ma', 'current')
                     totWattHrs = round( float( (eitherOr (data['emeter']['get_realtime'], 'total_wh', 'total'))), 1)
 
-
                     state_update_list = [
                         {'key':'curWatts', 'value':curWatts},
                         {'key':'totWattHrs', 'value':totWattHrs},
