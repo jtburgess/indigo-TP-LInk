@@ -1,6 +1,6 @@
 # Indigo TP-Link
 
-Version 0.9.9 is now Python 3 compatible, and has been tested with Indigo 2022.1
+Version 0.9.9 and newer are Python 3 compatible, and have been tested with Indigo 2022.1
 
 ## Overview
 
