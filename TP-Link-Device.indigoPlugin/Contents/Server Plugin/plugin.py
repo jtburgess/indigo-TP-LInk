@@ -56,14 +56,22 @@ def check_server(address):
 class MyDebugHandler(IndigoLogHandler, object):
     ########################################
     """ define a log handler to format log messages by level """
-    def __init__(self, displayName, level=logging.NOTSET, debug=False):
+    def __init__(self, displayName, level=logging.INFO, debug=False):
         super(IndigoLogHandler, self).__init__(level)
         self.displayName = displayName
         self.debug = debug
+        # self.plugin_file_handler = IndigoLogHandler.plugin_file_handler
         return
 
     def setLogLevel(self, loglevel):
-        self.loglevel = loglevel
+        if loglevel == logging.DEBUG or loglevel == logging.THREADDEBUG:
+            # send debug messages ONLY to the plugin specific log at: /Library/Application Support/Perceptive Automation/Indigo 7/Logs/your.plugin.id/plugin.log
+            self.plugin_file_handler.loglevel = loglevel
+            self.logger.info("Log level set to {}. Debug messages go to {}/plugin.log ONLY.".format(self.loglevel,
+                indigo.server.getLogsFolderPath(pluginId='com.JohnBurgess.indigoplugin.TP-Link-Device')))
+        else:
+            # self.plugin_file_handler.loglevel = loglevel
+            self.loglevel = loglevel
         # indigo.server.log("Received log level {}".format(self.loglevel))
         return
 
@@ -71,21 +79,14 @@ class MyDebugHandler(IndigoLogHandler, object):
         """ not used by this class; must be called independently by indigo """
         level = record.levelname
         is_error = False
-        if level == 'THREADDEBUG' and self.loglevel == 'debug':	# 5
-            logmessage = '({}:{}:{}): {}'.format(path.basename(record.pathname), record.funcName, record.lineno, record.getMessage())
-        elif level == 'DEBUG' and (self.loglevel == 'trace' or self.loglevel == "debug"):	# 10
-            logmessage = '({}:{}:{}): {}'.format(path.basename(record.pathname), record.funcName, record.lineno, record.getMessage())
-        elif level == 'INFO':		# 20
+        if level == logging.INFO:		# 20
             logmessage = record.getMessage()
-        elif level == 'WARNING':	# 30
-            logmessage = '({}:{}:{}): {}'.format(path.basename(record.pathname), record.funcName, record.lineno, record.getMessage())
-        elif level == 'ERROR':		# 40
+        elif level == logging.ERROR or level == logging.CRITICAL:		# 40, 50
             logmessage = '({}:{}:{}): {}'.format(path.basename(record.pathname), record.funcName, record.lineno, record.getMessage())
             is_error = True
         else:
-            return
+            logmessage = '({}:{}:{}): {}'.format(path.basename(record.pathname), record.funcName, record.lineno, record.getMessage())
 
-        indigo.server.log(message=logmessage, type=self.displayName, isError=is_error)
         return
 
 
@@ -95,13 +96,13 @@ class Plugin(indigo.PluginBase):
     def __init__(self, pluginId, pluginDisplayName, pluginVersion, pluginPrefs):
         super(Plugin, self).__init__(pluginId, pluginDisplayName, pluginVersion, pluginPrefs)
 
-        self.my_debug_handler = MyDebugHandler(pluginDisplayName, logging.THREADDEBUG)
+        self.my_debug_handler = MyDebugHandler(pluginDisplayName, logging.DEBUG)
         self.logger.addHandler(self.my_debug_handler)
         self.logger.removeHandler(self.indigo_log_handler)
 
         self.loglevel = pluginPrefs.get("logLevel", "info")
         self.my_debug_handler.setLogLevel(self.loglevel)
-        self.logger.info("Log level set to {}".format(self.loglevel))
+        self.logger.info("Log level init to {}".format(self.loglevel))
         self.logOnOff = pluginPrefs.get('logOnOff', False)
         self.tpThreads = {}
         self.tpDevices = {}
@@ -240,8 +241,7 @@ class Plugin(indigo.PluginBase):
     ######################
     def validatePrefsConfigUi(self, valuesDict):
         """set the log level dynamically"""
-        self.logger.debug("Current log level:{} received log level={}".format(self.loglevel, valuesDict['logLevel']))
-        self.logger.threaddebug("Current:{} received valuesDict={}".format(self.loglevel, valuesDict))
+        self.logger.debug("Current log level:{} new log level={}".format(self.loglevel, valuesDict['logLevel']))
         self.loglevel = valuesDict['logLevel']
         self.pluginPrefs["logLevel"] = self.loglevel
         self.my_debug_handler.setLogLevel(self.loglevel)
