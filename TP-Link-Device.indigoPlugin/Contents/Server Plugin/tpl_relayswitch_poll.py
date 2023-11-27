@@ -190,7 +190,7 @@ class relayswitch_poll(pollingThread):
             self.logger.threaddebug("Polling found %s set to %s" % (self.name, logState) )
             self.logger.threaddebug("%s, updated state on server to %s (%s, %s)" % (self.name, state, rssi, alias) )
 
-        self.logger.debug("%s: finished state update %s" % (self.name, data))
+        self.logger.threaddebug("%s: finished state update %s" % (self.name, data))
 
         indigo.debugger()
         self.logger.threaddebug("%s: In the loop - finished data gathering. Will now pause for %s" % (self.name, self.pollFreq))

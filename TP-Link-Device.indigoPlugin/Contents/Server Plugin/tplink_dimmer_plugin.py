@@ -101,7 +101,7 @@ class tplink_dimmer():
     return
 
   def getDeviceStateList(self, dev, statesDict):
-    self.logger.debug(" called for: %s." % statesDict)
+    self.logger.threaddebug(" called for: %s." % statesDict)
 
     # brightness level is pre-defined. No need to add it here
     hue = self.tpLink_self.getDeviceStateDictForNumberType("hue", "hue", "hue")

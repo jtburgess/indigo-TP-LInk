@@ -228,7 +228,7 @@ class relay_poll(pollingThread):
               self.logger.threaddebug("Polling found %s set to %s" % (self.name, logState) )
               self.logger.threaddebug("%s, updated state on server to %s (%s, %s)" % (self.name, state, rssi, alias) )
 
-          self.logger.debug("%s: finished state update %s" % (self.name, data))
+          self.logger.threaddebug("%s: finished state update %s" % (self.name, data))
 
           # Now we start looking for energy data... if the plug is capable
           if energyCapable:

@@ -82,7 +82,7 @@ class tplink_relayswitch():
     return
 
   def getDeviceStateList(self, dev, statesDict):
-    self.logger.debug(" called for: %s." % (statesDict, ))
+    self.logger.threaddebug(" called for: %s." % (statesDict, ))
     fadeOnTime  = self.tpLink_self.getDeviceStateDictForNumberType("fadeOnTime", "fadeOnTime", "fadeOnTime")
     fadeOffTime  = self.tpLink_self.getDeviceStateDictForNumberType("fadeOffTime", "fadeOffTime", "fadeOffTime")
     minThreshold  = self.tpLink_self.getDeviceStateDictForNumberType("minThreshold", "minThreshold", "minThreshold")

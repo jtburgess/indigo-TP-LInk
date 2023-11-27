@@ -193,7 +193,7 @@ class dimmer_poll(pollingThread):
             dev.updateStatesOnServer(state_update_list)
             self.logger.debug("{}, no state change; update state on server: Dimmer States={}".format(self.name, state_update_list))
 
-        self.logger.debug("%s: finished state update %s" % (self.name, data))
+        self.logger.threaddebug("%s: finished state update %s" % (self.name, data))
 
         indigo.debugger()
         self.logger.threaddebug("%s: In the loop - pause for %s; changed=%s, isRunning=%s" % (self.name, self.pollFreq, self.changed, self._is_running))

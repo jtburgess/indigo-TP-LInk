@@ -137,7 +137,7 @@ class tplink_relay():
     return
 
   def getDeviceStateList(self, dev, statesDict):
-    self.logger.debug(" called for: %s." % (statesDict, ))
+    self.logger.threaddebug(" called for: %s." % (statesDict, ))
 
     # if we actually have a device here and the device does energy reporting
     if 'energyCapable' in dev.pluginProps and dev.pluginProps['energyCapable']:
