@@ -167,7 +167,7 @@ class Plugin(indigo.PluginBase):
         self.logger.debug("called with tplink_dimmer addr: {}".format(addr))
 
         dimmer_proto = tplink_dimmer_protocol(addr, port, None, None, logger=self.logger)
-        if 'rampTime' in dev.pluginProps:
+        if 'rampTime' in dev.pluginProps and dev.pluginProps['rampTime']:
           dimmer_proto.setArg2 (dev.pluginProps['rampTime'])
         else:
           dimmer_proto.setArg2 ( 1000 ) # default 1 second
@@ -413,8 +413,8 @@ class Plugin(indigo.PluginBase):
         self.logger.info("    TPlink device type: {}".format(dev.deviceTypeId))
         self.logger.info("    TP Link model: {}".format(dev.pluginProps['model']))
         self.logger.info("    IP address: {}".format(dev.address))
-        self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
-        self.logger.info("    Device ID: {}".format(dev.pluginProps['deviceId']))
+        if 'mac' in dev.pluginProps: self.logger.info("    MAC address: {}".format(dev.pluginProps['mac']))
+        if 'deviceId' in dev.pluginProps: self.logger.info("    Device ID: {}".format(dev.pluginProps['deviceId']))
         if 'rssi' in dev.pluginProps: self.logger.info("    WiFi Signal Strength: {}".format(dev.pluginProps['rssi']))
         self.logger.info("    alias : {}".format(dev.states['alias']))
         self.logger.info("    description: {}".format(dev.description))

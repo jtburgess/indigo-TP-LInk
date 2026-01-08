@@ -12,7 +12,9 @@ dimmerModels = {
     "KL100", # lightbulb (if not dimmable, does it follow Relay properties and commands?)
     "KL110", # dimmable bulb
     "KL120", # tunable-white bulb
+    "KL125", # dimmable color bulb
     "KL130", # multicolor bulb
+    "KL135", # dimmable color bulb
     "KL430", # multicolor bulb
     "KL50(", # from Stan Krasnow
 }
@@ -89,12 +91,13 @@ class tplink_dimmer():
 
   def getInfo(self, pluginAction, dev):
     props = dev.pluginProps
-    if 'colorTemp' in props:
-      self.logger.info("        Color Temp: {}".format(props['colorTemp']))
-    self.logger.info("    Supports Color: {}".format(props['isColor']))
-    if props['isColor']:
-      self.logger.info("               Hue: {}".format(props['Hue']))
-      self.logger.info("        Saturation: {}".format(props['Saturation']))
+    states = dev.states
+    if 'isColor' in props:
+      self.logger.info("    Supports Color: {}".format(props['isColor']))
+      if props['isColor']:
+        if 'Hue' in states: self.logger.info("               Hue: {}".format(states['Hue']))
+        if 'Saturation' in states: self.logger.info("        Saturation: {}".format(states['Saturation']))
+        if 'colorTemp' in states: self.logger.info("        Color Temp: {}".format(states['colorTemp']))
     return
 
   def actionControlUniversal(self, action, dev):
@@ -104,8 +107,14 @@ class tplink_dimmer():
     self.logger.threaddebug(" called for: %s." % statesDict)
 
     # brightness level is pre-defined. No need to add it here
-    hue = self.tpLink_self.getDeviceStateDictForNumberType("hue", "hue", "hue")
-    statesDict.append(hue)
+    # Add color states for color-capable bulbs
+    if 'isColor' in dev.pluginProps and dev.pluginProps['isColor']:
+      hue = self.tpLink_self.getDeviceStateDictForNumberType("Hue", "Hue", "Hue")
+      saturation = self.tpLink_self.getDeviceStateDictForNumberType("Saturation", "Saturation", "Saturation")
+      colorTemp = self.tpLink_self.getDeviceStateDictForNumberType("colorTemp", "colorTemp", "colorTemp")
+      statesDict.append(hue)
+      statesDict.append(saturation)
+      statesDict.append(colorTemp)
 
     return statesDict
 
@@ -209,12 +218,14 @@ class tplink_dimmer():
     tplink_dev_states = tplink_dimmer_protocol(dev.address, 9999)
     result = tplink_dev_states.send('set_HSV', str(hue), str(sat), str(val))
 
-    # update HSV in device state
-    newProps = dev.pluginProps
-    newProps['Hue'] = hue
-    newProps['Saturation'] = sat
-    newProps['brightnessLevel'] = val
-    dev.replacePluginPropsOnServer(newProps)
+    # update HSV in device states
+    state_update_list = [
+        {'key':'Hue', 'value':hue},
+        {'key':'Saturation', 'value':sat},
+        {'key':'brightnessLevel', 'value':val},
+        {'key':'onOffState', 'value':True, 'uiValue':'On'},
+    ]
+    dev.updateStatesOnServer(state_update_list)
 
   # int value: value in percentage [0, 100]
   def set_ColorTemp(self, pluginAction, dev):
@@ -230,9 +241,6 @@ class tplink_dimmer():
 
     tplink_dev_states = tplink_dimmer_protocol(dev.address, 9999)
     result = tplink_dev_states.send('set_ColorTemp', str(temp))
-    # indigo.server.log("setColorTemp result: {}".format(result))
 
-    # update HSV in device state
-    newProps = dev.pluginProps
-    newProps['colorTemp'] = temp
-    dev.replacePluginPropsOnServer(newProps)
+    # update colorTemp in device state
+    dev.updateStateOnServer('colorTemp', temp)

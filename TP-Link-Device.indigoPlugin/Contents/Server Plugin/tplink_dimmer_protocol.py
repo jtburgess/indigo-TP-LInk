@@ -44,10 +44,10 @@ class tplink_dimmer_protocol(tplink_protocol):
     """
     return result_dict["smartlife.iot.smartbulb.lightingservice"]["transition_light_state"]["err_code"]
 
-  def send(self, request, arg1=None, arg2=None):
+  def send(self, request, arg1=None, arg2=None, arg3=None):
     # it doesn't hurt to have a default if YYY is undefined
     if arg2 == None:
       arg2 = self.arg2
 
-    self.debugLog("arg1={}, arg2={}".format(arg1, arg2))
-    return super(tplink_dimmer_protocol, self).send(request, str(arg1), str(arg2))
+    self.debugLog("arg1={}, arg2={}, arg3={}".format(arg1, arg2, arg3))
+    return super(tplink_dimmer_protocol, self).send(request, str(arg1), str(arg2), str(arg3) if arg3 is not None else None)
