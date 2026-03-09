@@ -53,7 +53,7 @@ def check_server(address):
 
 # for mapping old-style levels to new std ones.
 logLevelMap =  {
-        'threaddebug' : logging.THREADDEBUG,
+        'threaddebug' : logging.THREADDEBUG, # aka DeepDebug in PluginConfig.xml
         'THREADDEBUG' : logging.THREADDEBUG,
         logging.THREADDEBUG : logging.THREADDEBUG,
         'debug'       : logging.DEBUG,
@@ -88,18 +88,20 @@ class Plugin(indigo.PluginBase):
 
     def setLogLevel(self, logLevel):
         try:
-            logLevel = logLevelMap [ logLevel ]
+          logLevel = logLevelMap [ logLevel ]
         except:
-            self.logger.info ("Error mapping old log level ({}) to new; using INFO".format(logLevel))
-            logLevel = logging.INFO
+          self.logger.info ("Error mapping old log level ({}) to new; using INFO".format(logLevel))
+          logLevel = logging.INFO
 
         if logLevel == logging.DEBUG or logLevel == logging.THREADDEBUG:
-            self.plugin_file_handler.setLevel (logLevel)
-            # dont set indigo log level
-            return
+          # debug messages go to the plugin log
+          self.plugin_file_handler.setLevel (logLevel)
+          # dont set indigo log level
+          return
         else:
-            self.plugin_file_handler.setLevel (logging.DEBUG)
-            self.indigo_log_handler.setLevel (logLevel)
+          # info and warn messages go to the normal indigo log
+          self.plugin_file_handler.setLevel (logging.DEBUG)
+          self.indigo_log_handler.setLevel (logLevel)
         return
 
     def getSubType(self, model):
